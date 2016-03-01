@@ -1,4 +1,5 @@
 
+#include <stdio.h>
 #include "net/ppp/hdr.h"
 #include "byteorder.h"
 
@@ -15,18 +16,17 @@
 
 void ppp_hdr_print(ppp_hdr_t *hdr)
 {
-	// \todo{Print in binary format}
 	//Print flag
-	printf("Flag: %" BY2BINPT "\n", BY2BIN(ppp_hdr_get_flag(hdr)));
+	//printf("Flag: %" BY2BINPT "\n", BY2BIN(ppp_hdr_get_flag(hdr)));
 
 	//Print address
-	printf("Address: %" BY2BINPT "\n", BY2BIN(ppp_hdr_get_address(hdr)));
+	//printf("Address: %" BY2BINPT "\n", BY2BIN(ppp_hdr_get_address(hdr)));
 
 	//Print protocol
-	printf("Protocol: %" PRIu16 "\n", ppp_hdr_get_protocol(hdr));
+	//printf("Protocol: %" PRIu16 "\n", ppp_hdr_get_protocol(hdr));
 
 	//Print FCS
 	network_uint32_t fcs;
 	fcs = ppp_hdr_get_fcs(hdr);
-	printf("FCS: %" PRIu16 ", %" PRIu16 "\n",fcs[0], fcs[1]);
+	//printf("FCS: %" PRIu16 ", %" PRIu16 "\n",fcs[0], fcs[1]);
 }
