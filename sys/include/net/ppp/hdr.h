@@ -61,3 +61,4 @@ void ppp_hdr_print(ppp_hdr_t *hdr);
 }
 #endif
 #endif
+/** @} */
