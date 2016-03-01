@@ -1,0 +1,2 @@
+USEMODULE += gnrc_pktbuf_static
+USEMODULE += gnrc_ppp_lcp

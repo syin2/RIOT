@@ -103,6 +103,11 @@ typedef enum {
     /**
      * @}
      */
+//#ifdef MODULE_GNRC_PPP
+	GNRC_NETTYPE_PPP_LCP,
+	GNRC_NETTYPE_PPP_IPCP,
+	GNRC_NETTYPE_HDLC,
+//#endif
 
     GNRC_NETTYPE_NUMOF,         /**< maximum number of available protocols */
 } gnrc_nettype_t;
@@ -133,6 +138,7 @@ static inline gnrc_nettype_t gnrc_nettype_from_ethertype(uint16_t type)
             return GNRC_NETTYPE_UNDEF;
     }
 }
+
 
 /**
  * @brief   Translates @ref net_gnrc_nettype to an Ether Type number

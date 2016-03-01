@@ -1,4 +1,3 @@
-MODULE = ppp_hdr
+MODULE = ppp_pkt
 
 include $(RIOTBASE)/Makefile.base
-

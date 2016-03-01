@@ -1,5 +1,27 @@
-#ifndef PPP_HDR_H
-#define PPP_HDR_H
+/*
+ * Copyright (C) 2016 José Ignacio Alamos <jialamos@uc.cl>
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
+/**
+ * @defgroup    net_ppp Header
+ * @ingroup     net_ppp_hdr
+ * @brief       PPP header abstraction type and helper functions
+ * @{
+ *
+ * @file
+ * @brief   General definitions for PPP header and their helper functions
+ *
+ * @author  José Ignacio Alamos
+ */
+
+#ifndef PPP_HDR_H_
+#define PPP_HDR_H_
+
+#include <inttypes.h>
 
 #include "byteorder.h"
 
@@ -7,57 +29,116 @@
 extern "C" {
 #endif
 
-typedef struct __attribute__((packed)) {
-	uint8_t flag; // Flag
-	uint8_t address; //Address
-	uint16_t protocol; //protocol
-	network_uint32_t fcs; //Frame Check Sequence
+
+/**
+ * @brief   Header of a PPP packet
+ * @details A PPP packet is transmited as a payload of an HDLC packet. PPP packets only carry information about control protocol
+ * of a PPP stack (Link Control Protocol, IP Control Protocol, etc). IP packets encapsulated in HDLC frame are not
+ * considered PPP packet.
+ *
+ * The format of PPP header plus payload is:
+ *
+ *
+ *  0                   1                   2                   3
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |     Code      |  Identifier   |            Length             |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |    Payload ...
+ * +-+-+-+-+
+ *
+ *
+ */
+/*  PPP pkt header struct */
+typedef struct __attribute__((packed)){
+    uint8_t code;
+    uint8_t id;
+    network_uint16_t length;
 } ppp_hdr_t;
 
-static inline void ppp_hdr_set_flag(ppp_hdr_t *hdr)
+
+
+/**
+ * @brief    Get code field of PPP packet
+ *
+ * @param[in] hdr    PPP header
+ *
+ * @return    code of PPP header
+ */
+static inline uint8_t ppp_hdr_get_code(ppp_hdr_t *hdr)
 {
-	hdr->flag = 0x7E;
+    return hdr->code;
 }
 
-static inline uint8_t ppp_hdr_get_flag(ppp_hdr_t *hdr)
+
+/**
+ * @brief    Set code field of PPP header
+ *
+ * @param[in] hdr    PPP header
+ * @param[in] code    code to be set
+ *
+ */
+static inline void ppp_hdr_set_code(ppp_hdr_t *hdr, uint8_t code)
 {
-	return hdr->flag;
+    hdr->code = code;
 }
 
-static inline void ppp_hdr_set_address(ppp_hdr_t *hdr)
+
+/**
+ * @brief    Get id field of PPP header
+ *
+ * @param[in] hdr    PPP header
+ *
+ * @return    id of PPP header
+ */
+static inline uint8_t ppp_hdr_get_id(ppp_hdr_t *hdr)
 {
-	hdr->address = 0xFF;
+    return hdr->id;
 }
 
-static inline uint8_t ppp_hdr_get_address(ppp_hdr_t *hdr)
+
+/**
+ * @brief    Set id field of PPP header
+ *
+ * @param[in] hdr    PPP header
+ * @param[in] id    id to be set
+ *
+ */
+static inline void ppp_hdr_set_id(ppp_hdr_t *hdr, uint8_t id)
 {
-	return hdr->address;
+    hdr->id = id;
 }
 
-static inline void ppp_hdr_set_protocol(ppp_hdr_t *hdr, uint16_t protocol)
+
+/**
+ * @brief    Get length field of PPP header
+ *
+ * @param[in] hdr    PPP header
+ *
+ * @return    length of PPP header
+ */
+static inline uint16_t ppp_hdr_get_length(ppp_hdr_t *hdr)
 {
-	hdr->protocol = protocol;
+    return byteorder_ntohs(hdr->length);
 }
 
-static inline uint16_t ppp_hdr_get_protocol(ppp_hdr_t *hdr)
+
+
+/**
+ * @brief    Set length field of PPP header
+ *
+ * @param[in] hdr    PPP header
+ * @param[in] length    length to be set
+ *
+ */
+static inline void ppp_hdr_set_length(ppp_hdr_t *hdr, uint16_t length)
 {
-	return hdr->protocol;
+    hdr->length = byteorder_htons(length);
 }
 
-static inline void ppp_hdr_set_fcs(ppp_hdr_t *hdr, uint16_t fcs_1, uint16_t fcs_2)
-{
-	hdr->fcs.u16[0] = fcs_1;
-	hdr->fcs.u16[1] = fcs_2;
-} 
-
-static inline network_uint32_t ppp_hdr_get_fcs(ppp_hdr_t *hdr)
-{
-	return hdr->fcs;
-}
-
-void ppp_hdr_print(ppp_hdr_t *hdr);
 
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif /* PPP_HDR_H_ */

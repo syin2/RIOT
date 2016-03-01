@@ -40,11 +40,17 @@ endif
 ifneq (,$(filter ipv6_hdr,$(USEMODULE)))
     DIRS += net/network_layer/ipv6/hdr
 endif
+ifneq (,$(filter hdlc_fcs,$(USEMODULE)))
+    DIRS += net/link_layer/hdlc/fcs
+endif
 ifneq (,$(filter gnrc gnrc_%,$(USEMODULE)))
     DIRS += net/gnrc
 endif
 ifneq (,$(filter inet_csum,$(USEMODULE)))
     DIRS += net/crosslayer/inet_csum
+endif
+ifneq (,$(filter ppp_pkt,$(USEMODULE)))
+    DIRS += net/link_layer/ppp
 endif
 ifneq (,$(filter cipher_modes,$(USEMODULE)))
     DIRS += crypto/modes
@@ -54,6 +60,12 @@ ifneq (,$(filter nhdp,$(USEMODULE)))
 endif
 ifneq (,$(filter gnrc_netdev2,$(USEMODULE)))
     DIRS += net/gnrc/link_layer/netdev2
+endif
+ifneq (,$(filter gnrc_ppp,$(USEMODULE)))
+    DIRS += net/gnrc/link_layer/ppp
+endif
+ifneq (,$(filter gnrc_ppp_lcp,$(USEMODULE)))
+    DIRS += net/gnrc/link_layer/ppp/lcp
 endif
 ifneq (,$(filter fib,$(USEMODULE)))
     DIRS += net/network_layer/fib

@@ -1,0 +1,2 @@
+USEMODULE += ppp_pkt
+USEMODULE += gnrc_ppp

@@ -1,0 +1,2 @@
+USEMODULE += hdlc_hdr
+USEMODULE += hdlc_fcs
