@@ -34,6 +34,9 @@ endif
 ifneq (,$(filter ipv6_hdr,$(USEMODULE)))
     DIRS += net/network_layer/ipv6/hdr
 endif
+ifneq (,$(filter ppp_hdr,$(USEMODULE)))
+    DIRS += net/link_layer/ppp/hdr/
+endif
 ifneq (,$(filter gnrc gnrc_%,$(USEMODULE)))
     DIRS += net/gnrc
 endif
