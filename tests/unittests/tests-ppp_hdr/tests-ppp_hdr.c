@@ -21,6 +21,9 @@
 #include "unittests-constants.h"
 #include "tests-ppp_hdr.h"
 
+#define PPPINITFCS16    0xffff  /* Initial FCS value */
+#define PPPGOODFCS16    0xf0b8  /* Good final FCS value */
+
 static void test_ppp_hdr_set_get_version(void)
 {
 	ppp_hdr_t hdr;
@@ -64,6 +67,23 @@ static void test_ppp_hdr_set_get_fcs(void)
 	TEST_ASSERT_EQUAL_INT(0xFFFFFFFF, hdr.fcs.u32);
 }
 
+//Adapted test from RFC1662
+static void test_ppp_hdr_fcs_checksum(void)
+{
+	uint16_t trialfcs;
+	char cp[11] = "test_data\0\0";
+	int len = 9;
+
+	trialfcs = ppp_fcs16( PPPINITFCS16, cp, len );
+	trialfcs ^= 0xffff;                 /* complement */
+	cp[len] = (trialfcs & 0x00ff);      /* least significant byte first */
+	cp[len+1] = ((trialfcs >> 8) & 0x00ff);
+
+	trialfcs = ppp_fcs16( PPPINITFCS16, cp, len + 2 );
+
+	TEST_ASSERT_EQUAL_INT(PPPGOODFCS16, trialfcs);
+}
+
 Test *tests_ppp_hdr_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
@@ -71,6 +91,7 @@ Test *tests_ppp_hdr_tests(void)
         new_TestFixture(test_ppp_hdr_set_get_address),
         new_TestFixture(test_ppp_hdr_set_get_protocol),
         new_TestFixture(test_ppp_hdr_set_get_fcs),
+        new_TestFixture(test_ppp_hdr_fcs_checksum),
     };
 
     EMB_UNIT_TESTCALLER(ppp_hdr_tests, NULL, NULL, fixtures);
