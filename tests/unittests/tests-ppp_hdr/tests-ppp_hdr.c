@@ -71,15 +71,15 @@ static void test_ppp_hdr_set_get_fcs(void)
 static void test_ppp_hdr_fcs_checksum(void)
 {
 	uint16_t trialfcs;
-	char cp[11] = "test_data\0\0";
+	uint8_t cp[11] = "test_data\0\0";
 	int len = 9;
 
-	trialfcs = ppp_fcs16( PPPINITFCS16, cp, len );
+	trialfcs = ppp_fcs16( PPPINITFCS16, &cp[0], len );
 	trialfcs ^= 0xffff;                 /* complement */
 	cp[len] = (trialfcs & 0x00ff);      /* least significant byte first */
 	cp[len+1] = ((trialfcs >> 8) & 0x00ff);
 
-	trialfcs = ppp_fcs16( PPPINITFCS16, cp, len + 2 );
+	trialfcs = ppp_fcs16( PPPINITFCS16, &cp[0], len + 2 );
 
 	TEST_ASSERT_EQUAL_INT(PPPGOODFCS16, trialfcs);
 }
