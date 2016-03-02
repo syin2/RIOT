@@ -14,6 +14,7 @@ typedef struct __attribute__((packed)) {
 	network_uint32_t fcs; //Frame Check Sequence
 } ppp_hdr_t;
 
+
 static inline void ppp_hdr_set_flag(ppp_hdr_t *hdr)
 {
 	hdr->flag = 0x7E;
@@ -56,6 +57,7 @@ static inline network_uint32_t ppp_hdr_get_fcs(ppp_hdr_t *hdr)
 }
 
 void ppp_hdr_print(ppp_hdr_t *hdr);
+uint16_t ppp_fcs16(uint16_t, uint8_t*, int);
 
 #ifdef __cplusplus
 }
