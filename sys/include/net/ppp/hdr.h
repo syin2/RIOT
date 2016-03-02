@@ -58,6 +58,7 @@ static inline network_uint32_t ppp_hdr_get_fcs(ppp_hdr_t *hdr)
 
 void ppp_hdr_print(ppp_hdr_t *hdr);
 uint16_t ppp_fcs16(uint16_t, uint8_t*, int);
+uint32_t ppp_fcs32(uint32_t, uint8_t*, int);
 
 #ifdef __cplusplus
 }
