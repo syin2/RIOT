@@ -1,6 +1,6 @@
 
 #include <stdio.h>
-#include "net/hdlc/hdr.h"
+#include "net/hdlc/fcs.h"
 #include "byteorder.h"
 
 
