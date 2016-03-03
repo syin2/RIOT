@@ -54,13 +54,13 @@ static void test_hdlc_hdr_set_get_fcs(void)
 {
 	hdlc_hdr_t hdr;
 
-	uint16_t fcs_1, fcs_2;
-	fcs_1 = 0xFFFF;
-	fcs_2 = 0xFFFF;
+	uint16_t fcs;
+	fcs = 0xFFFF;
 
-	hdlc_hdr_set_fcs(&hdr, fcs_1, fcs_2);
+	hdlc_hdr_set_fcs(&hdr, fcs);
 
-	TEST_ASSERT_EQUAL_INT(0xFFFFFFFF, hdr.fcs.u32);
+	TEST_ASSERT_EQUAL_INT(0xFFFF, hdr.fcs.u16);
+	TEST_ASSERT_EQUAL_INT(0xFFFF, hdlc_hdr_get_fcs(&hdr).u16);
 }
 
 //Adapted test from RFC1662
