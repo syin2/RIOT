@@ -8,22 +8,11 @@ extern "C" {
 #endif
 
 typedef struct __attribute__((packed)) {
-	uint8_t flag; // Flag
 	uint8_t address; //Address
 	uint16_t protocol; //protocol
 	network_uint32_t fcs; //Frame Check Sequence
 } ppp_hdr_t;
 
-
-static inline void ppp_hdr_set_flag(ppp_hdr_t *hdr)
-{
-	hdr->flag = 0x7E;
-}
-
-static inline uint8_t ppp_hdr_get_flag(ppp_hdr_t *hdr)
-{
-	return hdr->flag;
-}
 
 static inline void ppp_hdr_set_address(ppp_hdr_t *hdr)
 {

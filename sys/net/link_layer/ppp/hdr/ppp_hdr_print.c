@@ -17,8 +17,6 @@
 
 void ppp_hdr_print(ppp_hdr_t *hdr)
 {
-	//Print flag
-	//printf("Flag: %" BY2BINPT "\n", BY2BIN(ppp_hdr_get_flag(hdr)));
 
 	//Print address
 	//printf("Address: %" BY2BINPT "\n", BY2BIN(ppp_hdr_get_address(hdr)));

@@ -29,15 +29,6 @@
 
 
 
-static void test_ppp_hdr_set_get_version(void)
-{
-	ppp_hdr_t hdr;
-	ppp_hdr_set_flag(&hdr);
-
-	TEST_ASSERT_EQUAL_INT(0x7E, hdr.flag);	
-	TEST_ASSERT_EQUAL_INT(0x7E, ppp_hdr_get_flag(&hdr));	
-}
-
 static void test_ppp_hdr_set_get_address(void)
 {
 	ppp_hdr_t hdr;
@@ -112,7 +103,6 @@ static void test_ppp_hdr_fcs32_checksum(void)
 Test *tests_ppp_hdr_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
-        new_TestFixture(test_ppp_hdr_set_get_version),
         new_TestFixture(test_ppp_hdr_set_get_address),
         new_TestFixture(test_ppp_hdr_set_get_protocol),
         new_TestFixture(test_ppp_hdr_set_get_fcs),
