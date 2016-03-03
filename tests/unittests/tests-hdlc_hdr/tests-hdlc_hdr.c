@@ -50,19 +50,6 @@ static void test_hdlc_hdr_set_get_protocol(void)
 	TEST_ASSERT_EQUAL_INT(protocol, hdlc_hdr_get_protocol(&hdr));
 }
 
-static void test_hdlc_hdr_set_get_fcs(void)
-{
-	hdlc_hdr_t hdr;
-
-	uint16_t fcs;
-	fcs = 0xFFFF;
-
-	hdlc_hdr_set_fcs(&hdr, fcs);
-
-	TEST_ASSERT_EQUAL_INT(0xFFFF, hdr.fcs.u16);
-	TEST_ASSERT_EQUAL_INT(0xFFFF, hdlc_hdr_get_fcs(&hdr).u16);
-}
-
 //Adapted test from RFC1662
 static void test_hdlc_hdr_fcs_checksum(void)
 {
@@ -105,7 +92,6 @@ Test *tests_hdlc_hdr_tests(void)
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture(test_hdlc_hdr_set_get_address),
         new_TestFixture(test_hdlc_hdr_set_get_protocol),
-        new_TestFixture(test_hdlc_hdr_set_get_fcs),
         new_TestFixture(test_hdlc_hdr_fcs_checksum),
         new_TestFixture(test_hdlc_hdr_fcs32_checksum),
     };
