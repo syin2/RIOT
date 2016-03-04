@@ -107,9 +107,7 @@ typedef enum {
      */
 
 #ifdef MODULE_GNRC_PPP
-	GNRC_NETTYPE_PPP_IPV6,           /**< Protocol is PPP, packet is IPv6 */
-	GNRC_NETTYPE_PPP_NCP_IPV6,           /**< Protocol is PPP, packet is NCP for IPv6*/
-	GNRC_NETTYPE_PPP_LCP,           /**< Protocol is PPP, packet is LCP*/
+	GNRC_NETTYPE_PPP,           /**< Protocol is PPP */
 #endif
     /**
      * @}
@@ -145,24 +143,6 @@ static inline gnrc_nettype_t gnrc_nettype_from_ethertype(uint16_t type)
     }
 }
 
-static inline gnrc_nettype_t gnrc_nettype_from_pppprotocol(uint16_t protocol)
-{
-    switch (protocol) {
-		case PPPTYPE_IPV6:
-			return GNRC_NETTYPE_PPP_IPV6
-		case PPPTYPE_NCP_IPV6:
-			return GNRC_NETTYPE_PPP_NCP_IPV6
-		case PPPTYPE_LCP:
-			return GNRC_NETTYPE_PPP_LCP
-		default:
-            return GNRC_NETTYPE_UNDEF;
-    }
-}
-
-static inline int gnrc_nettype_is_ppp(gnrc_nettype_t type)
-{
-	return (type==GNRC_NETTYPE_PPP_IPV6 || type==GNRC_NETTYPE_PPP_NCP_IPV6 || type==GNRC_NETTYPE_PPP_LCP)
-}
 
 /**
  * @brief   Translates @ref net_gnrc_nettype to an Ether Type number
@@ -188,20 +168,6 @@ static inline uint16_t gnrc_nettype_to_ethertype(gnrc_nettype_t type)
 #endif
         default:
             return ETHERTYPE_UNKNOWN;
-    }
-}
-
-static inline uint16_t gnrc_nettype_to_ppptype(gnrc_nettype_t type)
-{
-    switch (type) {
-		case GNRC_NETTYPE_PPP_IPV6:
-			return PPPTYPE_IPV6
-		case GNRC_NETTYPE_PPP_NFCIPV6:
-			return PPPTYPE_NCP_IPV6
-		case GNRC_NETTYPE_PPP_LCP:
-			return PPPTYPE_LCP;
-        default:
-            return PPPTYPE_UNKNOWN;
     }
 }
 

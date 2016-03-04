@@ -85,7 +85,7 @@ static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
 		}
 
         /* set payload type for HDLC frame (from now, PPP frame) -> LDC, NCP, etc */
-        pkt->type = gnrc_nettype_from_pppprotocol(byteorder_ntohs(hdr->protocol));
+        pkt->type = GNRC_NETTYPE_PPP
 
         DEBUG("gnrc_netdev2_ppp: received PPP packet")
 
@@ -93,8 +93,7 @@ static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
         od_hex_dump(hdr, nread, OD_WIDTH_DEFAULT);
 #endif
 
-		/* Remove hdlc header from packet */
-        gnrc_pktbuf_remove_snip(pkt, hdlc_hdr);
+		/* Don't remove hdlc_hdr. In case of Address and Control Supression, PPP module needs to handle that */
 		goto out;
     }
 
@@ -117,21 +116,19 @@ static int _send(gnrc_netdev2_t *gnrc_netdev2, gnrc_pktsnip_t *pkt)
     }
 
 	/* Check if pkt type is PPP*/
-    if (gnrc_nettype_is_ppp(pkt->type)) {
+    if (pkt->type != GNRC_NETTYPE_PPP) {
         DEBUG("gnrc_netdev2_eth: First header was not PPP\n");
         return -EBADMSG;
     }
 
-	hdr.protocol = byteorder_htons(gnrc_nettype_to_ppptype(pkt->type));
-
-    DEBUG("gnrc_netdev2_ppp: Packet sent");
-
+	/*At this point there's an HDLC frame without FCS and flag.*/
+	/*|--Address--|--Control--|--Protocol--|--Information--|--Padding--| */
     size_t n;
     pkt = gnrc_pktbuf_get_iovec(pkt, &n);
     struct iovec *vector = (struct iovec *)pkt->data;
-    vector[0].iov_base = (char*)&hdr;
-    vector[0].iov_len = sizeof(hdlc_hdr_t);
+
     dev->driver->send(dev, vector, n);
+    DEBUG("gnrc_netdev2_ppp: Packet sent");
 
     gnrc_pktbuf_release(pkt);
 
