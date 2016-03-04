@@ -97,10 +97,24 @@ typedef enum {
 #ifdef TEST_SUITES
     GNRC_NETTYPE_TEST,
 #endif
+    /**
+     * @}
+     */
+
+    /**
+     * @{
+     * @name Link layer
+     */
 
 #ifdef MODULE_GNRC_PPP
-	GNRC_NETTYPE_PPP,           /**< Protocol is PPP */
+	GNRC_NETTYPE_PPP,           /**< Protocol is PPP, encapsulated data */
+	GNRC_NETTYPE_PPP_NONCP,           /**< Protocol is PPP, packet is not associated to a NCP */
+	GNRC_NETTYPE_PPP_NCP,           /**< Protocol is PPP, packet is Network Control Protocol*/
+	GNRC_NETTYPE_PPP_LCP,           /**< Protocol is PPP, packet is Link Control Protocol*/
 #endif
+    /**
+     * @}
+     */
 
     GNRC_NETTYPE_NUMOF,         /**< maximum number of available protocols */
 } gnrc_nettype_t;
@@ -128,6 +142,26 @@ static inline gnrc_nettype_t gnrc_nettype_from_ethertype(uint16_t type)
             return GNRC_NETTYPE_CCN;
 #endif
         default:
+            return GNRC_NETTYPE_UNDEF;
+    }
+}
+
+static inline gnrc_nettype_t gnrc_nettype_from_pppprotocol(uint16_t protocol)
+{
+	/* Get PPP type from protocol */
+	uint8_t type = PPPTYPE(protocol);
+
+    switch (type) {
+		case PPP_PKT:
+			return GNRC_NETTYPE_PPP
+		case PPP_NONCP:
+			return GNRC_NETTYPE_PPP_NONCP
+		case PPP_NCP:
+			return GNRC_NETTYPE_PPP_NCP
+		case PPP_LCP:
+			return GNRC_NETTYPE_PPP_LCP
+		default:
+		/* Shouldn't reach here! */
             return GNRC_NETTYPE_UNDEF;
     }
 }
