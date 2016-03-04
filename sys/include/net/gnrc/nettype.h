@@ -158,6 +158,10 @@ static inline gnrc_nettype_t gnrc_nettype_from_pppprotocol(uint16_t protocol)
             return GNRC_NETTYPE_UNDEF;
     }
 }
+static inline int gnrc_nettype_is_ppp(gnrc_nettype_t type)
+{
+	return (type==GNRC_NETTYPE_PPP_IPV6 || type==GNRC_NETTYPE_PPP_NCP_IPV6 || type==GNRC_NETTYPE_PPP_LCP)
+}
 
 /**
  * @brief   Translates @ref net_gnrc_nettype to an Ether Type number
