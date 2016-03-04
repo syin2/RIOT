@@ -19,6 +19,7 @@
 #include "net/gnrc.h"
 #include "net/gnrc/netdev2.h"
 #include "net/hdlc/hdr.h"
+#include "net/hdlctype.h"
 
 #ifdef MODULE_GNRC_IPV6
 #include "net/ipv6/hdr.h"
@@ -75,6 +76,13 @@ static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
 
 		/* HDLC header (Address + Protocol) */
         hdlc_hdr_t *hdr = (hdlc_hdr_t *)hdlc_hdr->data;
+
+		/* if HDLC address is not PPP...*/
+		if (hdlc_hdr->address != HDLTYPE_PPP){
+			DEBUG("gnrc_netdev2_ppp: HDLC frame is not PPP!\n");
+			gnrc_pktbuf_release(hdlc_hdr);
+			goto safe_out;
+		}
 
         /* set payload type for HDLC frame (from now, PPP frame) -> LDC, NCP, etc */
         pkt->type = gnrc_nettype_from_pppprotocol(byteorder_ntohs(hdr->protocol));
