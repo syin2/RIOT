@@ -158,6 +158,7 @@ static inline gnrc_nettype_t gnrc_nettype_from_pppprotocol(uint16_t protocol)
             return GNRC_NETTYPE_UNDEF;
     }
 }
+
 static inline int gnrc_nettype_is_ppp(gnrc_nettype_t type)
 {
 	return (type==GNRC_NETTYPE_PPP_IPV6 || type==GNRC_NETTYPE_PPP_NCP_IPV6 || type==GNRC_NETTYPE_PPP_LCP)
@@ -187,6 +188,20 @@ static inline uint16_t gnrc_nettype_to_ethertype(gnrc_nettype_t type)
 #endif
         default:
             return ETHERTYPE_UNKNOWN;
+    }
+}
+
+static inline uint16_t gnrc_nettype_to_ppptype(gnrc_nettype_t type)
+{
+    switch (type) {
+		case GNRC_NETTYPE_PPP_IPV6:
+			return PPPTYPE_IPV6
+		case GNRC_NETTYPE_PPP_NFCIPV6:
+			return PPPTYPE_NCP_IPV6
+		case GNRC_NETTYPE_PPP_LCP:
+			return PPPTYPE_LCP;
+        default:
+            return PPPTYPE_UNKNOWN;
     }
 }
 
