@@ -29,6 +29,7 @@
 #define ENABLE_DEBUG (0)
 #include "debug.h"
 
+/* Receive PPP packet. Send back only payload */
 static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
 {
     netdev2_t *dev = gnrc_netdev2->dev;
@@ -75,37 +76,18 @@ static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
 		/* HDLC header (Address + Protocol) */
         hdlc_hdr_t *hdr = (hdlc_hdr_t *)hdlc_hdr->data;
 
+        /* set payload type for HDLC frame (from now, PPP frame) -> LDC, NCP, etc */
+        pkt->type = gnrc_nettype_from_pppprotocol(byteorder_ntohs(hdr->protocol));
 
-        /* set payload type from ethertype */
-        pkt->type = gnrc_nettype_from_ethertype(byteorder_ntohs(hdr->type));
+        DEBUG("gnrc_netdev2_ppp: received PPP packet")
 
-        /* create netif header */
-        gnrc_pktsnip_t *netif_hdr;
-        netif_hdr = gnrc_pktbuf_add(NULL, NULL,
-                sizeof(gnrc_netif_hdr_t) + (2 * ETHERNET_ADDR_LEN),
-                GNRC_NETTYPE_NETIF);
-
-        if (netif_hdr == NULL) {
-            DEBUG("gnrc_netdev2_eth: no space left in packet buffer\n");
-            pkt = eth_hdr;
-            goto safe_out;
-        }
-
-        gnrc_netif_hdr_init(netif_hdr->data, ETHERNET_ADDR_LEN, ETHERNET_ADDR_LEN);
-        gnrc_netif_hdr_set_src_addr(netif_hdr->data, hdr->src, ETHERNET_ADDR_LEN);
-        gnrc_netif_hdr_set_dst_addr(netif_hdr->data, hdr->dst, ETHERNET_ADDR_LEN);
-        ((gnrc_netif_hdr_t *)netif_hdr->data)->if_pid = thread_getpid();
-
-        DEBUG("gnrc_netdev2_eth: received packet from %02x:%02x:%02x:%02x:%02x:%02x "
-                "of length %d\n",
-                hdr->src[0], hdr->src[1], hdr->src[2], hdr->src[3], hdr->src[4],
-                hdr->src[5], nread);
 #if defined(MODULE_OD) && ENABLE_DEBUG
         od_hex_dump(hdr, nread, OD_WIDTH_DEFAULT);
 #endif
 
-        gnrc_pktbuf_remove_snip(pkt, eth_hdr);
-        LL_APPEND(pkt, netif_hdr);
+		/* Remove hdlc header from packet */
+        gnrc_pktbuf_remove_snip(pkt, hdlc_hdr);
+		goto out;
     }
 
 out:
