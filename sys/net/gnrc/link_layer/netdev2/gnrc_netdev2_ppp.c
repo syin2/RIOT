@@ -132,8 +132,6 @@ static inline void _addr_set_multicast(uint8_t *dst, gnrc_pktsnip_t *payload)
 static int _send(gnrc_netdev2_t *gnrc_netdev2, gnrc_pktsnip_t *pkt)
 {
     hdlc_hdr_t hdr;
-    gnrc_pktsnip_t *payload;
-
     netdev2_t *dev = gnrc_netdev2->dev;
 
     if (pkt == NULL) {
@@ -141,60 +139,21 @@ static int _send(gnrc_netdev2_t *gnrc_netdev2, gnrc_pktsnip_t *pkt)
         return -EINVAL;
     }
 
-    payload = pkt->next;
-
+	/* Check if pkt type is PPP*/
     if (gnrc_nettype_is_ppp(pkt->type)) {
         DEBUG("gnrc_netdev2_eth: First header was not PPP\n");
         return -EBADMSG;
     }
 
-    if (payload) {
-        hdr.type = byteorder_htons(gnrc_nettype_to_ethertype(payload->type));
-    }
-    else {
-        hdr.type = byteorder_htons(ETHERTYPE_UNKNOWN);
-    }
+	hdr.protocol = byteorder_htons(gnrc_nettype_to_ppptype(pkt->type));
 
-    netif_hdr = pkt->data;
-
-    /* set ppp header */
-    if (netif_hdr->src_l2addr_len == ETHERNET_ADDR_LEN) {
-        memcpy(hdr.dst, gnrc_netif_hdr_get_src_addr(netif_hdr),
-               netif_hdr->src_l2addr_len);
-    }
-    else {
-        dev->driver->get(dev, NETOPT_ADDRESS, hdr.src, ETHERNET_ADDR_LEN);
-    }
-
-    if (netif_hdr->flags & GNRC_NETIF_HDR_FLAGS_BROADCAST) {
-        _addr_set_broadcast(hdr.dst);
-    }
-    else if (netif_hdr->flags & GNRC_NETIF_HDR_FLAGS_MULTICAST) {
-        if (payload == NULL) {
-            DEBUG("gnrc_netdev2_eth: empty multicast packets over Ethernet "\
-                  "are not yet supported\n");
-            return -ENOTSUP;
-        }
-        _addr_set_multicast(hdr.dst, payload);
-    }
-    else if (netif_hdr->dst_l2addr_len == ETHERNET_ADDR_LEN) {
-        memcpy(hdr.dst, gnrc_netif_hdr_get_dst_addr(netif_hdr),
-               ETHERNET_ADDR_LEN);
-    }
-    else {
-        DEBUG("gnrc_netdev2_eth: destination address had unexpected format\n");
-        return -EBADMSG;
-    }
-
-    DEBUG("gnrc_netdev2_eth: send to %02x:%02x:%02x:%02x:%02x:%02x\n",
-          hdr.dst[0], hdr.dst[1], hdr.dst[2],
-          hdr.dst[3], hdr.dst[4], hdr.dst[5]);
+    DEBUG("gnrc_netdev2_ppp: Packet sent");
 
     size_t n;
     pkt = gnrc_pktbuf_get_iovec(pkt, &n);
     struct iovec *vector = (struct iovec *)pkt->data;
     vector[0].iov_base = (char*)&hdr;
-    vector[0].iov_len = sizeof(ppp_hdr_t);
+    vector[0].iov_len = sizeof(hdlc_hdr_t);
     dev->driver->send(dev, vector, n);
 
     gnrc_pktbuf_release(pkt);
@@ -202,7 +161,7 @@ static int _send(gnrc_netdev2_t *gnrc_netdev2, gnrc_pktsnip_t *pkt)
     return 0;
 }
 
-int gnrc_netdev2_eth_init(gnrc_netdev2_t *gnrc_netdev2, netdev2_t *dev)
+int gnrc_netdev2_ppp_init(gnrc_netdev2_t *gnrc_netdev2, netdev2_t *dev)
 {
     gnrc_netdev2->send = _send;
     gnrc_netdev2->recv = _recv;
