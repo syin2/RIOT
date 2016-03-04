@@ -72,7 +72,7 @@ static void *_ppp_thread(void *args)
     /* setup the MAC layers message queue */
     msg_init_queue(msg_queue, GNRC_PPP_MSG_QUEUE_SIZE);
     /* save the PID to the device descriptor and register the device */
-    dev->mac_pid = thread_getpid();
+    dev->pid = thread_getpid();
 
     gnrc_netif_add(dev->mac_pid);
     /* register the event callback with the device driver */
