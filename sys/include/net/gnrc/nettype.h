@@ -107,10 +107,9 @@ typedef enum {
      */
 
 #ifdef MODULE_GNRC_PPP
-	GNRC_NETTYPE_PPP,           /**< Protocol is PPP, encapsulated data */
-	GNRC_NETTYPE_PPP_NONCP,           /**< Protocol is PPP, packet is not associated to a NCP */
-	GNRC_NETTYPE_PPP_NCP,           /**< Protocol is PPP, packet is Network Control Protocol*/
-	GNRC_NETTYPE_PPP_LCP,           /**< Protocol is PPP, packet is Link Control Protocol*/
+	GNRC_NETTYPE_PPP_IPV6,           /**< Protocol is PPP, packet is IPv6 */
+	GNRC_NETTYPE_PPP_NCP_IPV6,           /**< Protocol is PPP, packet is NCP for IPv6*/
+	GNRC_NETTYPE_PPP_LCP,           /**< Protocol is PPP, packet is LCP*/
 #endif
     /**
      * @}
@@ -148,20 +147,14 @@ static inline gnrc_nettype_t gnrc_nettype_from_ethertype(uint16_t type)
 
 static inline gnrc_nettype_t gnrc_nettype_from_pppprotocol(uint16_t protocol)
 {
-	/* Get PPP type from protocol */
-	uint8_t type = PPPTYPE(protocol);
-
-    switch (type) {
-		case PPP_PKT:
-			return GNRC_NETTYPE_PPP
-		case PPP_NONCP:
-			return GNRC_NETTYPE_PPP_NONCP
-		case PPP_NCP:
-			return GNRC_NETTYPE_PPP_NCP
-		case PPP_LCP:
+    switch (protocol) {
+		case PPPTYPE_IPV6:
+			return GNRC_NETTYPE_PPP_IPV6
+		case PPPTYPE_NCP_IPV6:
+			return GNRC_NETTYPE_PPP_NCP_IPV6
+		case PPPTYPE_LCP:
 			return GNRC_NETTYPE_PPP_LCP
 		default:
-		/* Shouldn't reach here! */
             return GNRC_NETTYPE_UNDEF;
     }
 }

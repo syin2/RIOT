@@ -28,13 +28,10 @@
 extern "C" {
 #endif
 
-//Get PPP type from protocol 
-#define PPPTYPE(x)(x>>14)
 
-#define PPP_PKT       (0x0)    /**< NCP related packet segment */
-#define PPP_NONCP       (0x1)    /**< NO NCP segment */
-#define PPP_NCP       (0x2)    /**< NCP segment */
-#define PPP_LCP       (0x3)    /**< LCP segment */
+#define PPPTYPE_IPV6       (0x0057)    /**< IPv6 packet in PPP*/
+#define PPPTYPE_NCP_IPV6       (0x8057)    /**< NCP packet*/
+#define PPPTYPE_LCP       (0xC021)    /**< LCP packet  */
 
 #ifdef __cplusplus
 }

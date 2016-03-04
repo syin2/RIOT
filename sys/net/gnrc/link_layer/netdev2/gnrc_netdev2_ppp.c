@@ -131,21 +131,20 @@ static inline void _addr_set_multicast(uint8_t *dst, gnrc_pktsnip_t *payload)
 
 static int _send(gnrc_netdev2_t *gnrc_netdev2, gnrc_pktsnip_t *pkt)
 {
-    ppp_hdr_t hdr;
-    gnrc_netif_hdr_t *netif_hdr;
+    hdlc_hdr_t hdr;
     gnrc_pktsnip_t *payload;
 
     netdev2_t *dev = gnrc_netdev2->dev;
 
     if (pkt == NULL) {
-        DEBUG("gnrc_netdev2_eth: pkt was NULL");
+        DEBUG("gnrc_netdev2_ppp: pkt was NULL");
         return -EINVAL;
     }
 
     payload = pkt->next;
 
-    if (pkt->type != GNRC_NETTYPE_NETIF) {
-        DEBUG("gnrc_netdev2_eth: First header was not generic netif header\n");
+    if (gnrc_nettype_is_ppp(pkt->type)) {
+        DEBUG("gnrc_netdev2_eth: First header was not PPP\n");
         return -EBADMSG;
     }
 
