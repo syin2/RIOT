@@ -11,7 +11,8 @@ extern "C" {
 
 typedef struct __attribute__((packed)) {
 	uint8_t address; //Address
-	uint16_t protocol; //protocol
+	uint8_t control; //Control
+	uint16_t protocol; //Protocol
 } hdlc_hdr_t;
 
 static inline void hdlc_hdr_set_address(hdlc_hdr_t *hdr, uint8_t address)
@@ -22,6 +23,16 @@ static inline void hdlc_hdr_set_address(hdlc_hdr_t *hdr, uint8_t address)
 static inline uint8_t hdlc_hdr_get_address(hdlc_hdr_t *hdr)
 {
 	return hdr->address;
+}
+
+static inline void hdlc_hdr_set_control(hdlc_hdr_t *hdr, uint8_t control)
+{
+	hdr->control = control;
+}
+
+static inline uint8_t hdlc_hdr_get_control(hdlc_hdr_t *hdr)
+{
+	return hdr->control;
 }
 
 static inline void hdlc_hdr_set_protocol(hdlc_hdr_t *hdr, uint16_t protocol)
