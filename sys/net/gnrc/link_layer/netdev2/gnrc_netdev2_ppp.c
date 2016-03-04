@@ -106,29 +106,6 @@ safe_out:
     return NULL;
 }
 
-static inline void _addr_set_broadcast(uint8_t *dst)
-{
-    memset(dst, 0xff, ETHERNET_ADDR_LEN);
-}
-
-static inline void _addr_set_multicast(uint8_t *dst, gnrc_pktsnip_t *payload)
-{
-    switch (payload->type) {
-#ifdef MODULE_GNRC_IPV6
-        case GNRC_NETTYPE_IPV6:
-            /* https://tools.ietf.org/html/rfc2464#section-7 */
-            dst[0] = 0x33;
-            dst[1] = 0x33;
-            ipv6_hdr_t *ipv6 = payload->data;
-            memcpy(dst + 2, ipv6->dst.u8 + 12, 4);
-            break;
-#endif
-        default:
-            _addr_set_broadcast(dst);
-            break;
-    }
-}
-
 static int _send(gnrc_netdev2_t *gnrc_netdev2, gnrc_pktsnip_t *pkt)
 {
     hdlc_hdr_t hdr;
