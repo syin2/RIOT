@@ -32,6 +32,15 @@ static void test_hdlc_hdr_set_get_address(void)
 	TEST_ASSERT_EQUAL_INT(0xFF, hdlc_hdr_get_address(&hdr));
 }
 
+static void test_hdlc_hdr_set_get_control(void)
+{
+	hdlc_hdr_t hdr;
+	hdlc_hdr_set_control(&hdr,0xFF);
+
+	TEST_ASSERT_EQUAL_INT(0xFF, hdr.control);
+	TEST_ASSERT_EQUAL_INT(0xFF, hdlc_hdr_get_control(&hdr));
+}
+
 static void test_hdlc_hdr_set_get_protocol(void)
 {
 	hdlc_hdr_t hdr;
@@ -49,6 +58,7 @@ Test *tests_hdlc_hdr_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture(test_hdlc_hdr_set_get_address),
+        new_TestFixture(test_hdlc_hdr_set_get_control),
         new_TestFixture(test_hdlc_hdr_set_get_protocol),
     };
 
