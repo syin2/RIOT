@@ -101,18 +101,6 @@ typedef enum {
      * @}
      */
 
-    /**
-     * @{
-     * @name Link layer
-     */
-
-#ifdef MODULE_GNRC_PPP
-	GNRC_NETTYPE_PPP,           /**< Protocol is PPP */
-#endif
-    /**
-     * @}
-     */
-
     GNRC_NETTYPE_NUMOF,         /**< maximum number of available protocols */
 } gnrc_nettype_t;
 
