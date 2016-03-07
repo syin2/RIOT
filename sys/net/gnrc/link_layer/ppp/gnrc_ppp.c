@@ -87,11 +87,11 @@ static void *_ppp_thread(void *args)
         switch (msg.type) {
             case GNRC_NETDEV_MSG_TYPE_EVENT:
                 DEBUG("ppp: GNRC_NETDEV_MSG_TYPE_EVENT received\n");
-                dev->driver->isr_event(dev, msg.content.value);
+				_ppp_recv_pkt(dev, (gnrc_pktsnit_t *)msg.content.ptr);
                 break;
             case GNRC_NETAPI_MSG_TYPE_SND:
                 DEBUG("ppp: GNRC_NETAPI_MSG_TYPE_SND received\n");
-                dev->driver->send_data(dev, (gnrc_pktsnip_t *)msg.content.ptr);
+				_ppp_snd_pkt(dev, (gnrc_pktsnit_t *)msg.content.ptr);
                 break;
             case GNRC_NETAPI_MSG_TYPE_SET:
                 /* TODO: filter out MAC layer options -> for now forward
