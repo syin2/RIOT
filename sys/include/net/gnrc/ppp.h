@@ -30,6 +30,18 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+typedef enum {
+	LCPSTATE_DEAD,
+	LCPSTATE_ESTABLISHED,
+	LCPSTATE_AUTH,
+	LCP_NCP,
+	LCP_OPEN,
+	LCP_TERMINATION
+} lcp_state_t; 
+
+typedef struct {
+	int state;
+} ppp_dev_t;
 
 
 #ifdef __cplusplus
