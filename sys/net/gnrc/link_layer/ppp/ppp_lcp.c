@@ -469,42 +469,37 @@ static void _state_opened(ppp_layer_t *l_lcp))
 	}
 }
 
+/* Call functions depending on function flag*/
+static void _event_action(ppp_dev_t *dev,uint16_t flags) 
+{
+	if(flags & F_TLU) _tlu(dev);
+	if(flags & F_TLD) _tld(dev);
+	if(flags & F_TLS) _tls(dev);
+	if(flags & F_TLF) _tlf(dev);
+	if(flags & F_IRC) _irc(dev);
+	if(flags & F_ZRC) _zrc(dev);
+	if(flags & F_SRC) _src(dev);
+	if(flags & F_SCA) _sca(dev);
+	if(flags & F_SCN) _scn(dev);
+	if(flags & F_STR) _str(dev);
+	if(flags & F_STA) _sta(dev);
+	if(flags & F_SCJ) _scj(dev);
+	if(flags & F_SER) _ser(dev);
+}
 static int lcp_recv(ppp_layer_t *l_lcp)
 {
+	uint8_t next_state;
 
-	switch(l_lcp->state)
-	{
-		case PPP_STATE_INITIAL:
-			break;
-		case PPP_STATE_STARTING:
-			break;
-		case PPP_STATE_CLOSED:
-			break;
-		case PPP_STATE_STOPPED:
-			break;
-		case PPP_STATE_CLOSING:
-			break;
-		case PPP_STATE_STOPPING:
-			break;
-		case PPP_STATE_REQ_SENT:
-			break;
-		case PPP_STATE_ACK_RCVD:
-			break;
-		case PPP_STATE_ACK_SENT:
-			break;
-		case PPP_STATE_OPENED:
-			break;
-		default:
-			/* Shouldn't reach here */
-			break;
+	/* Call the appropiate functions for each state */
+	_event_action(actions[l_lcp->state][l_lcp->event])
+	/* Set next state */
+	next_state = state_trans[l_lcp->state][l_lcp->event]
+
+	/* Shouldn't happen, but won't take the risk */
+	/* Keep in same state if there's something wrong */
+	if(next_state != S_UNDEF){
+		l_lcp->state = next_state;
 	}
-	l_lcp->state = l_lcp->_next_state;
-
-	/* Read events */
-	/* State transition */
-
-safe_out:
-
 }
 static int _handle_conf_ack(ppt_dev_t *dev, gnrc_pktsnip_t *pkt)
 {
