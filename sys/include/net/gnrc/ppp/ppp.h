@@ -31,13 +31,35 @@
 extern "C" {
 #endif
 
-typedef struct{
-	PPP_STATE_DEAD,
-	PPP_STATE_ESTABLISHED,
-	PPP_STATE_AUTH,
-	PPP_STATE_NETLAYER,
-	PPP_STATE_TERMINATION
-} ppp_state_t;
+typedef enum{
+	E_UP,
+	E_DOWN,
+	E_OPEN,
+	E_CLOSE,
+	E_TOp,
+	E_TOm,
+	E_RCRp,
+	E_RCRm,
+	E_RCA,
+	E_RCN,
+	E_RTR,
+	E_RTA,
+	E_RUC,
+	E_RXJp,
+	E_RXJm,
+	E_RXR
+} ppp_auto_event_t;
+
+#define PPP_STATE_INITIAL (0)
+#define PPP_STATE_STARTING (1)
+#define PPP_STATE_CLOSED (2)
+#define PPP_STATE_STOPPED (3)
+#define PPP_STATE_CLOSING (4)
+#define PPP_STATE_STOPPING (5)
+#define PPP_STATE_REQ_SENT (6)
+#define PPP_STATE_ACK_RCVD (7)
+#define PPP_STATE_ACK_SENT (8)
+#define PPP_STATE_OPENED (9)
 
 #define PPP_CONF_REQ (1)
 #define PPP_CONF_ACK (2)
