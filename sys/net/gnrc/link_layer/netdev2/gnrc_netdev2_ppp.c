@@ -84,9 +84,6 @@ static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
 			goto safe_out;
 		}
 
-        /* set payload type for HDLC frame (from now, PPP frame) -> LDC, NCP, etc */
-        pkt->type = GNRC_NETTYPE_PPP
-
         DEBUG("gnrc_netdev2_ppp: received PPP packet")
 
 #if defined(MODULE_OD) && ENABLE_DEBUG

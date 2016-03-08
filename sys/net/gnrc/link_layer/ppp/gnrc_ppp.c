@@ -54,6 +54,38 @@ static void _event_cb(gnrc_netdev_event_t event, void *data)
     }
 }
 
+//This should be only triggered from network layer. No LCP or NCP here!
+static void _ppp_snd_pkt(gnrc_netdev2_t *dev, gnrc_pktsnip_t *pkt, ppp_dev_t *ppp_dev)
+{
+}
+
+
+static int _ppp_recv_pkt(ppp_dev *dev, gnrc_pktsnip_t *pkt)
+{
+	/* Mark hdlc header */
+	gnrc_pktsnip_t *hdlc_hdr = gnrc_pktbuf_mark(pkt, sizeof(hdlc_hdr_t), GNRC_NETTYPE_UNDEF);
+	if (!hdlc_hdr) {
+		DEBUG("gnrc_ppp: no space left in packet buffer\n");
+		return;	
+	}
+
+	/* Set payload type */
+	gnrc_pktsnip_t *ctrl_hdr = NULL;
+	if (ppp_frame_is_control(hdlc_hdr->protocol))
+	{
+		/* Mark ppp control header */
+		ctrl_hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_ctrl_hdr_t), GNRC_NETTYPE_UNDEF);
+		if(!ctrl_hdr)
+		{
+			DEBUG("gnrc_ppp: no space left in packet buffer\n");
+			return;
+		}
+	}
+
+	/* Fill states */
+
+}
+
 /**
  * @brief   Startup code and event loop of the PPP layer
  *

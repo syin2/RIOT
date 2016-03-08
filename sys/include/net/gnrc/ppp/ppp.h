@@ -31,24 +31,22 @@
 extern "C" {
 #endif
 
-typedef enum{
-	E_UP,
-	E_DOWN,
-	E_OPEN,
-	E_CLOSE,
-	E_TOp,
-	E_TOm,
-	E_RCRp,
-	E_RCRm,
-	E_RCA,
-	E_RCN,
-	E_RTR,
-	E_RTA,
-	E_RUC,
-	E_RXJp,
-	E_RXJm,
-	E_RXR
-} ppp_auto_event_t;
+#define E_UP (1<<0)
+#define E_DOWN (1<<1)
+#define E_OPEN (1<<2)
+#define E_CLOSE (1<<3)
+#define E_TOp (1<<4)
+#define E_TOm (1<<5)
+#define E_RCRp (1<<6)
+#define E_RCRm (1<<7)
+#define E_RCA (1<<8)
+#define E_RCN (1<<9)
+#define E_RTR (1<<10)
+#define E_RTA (1<<11)
+#define E_RUC (1<<12)
+#define E_RXJp (1<<13)
+#define E_RXJm (1<<14)
+#define E_RX (1<<15)
 
 #define PPP_STATE_INITIAL (0)
 #define PPP_STATE_STARTING (1)
