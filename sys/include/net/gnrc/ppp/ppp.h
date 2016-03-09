@@ -141,11 +141,41 @@ const uint8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 #define PPP_IDENT (12)
 #define PPP_TIME_REM (13)
 
+#define PPP_MSG_UP = (1)
+#define PPP_MSG_DOWN = (2)
+
+#define PPP_MAX_TERMINATE (3)
+#define PPP_MAX_CONFIG (3)
+
+#define PPP_MSG_TIMEOUT (1)
+
+#define PPP_CP_HDR_BASE_SIZE (4)
+
+#define PPP_PAYLOAD_BUF_SIZE (256)
 
 typedef struct {
-	int state;
+	uint8_t state;
+	uint8_t payload_buf[PPP_PAYLOAD_BUF_SIZE];
+
+	ppp_ctrl_prot_t *l_lcp;
+	ppp_ctrl_prot_t *n_ncp;
+
 	gnrc_netdev2_t *dev;
 } ppp_dev_t;
+
+typedef struct {
+	uint8_t event;
+	uint8_t l_upper_msg;
+	uint8_t l_lower_msg;
+
+	uint32_t restart_time;
+	uint8_t counter_term;
+	uint8_t counter_config;
+	uint8_t counter_failure;
+
+	ppp_dev_t *dev;
+} ppp_ctrl_prot_t;
+
 
 typedef struct __attribute__((packed)) {
 	uint8_t type;

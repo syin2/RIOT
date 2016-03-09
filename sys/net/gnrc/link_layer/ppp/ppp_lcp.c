@@ -19,505 +19,134 @@
 #include "net/ppp/lcp.h"
 
 
-static void _state_initial(ppp_layer_t *l_lcp))
+static int send_cp(ppp_dev_t *dev, uint8_t code, uint8_t *payload, size_t p_size)
 {
-	if(l_lcp->events & S_UP)
-	{
-		l_lcp->next_state = PPP_STATE_CLOSED;
+	/* Get real size of payload */
+	uint16_t payload_size = PPP_CP_HDR_BASE_SIZE+p_size;
+
+	/* Set code, identifier, length*/
+	dev->payload_buf[0] = code;
+	/*Identifier. For now, a random number*/
+	int id = 666;
+	dev->payload_buf[1] = id;
+	dev->paylload_buf[2] = 0;
+	dev->payload_buf[3] = p_size;
+
+	/*Copy payload to payload_buf. DON'T FORGET TO CHECK SIZES!!*/
+	memcpy(&dev->payload_buf[PPP_CP_HDR_BASE_SIZE], payload, p_size);
+
+	/* Create pkt snip */
+	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, &dev->payload_buf[0], p_size, GNRC_NETTYPE_UNDEF);,
+	if (pkt == NULL){
+		DEBUG("PPP: not enough space in pkt buffer");
+		return;
 	}
-	else if (l_lcp->events & S_OPEN)
-	{
-		tls(l_lcp);
-		l_lcp->next_state = PPP_STATE_STARTING;
-	}
-	else if (l_lcp->events & S_CLOSE)
-	{
-		l_lcp->next_state = PPP_STATE_INITIAL;
-	}
+	
+	/* Send pkt to ppp_send*/
+	ppp_send(dev, pkt);
+
 }
 
-static void _state_starting(ppp_layer_t *l_lcp))
+static int _gen_lcp_ctrl_payload(ppp_ctrl_prot_t *l_lcp, uint8_t *payload)
 {
-	if(l_lcp->events & S_UP)
-	{
-		irc(l_lcp);
-		scr(l_lcp);
-		l_lcp->next_state = PPP_STATE_REQ_SENT;
-	}
-	else if(l_lcp->events & S_OPEN)
-	{
-		l_lcp->next_state = PPP_STATE_STARTING;
-	}
-	else if(l_lcp->events & S_CLOSE)
-	{
-		tlf(l_lcp);
-		l_lcp->next_state = PPP_STATE_INITIAL;
-	}
+	/* Get LCP options struct */
+	lcp_opt_t lcp_opts = (lcp_opt_t*) l_lcp->opts;
+
+	/* Get the options available to send  */
+	int opt_flags = lcp_opts->flags;
+
+	int size = 0;
+
+	/* options still not implemented */
+	/* Don't send options*/
+	payload = NULL;
+	return size;
 }
 
-static void _state_closed(ppp_layer_t *l_lcp))
+static void _tlu(ppp_dev_t *dev)
 {
-	if(l_lcp->events & S_DOWN)
-	{
-		l_lcp->next_state = PPP_STATE_INITIAL;
-	}
-	else if(l_lcp->events & S_OPEN)
-	{
-		irc(l_lcp);
-		scr(l_lcp);
-		l_lcp->next->state = PPP_STATE_REQ_SENT;
-	}
-	else if(l_lcp->events & (S_CLOSE | S_RTA | S_RXJp | S_RXR))
-	{
-		l_lcp->next_state = PPP_STATE_CLOSED;
-	}
-	else if(l_lcp->events & (S_RCRp | S_RCRm | S_RCA | S_RCN | S_RTR))
-	{
-		sta(l_lcp);
-		l_lcp->next_state = PPP_STATE_CLOSED;
-	}
-	else if(l_lcp->events & S_RUC)
-	{
-		scj(l_lcp);
-		l_lcp->next_state = PPP_STATE_CLOSED;
-	}
-	else if(l_lcp->events & S_RXJm)
-	{
-		tlf(l_lcp);
-		l_lcp->next_state = PPP_STATE_CLOSED;
-	}
+	dev->l_upper_msg |= PPP_MSG_UP;
 }
 
-static void _state_stopped(ppp_layer_t *l_lcp))
+static void _tld(ppp_dev_t *dev)
 {
-	if(l_lcp->events & S_DOWN)
-	{
-		tls(l_lcp);
-		l_lcp->next_state = PPP_STATE_STARTING;
-	}
-	else if(l_lcp->events & S_OPEN)
-	{
-		/* Passive? */
-		l_lcp->next_state = PPP_STATE_STOPPED;
-	}
-	else if(l_lcp->events & S_CLOSE)
-	{
-		l_lcp->next_state = PPP_STATE_CLOSED;
-	}
-	else if(l_lcp->events & S_RCRp)
-	{
-		irc(l_lcp);
-		scr(l_lcp);
-		sca(l_lcp);
-		lcp->next_state = PPP_STATE_ACK_SENT;
-	}
-	else if(l_lcp->events & S_RCRm)
-	{
-		irc(l_lcp);
-		scr(l_lcp);
-		sca(l_lcp);
-		lcp->next_state = PPP_STATE_REQ_SENT;
-	}
-	else if(l_lcp->events & (S_RCA | S_RCN | S_RTR)
-	{
-		sta(l_lcp);
-		lcp->next_state = PPP_STATE_STOPPED;
-	}
-	else if(l_lcp->events & (S_RTA | S_RXJp | S_RXR))
-	{
-		l_lcp->next_state = PPP_STATE_STOPPED;
-	}
-	else if(l_lcp->events & S_RUC)
-	{
-		scj(l_lcp);
-		l_lcp->next_state = PPP_STATE_STOPPED;
-	}
-	else if(l_lcp->events & S_RXJm)
-	{
-		tlf(l_lcp);
-		l_lcp->next_state = PPP_STATE_STOPPED;
-	}
+	dev->l_upper_msg |= PPP_MSG_DOWN;
 }
 
-static void _state_closing(ppp_layer_t *l_lcp))
+static void _tls(ppp_dev_t *dev)
 {
-	if(l_lcp->events & S_DOWN)
-	{
-		l_lcp->next_state = PPP_STATE_INITIAL;
-	}
-	else if(l_lcp->events & S_OPEN)
-	{
-		/* Passive? */
-		l_lcp->next_state = PPP_STATE_STOPPING;
-	}
-	else if(l_lcp->events & S_CLOSE)
-	{
-		l_lcp->next_state = PPP_STATE_CLOSING;
-	}
-	else if(l_lcp->events & S_TOp)
-	{
-		str(l_lcp);
-		l_lcp->next_state = PPP_STATE_CLOSING;
-	}
-	else if(l_lcp->events & S_TOm)
-	{
-		tlf(l_lcp);
-		l_lcp->next_state = PPP_STATE_CLOSED;
-	}
-	else if(l_lcp->events & (S_RCRp | S_RCRm | S_RCA | S_RCN | S_RXJp | S_RXR))
-	{
-		l_lcp->next_state = PPP_STATE_CLOSING;
-	}
-	else if(l_lcp->events & S_RTR)
-	{
-		sta(l_lcp);
-		l_lcp->next_state = PPP_STATE_CLOSING;
-	}
-	else if(l_lcp->events & S_RTA)
-	{
-		tlf(l_lcp);
-		l_lcp->next_state = PPP_STATE_CLOSED;
-	}
-	else if(l_lcp->events & S_RUC)
-	{
-		scj(l_lcp);
-		l_lcp->next_state = PPP_STATE_CLOSING;
-	}
-	else if(l_lcp->events & S_RXJm)
-	{
-		tlf(l_lfc);
-		l_lcp->next_state = PPP_STATE_CLOSED;
-	}
-}
-static void _state_stopping(ppp_layer_t *l_lcp))
-{
-	if(l_lcp->events & S_DOWN)
-	{
-		l_lcp->next_state = PPP_STATE_STARTING;	
-	}
-	else if(l_lcp->events & S_OPEN)
-	{
-		/* Passive? */
-		l_lcp->next_state = PPP_STATE_STOPPING;
-	}
-	else if(l_lcp->events & S_CLOSE)
-	{
-		l_lcp->next_state = PPP_STATE_CLOSING;
-	}
-	else if(l_lcp->events & S_TOp)
-	{
-		str(l_lcp9;
-		l_lcp->next_state = PPP_STATE_STOPPING;
-	}
-	else if(l_lcp->events & S_TOm)
-	{
-		tlf(l_lcp);
-		l_lcp->next_state = PPP_STATE_STOPPED;
-	}
-	else if(l_lcp->events & (S_RCRp | S_RCRm | S_RCA | S_RCN | S_RXJp | S_RXR))
-	{
-		l_lcp->next_state = PPP_STATE_STOPPING;
-	}
-	else if(l_lcp->events & S_RTR)
-	{
-		sta(l_lcp);
-		l_lcp->next_state = PPP_STATE_STOPPING;
-	}
-	else if(l_lcp->events & S_RTA)
-	{
-		tlf(l_lcp);
-		l_lcp->next_state = PPP_STATE_STOPPED;
-	}
-	else if(l_lcp->events & S_RUC)
-	{
-		scj(l_lcp);
-		l_lcp->next_state = PPP_STATE_STOPPING;
-	}
-	else if(l_lcp->events & S_RXJm)
-	{
-		tlf(l_lcp);
-		l_lcp->next_state = PPP_STATE_STOPPED;
-	}
-}
-static void _state_req_sent(ppp_layer_t *l_lcp))
-{
-	if(l_lcp->events & S_DOWN)
-	{
-		
-	}
-	else if(l_lcp->events & S_OPEN)
-	{
-		
-	}
-	else if(l_lcp->events & S_CLOSE)
-	{
-		
-	}
-	else if(l_lcp->events & S_TOp)
-	{
-		
-	}
-	else if(l_lcp->events & S_TOm)
-	{
-		
-	}
-	else if(l_lcp->events & S_RCRp)
-	{
-		
-	}
-	else if(l_lcp->events & S_RCRm)
-	{
-		
-	}
-	else if(l_lcp->events & S_RCA)
-	{
-		
-	}
-	else if(l_lcp->events & S_RCN)
-	{
-		
-	}
-	else if(l_lcp->events & S_RTR)
-	{
-		
-	}
-	else if(l_lcp->events & S_RTA)
-	{
-		
-	}
-	else if(l_lcp->events & S_RUC)
-	{
-		
-	}
-	else if(l_lcp->events & S_RXJp)
-	{
-		
-	}
-	else if(l_lcp->events & S_RXJm)
-	{
-		
-	}
-	else if(l_lcp->events & S_RXR)
-	{
-		
-	}
-}
-static void _state_ack_rcvd(ppp_layer_t *l_lcp))
-{
-	if(l_lcp->events & S_DOWN)
-	{
-		
-	}
-	else if(l_lcp->events & S_OPEN)
-	{
-		
-	}
-	else if(l_lcp->events & S_CLOSE)
-	{
-		
-	}
-	else if(l_lcp->events & S_RCRp)
-	{
-		
-	}
-	else if(l_lcp->events & S_RCRm)
-	{
-		
-	}
-	else if(l_lcp->events & S_RCA)
-	{
-		
-	}
-	else if(l_lcp->events & S_RCN)
-	{
-		
-	}
-	else if(l_lcp->events & S_RTR)
-	{
-		
-	}
-	else if(l_lcp->events & S_RTA)
-	{
-		
-	}
-	else if(l_lcp->events & S_RUC)
-	{
-		
-	}
-	else if(l_lcp->events & S_RXJp)
-	{
-		
-	}
-	else if(l_lcp->events & S_RXJm)
-	{
-		
-	}
-	else if(l_lcp->events & S_RXR)
-	{
-		
-	}
+	dev->l_lower_msg |= PPP_MSG_UP;
 }
 
-static void _state_ack_sent(ppp_layer_t *l_lcp))
+static void _tlf(ppp_dev_t *dev)
 {
-	if(l_lcp->events & S_DOWN)
-	{
-		
-	}
-	else if(l_lcp->events & S_OPEN)
-	{
-		
-	}
-	else if(l_lcp->events & S_CLOSE)
-	{
-		
-	}
-	else if(l_lcp->events & S_RCRp)
-	{
-		
-	}
-	else if(l_lcp->events & S_RCRm)
-	{
-		
-	}
-	else if(l_lcp->events & S_RCA)
-	{
-		
-	}
-	else if(l_lcp->events & S_RCN)
-	{
-		
-	}
-	else if(l_lcp->events & S_RTR)
-	{
-		
-	}
-	else if(l_lcp->events & S_RTA)
-	{
-		
-	}
-	else if(l_lcp->events & S_RUC)
-	{
-		
-	}
-	else if(l_lcp->events & S_RXJp)
-	{
-		
-	}
-	else if(l_lcp->events & S_RXJm)
-	{
-		
-	}
-	else if(l_lcp->events & S_RXR)
-	{
-		
-	}
+	dev->l_lower_msg |= PPP_MSG_DOWN;
 }
-static void _state_opened(ppp_layer_t *l_lcp))
+
+static void _irc(ppp_dev_t *dev)
 {
-	if(l_lcp->events & S_DOWN)
-	{
-		
-	}
-	else if(l_lcp->events & S_OPEN)
-	{
-		
-	}
-	else if(l_lcp->events & S_CLOSE)
-	{
-		
-	}
-	else if(l_lcp->events & S_RCRp)
-	{
-		
-	}
-	else if(l_lcp->events & S_RCRm)
-	{
-		
-	}
-	else if(l_lcp->events & S_RCA)
-	{
-		
-	}
-	else if(l_lcp->events & S_RCN)
-	{
-		
-	}
-	else if(l_lcp->events & S_RTR)
-	{
-		
-	}
-	else if(l_lcp->events & S_RTA)
-	{
-		
-	}
-	else if(l_lcp->events & S_RUC)
-	{
-		
-	}
-	else if(l_lcp->events & S_RXJp)
-	{
-		
-	}
-	else if(l_lcp->events & S_RXJm)
-	{
-		
-	}
-	else if(l_lcp->events & S_RXR)
-	{
-		
-	}
+	/*Depending on the state, set the right value for restart counter*/
+}
+static void _zrc(ppp_ctrl_prot_t *l_lcp)
+{
+	l_lcp->restart_counter = 0;
+	/* Set timer to appropiate value */
+}
+
+
+static void _src(ppp_dev_t *dev)
+{
+	uint8_t *opts;
+	/* Size of payload (options) */
+	int size;
+	size = _gen_ctrl_payload(dev, opts);
+
+	/* Send control protocol*/
+	pkt = send_cp(PPP_CP_REQUEST_CONFIGURE, opts, size)
+}
+
+static void _sca(ppp_dev_t *dev)
+{
+	
 }
 
 /* Call functions depending on function flag*/
-static void _event_action(ppp_dev_t *dev,uint16_t flags) 
+static void _event_action(ppp_ctrl_prot_t *l_lcp) 
 {
-	if(flags & F_TLU) _tlu(dev);
-	if(flags & F_TLD) _tld(dev);
-	if(flags & F_TLS) _tls(dev);
-	if(flags & F_TLF) _tlf(dev);
-	if(flags & F_IRC) _irc(dev);
-	if(flags & F_ZRC) _zrc(dev);
-	if(flags & F_SRC) _src(dev);
-	if(flags & F_SCA) _sca(dev);
-	if(flags & F_SCN) _scn(dev);
-	if(flags & F_STR) _str(dev);
-	if(flags & F_STA) _sta(dev);
-	if(flags & F_SCJ) _scj(dev);
-	if(flags & F_SER) _ser(dev);
+	uint8_t flags;
+	/* Reset link status */
+	l_lcp->l_upper_msg = 0;
+	l_lcp->l_lower_msg = 0;
+
+	flags = actions[l_lcp->state][l_lcp->event];
+
+	if(flags & F_TLU) _tlu(l_lcp);
+	if(flags & F_TLD) _tld(l_lcp);
+	if(flags & F_TLS) _tls(l_lcp);
+	if(flags & F_TLF) _tlf(l_lcp);
+	if(flags & F_IRC) _irc(l_lcp);
+	if(flags & F_ZRC) _zrc(l_lcp);
+	if(flags & F_SRC) _src(l_lcp);
+	if(flags & F_SCA) _sca(l_lcp);
+	if(flags & F_SCN) _scn(l_lcp);
+	if(flags & F_STR) _str(l_lcp);
+	if(flags & F_STA) _sta(l_lcp);
+	if(flags & F_SCJ) _scj(l_lcp);
+	if(flags & F_SER) _ser(l_lcp);
 }
-static int lcp_recv(ppp_layer_t *l_lcp)
+
+static int lcp_fsm(ppp_ctrl_prot *l_lcp)
 {
 	uint8_t next_state;
 
+
 	/* Call the appropiate functions for each state */
-	_event_action(actions[l_lcp->state][l_lcp->event])
+	_event_action(l_lcp);
 	/* Set next state */
 	next_state = state_trans[l_lcp->state][l_lcp->event]
 
-	/* Shouldn't happen, but won't take the risk */
-	/* Keep in same state if there's something wrong */
+	/* Keep in same state if there's something wrong (RFC 1661) */
 	if(next_state != S_UNDEF){
 		l_lcp->state = next_state;
 	}
-}
-static int _handle_conf_ack(ppt_dev_t *dev, gnrc_pktsnip_t *pkt)
-{
-	/* Retrieve peer negotiation */
-	lcp_conf_t *opts = _retr_peer_neg(pkt);
-	
-	/* Shouldn't be necessary... but check if the response has the right negotiation params */
-	if (opts->opts == dev->lcp_conf->opts)
-	{
-		/* Auth still not implemented. Go to NCP state...*/
-		/* Change state to LCP's NCP */
-		dev->state = LCPSTATE_NCP;
-
-		/* Start negotiation of choosen NCP protocol*/
-		ppp_ncp_start(dev)
-	}
-	else
-	{
-	}
-	return 0;
 }

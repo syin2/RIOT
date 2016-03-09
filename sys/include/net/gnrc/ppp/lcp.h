@@ -17,8 +17,7 @@ extern "C" {
 #define LCP_OPT_ACFC (32)
 
 typedef struct{
-	uint16_t identifier;
-	uint8_t opts;
+	uint16_t flags;
 	uint16_t mru;
 	uint16_t auth;
 	uint16_t *auth_data;
@@ -26,17 +25,7 @@ typedef struct{
 	uint32_t magic;
 	int b_pfc;
 	int b_acfc;
-
-} lcp_conf_t;
-
-typedef enum {
-	LCPSTATE_DEAD,
-	LCPSTATE_ESTABLISHED,
-	LCPSTATE_AUTH,
-	LCPSTATE_NCP,
-	LCPSTATE_OPEN,
-	LCPSTATE_TERMINATION
-} lcp_state_t; 
+} lcp_opt_t;
 
 static int lcp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt);
 
