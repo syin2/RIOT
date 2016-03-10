@@ -268,6 +268,12 @@ static int _ppp_recv_pkt(ppp_dev *dev, gnrc_pktsnip_t *pkt)
 		return;
 }
 
+/* Used for unittest */
+void test_rx_lcp_conf_req(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
+{
+	_rx_lcp_conf_req(l_lcp, pkt);
+}
+
 /**
  * @brief   Startup code and event loop of the PPP layer
  *
