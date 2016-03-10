@@ -54,6 +54,80 @@ static void _event_cb(gnrc_netdev_event_t event, void *data)
     }
 }
 
+static int _read_lcp_pkt(uint8_t type, uint8_t *payload, size_t size, cp_opt_t *opt_buf)
+{
+	uint16_t u16;
+	opt_buf->type = type;
+	/* For the moment, only MRU option supported */
+	switch(type)
+	{
+		case LCP_OPT_MRU:
+			if(size != 2) /* TODO: Replace with label*/
+				return -1; /* TODO: Replace with label*/
+			u16 = (*payload)<<8 + *(payload+1);
+			opt_buf->payload = (uint16_t*) &u16;
+			opt_buf->p_size = (size_t) sizeof(uint16_t);
+			if(u16 > LCP_MAX_MRU){
+				opt_buf->status = CP_CREQ_NAQ;
+				return;
+			}
+			opt_buf->status = CP_CREQ_ACK;
+			break;
+		default:
+			opt_buf->status = CP_CREQ_REJ;
+	}
+	return;
+}
+static int _get_opt_status(uint8_t *payload, size_t p_size, cp_opt_t *opt_status)
+{
+	opt_status->num=0;
+	/*Start iterating over options */
+	uint16_t cursor = 0;
+	
+	/* For now, only MRU is implemented */
+	uint8_t curr_type, curr_len;
+	uint32_t curr_value;
+
+	uint8_t response_state;
+	uint8_t curr_status;
+	/* Assume the configure request is OK */
+	pkt_state = CP_CREQ_ACK;
+
+	/* TODO: Check default value (no opts sent)*/
+	while(cursor < p_size) {
+		/* Read current option type */
+		curr_type = *(payload+cursor);
+		curr_len = *(payload+cursor+1);
+		
+		/* TODO: If cursor + len > total_length, discard pkt*/
+
+		_read_lcp_pkt(curr_type, payload+cursor+2, (size_t) curr_len, &l_lcp_>opt_buf[opt_status->num])
+
+		switch(response_state) {
+			case CP_CREQ_ACK:
+				response_state = curr_status;
+				if(response_state != CP_CREQ_ACK) {
+					opt_status->num = 0;
+				}
+				break;
+			case CP_CREG_NAK:
+				if(curr_opt->status != CP_CREQ_ACK){
+					response_state = curr_status;
+				}
+
+				if(response_state != CP_CREQ_ACK){
+					opt_status->num = 0;
+				}
+				break;
+			case CP_CREQ_REJ:
+				break;
+		}
+		opt_status->num += 1;
+		cursor = cursor + curr_len;
+	}
+	return; /*TODO: Check return*/
+}
+
 static int _rx_lcp_conf_req(ppp_ctrl_prot_t l_lcp, gnrc_pktsnip_t *pkt)
 {
 	/* Get payload length */
@@ -64,33 +138,30 @@ static int _rx_lcp_conf_req(ppp_ctrl_prot_t l_lcp, gnrc_pktsnip_t *pkt)
 
 	uint16_t length = (pkt->data[2] << 8) + pkt->data[3];
 	
-	if (length != pkt->size)
-	{
+	if (length != pkt->size) {
+		/* TODO: Error code*/
 		return;
 	}
 	
 	uint8_t *opts = NULL;
-	/*If there are options, default values are used... implementation must support default values*/
-	if (length == PPP_CP_HDR_BASE_SIZE)
-	{
-		/* Good request config received*/
-		l_lcp->event = E_RCRp;
-		return;	
-	}
 
 	_opts = (uint8_t*) (pkt->data+PPP_CP_HDR_BASE_SIZE);
-	/*Start iterating over options */
-	uint16_t cursor = 0;
-	
-	/* For now, only MRU is implemented */
-	uint8_t curr_type, curr_len;
-	while(cursor < length-PPP_CP_HDR_BASE_SIZE)
-	{
-		/* Read current option type */
-		curr_type = *(_opts+cursor);
-		curr_len = *(_opts+cursor+1);
-
+	/* Copy data to payload buffer */
+	/* TODO */
+	/* At this point, we have the responses and type of responses. Process each one*/
+	switch(response_state){
+		case CP_CREQ_ACK:
+		l_lcp->event = E_RCRp;
+			break;
+		case CP_CREQ_NAK:
+		_negotiate_nak(l_lcp);
+		l_lcp->event = E_RCRm;
+			break;
+		case CP_CREQ_REJ:
+		l_lcp->event = E_RCRm;
+			break;
 	}
+
 }
 
 static void ppp_send(ppp_dev *dev, gnrc_pktsnip_t *pkt)

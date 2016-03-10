@@ -153,6 +153,15 @@ const uint8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 
 #define PPP_PAYLOAD_BUF_SIZE (256)
 
+
+
+#define CP_CREQ_ACK (0)
+#define CP_CREQ_NAK (1)
+#define CP_CREQ_REJ (2)
+
+
+#define MAX_CP_OPTIONS (20)
+
 typedef struct {
 	uint8_t state;
 	uint8_t payload_buf[PPP_PAYLOAD_BUF_SIZE];
@@ -174,6 +183,9 @@ typedef struct {
 	uint8_t counter_failure;
 
 	ppp_dev_t *dev;
+
+	/* CP options to be sent are stored here, before copying to payload buffer*/
+	cp_opt_t _opt_buf[MAX_CP_OPTIONS];
 } ppp_ctrl_prot_t;
 
 
@@ -187,6 +199,19 @@ typedef struct __attribute__((packed)) {
 	uint8_t type;
 	uint16_t length;
 } ppp_opt_hdr_t;
+
+typedef struct cp_opt_t{
+	uint8_t type;
+	uint8_t status;
+	void *payload;
+	size_t p_size;
+} cp_opt_t
+
+typedef struct opt_status_t
+{
+	uint8_t num;
+	uint8_t status;
+} opt_status_t;
 
 
 #ifdef __cplusplus

@@ -16,6 +16,7 @@ extern "C" {
 #define LCP_OPT_PFC (16)
 #define LCP_OPT_ACFC (32)
 
+#define LCP_MAX_MRU (2000)
 typedef struct{
 	uint16_t flags;
 	uint16_t mru;
