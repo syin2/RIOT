@@ -78,7 +78,7 @@ static int _read_lcp_pkt(uint8_t type, uint8_t *payload, size_t size, cp_opt_t *
 	}
 	return;
 }
-static int _get_opt_status(uint8_t *payload, size_t p_size, cp_opt_t *opt_status)
+static int _get_opt_status(ppp_ctrl_prot_t *l_lcp, uint8_t *payload, size_t p_size, cp_opt_t *opt_status)
 {
 	opt_status->num=0;
 	/*Start iterating over options */
@@ -125,10 +125,30 @@ static int _get_opt_status(uint8_t *payload, size_t p_size, cp_opt_t *opt_status
 		opt_status->num += 1;
 		cursor = cursor + curr_len;
 	}
+	l_lcp->_num_opt = opt_status->num;
+
 	return; /*TODO: Check return*/
 }
 
-static int _rx_lcp_conf_req(ppp_ctrl_prot_t l_lcp, gnrc_pktsnip_t *pkt)
+static void _lcp_negotiate_nak(ppp_ctrl_prot_t *l_lcp)
+{
+	/* Iterate through every NAK'd option*/
+	uint16_t u16;
+	for(int i=0;i<_num_opt;i++)
+	{
+		switch(l_lcp->_opt_buf[i].type)
+		{
+			case LCP_OPT_MRU:
+				u16 = LCP_DEFAULT_MRU;
+				l_lcp->opt_buf[i].payload = &u16;
+				break;
+			default:
+				/*Shouldn't reach here*/ /*TODO: Assert?*/
+				break;
+		}
+	}
+}
+static int _rx_lcp_conf_req(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
 {
 	/* Get payload length */
 	uint8_t identifier = pkt->data[1];
@@ -143,22 +163,26 @@ static int _rx_lcp_conf_req(ppp_ctrl_prot_t l_lcp, gnrc_pktsnip_t *pkt)
 		return;
 	}
 	
-	uint8_t *opts = NULL;
+	cp_opt_t opt_status;
+	int status = _get_opt_status(l_lcp, pkt->data+PPP_CP_HDR_BASE_SIZE,(size_t) (length-PPP_CP_HDR_BASE_SIZE),
+	&opt_status)
 
-	_opts = (uint8_t*) (pkt->data+PPP_CP_HDR_BASE_SIZE);
-	/* Copy data to payload buffer */
-	/* TODO */
+	int response_state = opt_status->status;
+
 	/* At this point, we have the responses and type of responses. Process each one*/
 	switch(response_state){
 		case CP_CREQ_ACK:
 		l_lcp->event = E_RCRp;
 			break;
 		case CP_CREQ_NAK:
-		_negotiate_nak(l_lcp);
+		_lcp_negotiate_nak(l_lcp);
 		l_lcp->event = E_RCRm;
 			break;
 		case CP_CREQ_REJ:
 		l_lcp->event = E_RCRm;
+			break;
+		default:
+			/*Shouldn't reach here*/
 			break;
 	}
 
@@ -221,10 +245,10 @@ static int _ppp_recv_pkt(ppp_dev *dev, gnrc_pktsnip_t *pkt)
 			/* Check if NCP is up. Silently discard pkt if not */
 			if (!dev->l_ncp->up)
 			{
-				pkt = hdlc_hdr;
-				goto safe_out
+				break;
 			}
 			_pktsnd_upper_layer(dev, pkt);
+			goto out;
 			break;
 		case PPPTYPE_LCP:
 			_handle_lcp_pkt(dev->l_lcp, pkt);
@@ -233,14 +257,14 @@ static int _ppp_recv_pkt(ppp_dev *dev, gnrc_pktsnip_t *pkt)
 			_handle_ncp_pkt(dev->l_ncp, pkt);
 			break;
 		default:
-			/* Silently discard */
 			break;
 	}
 
-	out:
-		return;
-	safe_out:
+		pkt = hdlc_hdr;
 		gnrc_pktbuf_release(pkt);
+		return;
+
+	dont_discard:
 		return;
 }
 
