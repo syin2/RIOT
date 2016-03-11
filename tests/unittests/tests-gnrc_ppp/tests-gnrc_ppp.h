@@ -15,8 +15,8 @@
  *
  * @author      José Ignacio Alamos <jialamos@uc.cl>
  */
-#ifndef TESTS_PPP_HDR_H_
-#define TESTS_PPP_HDR_H_
+#ifndef TESTS_GNRC_PPP_H_
+#define TESTS_GNRC_PPP_H_
 
 #include "embUnit.h"
 
@@ -33,6 +33,6 @@ void tests_gnrc_ppp(void);
 }
 #endif
 
-#endif /* TESTS_PPP_HDR_H_ */
+#endif /* TESTS_GNRC_PPP_H_*/
 /** @} */
 
