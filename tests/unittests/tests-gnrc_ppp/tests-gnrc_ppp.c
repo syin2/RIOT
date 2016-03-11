@@ -36,7 +36,7 @@ static void test_gnrc_ppp_lcp_recv_cr_nak(void)
 	/* Test nak packet */
 	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL,nak_packet,8,GNRC_NETTYPE_TEST);
 
-	test_rx_lcp_conf_req(&fake_prot, pkt);
+	test_handle_cp_rcr(&fake_prot, pkt);
 	gnrc_pktbuf_release(pkt);
 
 	/* Event should be RCRm */
@@ -65,7 +65,7 @@ static void test_gnrc_ppp_lcp_recv_cr_rej(void)
 	/* Test rej packet */
 	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL,rej_packet,8,GNRC_NETTYPE_TEST);
 
-	test_rx_lcp_conf_req(&fake_prot, pkt);
+	test_handle_cp_rcr(&fake_prot, pkt);
 	gnrc_pktbuf_release(pkt);
 
 	/* Event should be RCRm */
@@ -94,7 +94,7 @@ static void test_gnrc_ppp_lcp_recv_cr_ack(void)
 	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL,good_packet,8,GNRC_NETTYPE_TEST);
 	TEST_ASSERT_NOT_NULL(pkt);
 
-	test_rx_lcp_conf_req(&fake_prot, pkt);
+	test_handle_cp_rcr(&fake_prot, pkt);
 	gnrc_pktbuf_release(pkt);
 
 	/* Event should be RCRp */

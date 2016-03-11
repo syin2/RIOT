@@ -168,7 +168,7 @@ static void _lcp_negotiate_nak(ppp_ctrl_prot_t *l_lcp)
 		}
 	}
 }
-static int _rx_lcp_conf_req(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
+static int _handle_cp_rcr(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
 {
 	/* Get payload length */
 	uint8_t *data = (uint8_t*) pkt->data;
@@ -225,7 +225,7 @@ void ppp_send(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 	(void) pkt;
 }
 
-static void _handle_lcp_pkt(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
+static void _handle_pkt_lcp(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
 {
 	/*LCP type*/
 	uint8_t *data = (uint8_t*) pkt->data;
@@ -233,7 +233,7 @@ static void _handle_lcp_pkt(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
 	
 	switch(type){
 		case PPP_CONF_REQ:
-			_rx_lcp_conf_req(l_lcp, pkt);
+			_handle_cp_rcr(l_lcp, pkt);
 			break;
 		case PPP_CONF_ACK:
 			break;
@@ -262,7 +262,7 @@ static void _handle_lcp_pkt(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
 	}
 }
 
-static void _handle_ncp_pkt(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
+static void _handle_pkt_ncp(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
 {
 	(void) l_lcp;
 	(void) pkt;
@@ -298,10 +298,10 @@ static int _ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 			goto dont_discard;
 			break;
 		case PPPTYPE_LCP:
-			_handle_lcp_pkt(dev->l_lcp, pkt);
+			_handle_pkt_lcp(dev->l_lcp, pkt);
 			break;
 		case PPPTYPE_NCP_IPV4:
-			_handle_ncp_pkt(dev->l_ncp, pkt);
+			_handle_pkt_ncp(dev->l_ncp, pkt);
 			break;
 		default:
 			break;
@@ -316,10 +316,10 @@ static int _ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 }
 #endif
 /* Used for unittest */
-void test_rx_lcp_conf_req(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
+void test_handle_cp_rcr(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
 {
-	DEBUG("Testing _rx_lcp_conf_req\n");
-	_rx_lcp_conf_req(l_lcp, pkt);
+	DEBUG("Testing _handle_cp_rcr\n");
+	_handle_cp_rcr(l_lcp, pkt);
 }
 #if 0
 void test_ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
