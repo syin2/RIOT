@@ -17,6 +17,8 @@ extern "C" {
 #define LCP_OPT_ACFC (32)
 
 #define LCP_MAX_MRU (2000)
+#define LCP_DEFAULT_MRU (1500)
+
 typedef struct{
 	uint16_t flags;
 	uint16_t mru;
@@ -28,7 +30,6 @@ typedef struct{
 	int b_acfc;
 } lcp_opt_t;
 
-static int lcp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt);
 
 #ifdef __cplusplus
 }

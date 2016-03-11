@@ -30,14 +30,12 @@ extern "C" {
 
 
 #define PPPTYPE_IPV6       (0x0057)    /**< IPv6 packet in PPP*/
+#define PPPTYPE_IPV4       (0x0021)
 #define PPPTYPE_NCP_IPV6       (0x8057)    /**< NCP packet*/
+#define PPPTYPE_NCP_IPV4       (0x8021)    /**< NCP packet*/
 #define PPPTYPE_LCP       (0xC021)    /**< LCP packet  */
 #define PPPTYPE_UNKNOWN       (0x8001)    /**<Unknown  packet (Unused protocol number according to IANA) */
 
-static inline int ppp_frame_is_control(uint16_t procotol)
-{
-	return (protocol == PPPTYPE_LCP) || (protocol == PPPTYPE_NCP_IPV6);
-}
 #ifdef __cplusplus
 }
 #endif
