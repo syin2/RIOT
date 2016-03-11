@@ -88,7 +88,7 @@ static int _read_lcp_pkt(uint8_t type, uint8_t *payload, size_t size, cp_opt_t *
 	}
 	return 0;/*TODO: Fix right value */
 }
-static int _get_opt_status(ppp_ctrl_prot_t *l_lcp, uint8_t *payload, size_t p_size, opt_response_status_t *opt_status)
+static int _parse_cp_options(ppp_ctrl_prot_t *l_lcp, uint8_t *payload, size_t p_size, opt_response_status_t *opt_status)
 {
 	opt_status->num=0;
 	/*Start iterating over options */
@@ -186,7 +186,7 @@ static int _handle_cp_rcr(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
 	
 	opt_response_status_t opt_status;
 	DEBUG("gnrc_ppp: CP: Length of whole packet is %i \n", (int) length);
-	int status = _get_opt_status(l_lcp, data+PPP_CP_HDR_BASE_SIZE,(size_t) (length-PPP_CP_HDR_BASE_SIZE),
+	int status = _parse_cp_options(l_lcp, data+PPP_CP_HDR_BASE_SIZE,(size_t) (length-PPP_CP_HDR_BASE_SIZE),
 	&opt_status);
 
 	if(status == 1000)
