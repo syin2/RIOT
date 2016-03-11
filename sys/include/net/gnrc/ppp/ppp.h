@@ -167,6 +167,7 @@ const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 
 struct ppp_dev_t;
 
+/*Control Protocol configure option*/
 typedef struct cp_opt_t{
 	uint8_t type;
 	uint8_t status;
@@ -174,6 +175,7 @@ typedef struct cp_opt_t{
 	size_t p_size;
 } cp_opt_t;
 
+/* Control Protocol struct*/
 typedef struct ppp_ctrl_prot_t{
 	uint8_t event;
 	uint8_t l_upper_msg;
@@ -195,6 +197,8 @@ typedef struct ppp_ctrl_prot_t{
 	uint8_t _opt_response_status;
 } ppp_ctrl_prot_t;
 
+
+/* PPP device */
 typedef struct ppp_dev_t{
 	struct ppp_ctrl_prot_t *l_lcp;
 	struct ppp_ctrl_prot_t *l_ncp;
@@ -208,11 +212,12 @@ typedef struct ppp_dev_t{
 void test_rx_lcp_conf_req(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt);
 void test_ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt);
 
-typedef struct opt_status_t
+/* Status of Control Protocol options response */
+typedef struct opt_response_status_t
 {
-	uint8_t num;
-	uint8_t status;
-} opt_status_t;
+	uint8_t num; /* Number of options in response */
+	uint8_t status; /* Status of the set of CP opt response (ACK, NAK, REJ)*/
+} opt_response_status_t;
 
 
 void ppp_send(ppp_dev_t *dev, gnrc_pktsnip_t *pkt);
