@@ -165,6 +165,10 @@ const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 
 #define PPP_CP_REQUEST_CONFIGURE (1)
 
+#define OPT_HAS_ACK (1)
+#define OPT_HAS_NAK (2)
+#define OPT_HAS_REJ (4)
+
 struct ppp_dev_t;
 
 /*Control Protocol configure option*/
@@ -176,7 +180,7 @@ typedef struct cp_opt_t{
 } cp_opt_t;
 
 /* Control Protocol struct*/
-typedef struct ppp_ctrl_prot_t{
+typedef struct ppp_cp_t{
 	uint8_t event;
 	uint8_t l_upper_msg;
 	uint8_t l_lower_msg;
@@ -191,17 +195,18 @@ typedef struct ppp_ctrl_prot_t{
 
 	struct ppp_dev_t *dev;
 
+	/* Outgoing options stack*/
+	opt_stack_t *outgoing_opts;
+
 	/* CP options to be sent are stored here, before copying to payload buffer*/
 	cp_opt_t _opt_buf[MAX_CP_OPTIONS];
-	uint8_t _num_opt;
-	uint8_t _opt_response_status;
-} ppp_ctrl_prot_t;
+} ppp_cp_t;
 
 
 /* PPP device */
 typedef struct ppp_dev_t{
-	struct ppp_ctrl_prot_t *l_lcp;
-	struct ppp_ctrl_prot_t *l_ncp;
+	struct ppp_cp_t *l_lcp;
+	struct ppp_cp_t *l_ncp;
 	gnrc_netdev2_t *dev;
 
 	uint8_t _payload_buf[PPP_PAYLOAD_BUF_SIZE];
@@ -209,15 +214,17 @@ typedef struct ppp_dev_t{
 } ppp_dev_t;
 
 
-void test_handle_cp_rcr(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt);
+void test_handle_cp_rcr(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt);
 void test_ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt);
 
 /* Status of Control Protocol options response */
-typedef struct opt_response_status_t
+typedef struct opt_stack_t
 {
-	uint8_t num; /* Number of options in response */
-	uint8_t status; /* Status of the set of CP opt response (ACK, NAK, REJ)*/
-} opt_response_status_t;
+	uint8_t type; /* Status of the set of CP opt response (ACK, NAK, REJ)*/
+	uint8_t num_opts; /* Number of options in response */
+	cp_opt_t *opts;
+	uint8_t content_flag;
+}opt_stack_t;
 
 
 void ppp_send(ppp_dev_t *dev, gnrc_pktsnip_t *pkt);

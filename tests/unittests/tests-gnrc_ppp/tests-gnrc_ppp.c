@@ -27,7 +27,7 @@
 static void test_gnrc_ppp_lcp_recv_cr_nak(void)
 {
 	/*Make fake ctrl prot*/
-	ppp_ctrl_prot_t fake_prot;
+	ppp_cp_t fake_prot;
 
 	/* Same packet, wrong value of MRU*/
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
@@ -56,7 +56,7 @@ static void test_gnrc_ppp_lcp_recv_cr_nak(void)
 static void test_gnrc_ppp_lcp_recv_cr_rej(void)
 {
 	/*Make fake ctrl prot*/
-	ppp_ctrl_prot_t fake_prot;
+	ppp_cp_t fake_prot;
 
 	/* Packet with unrecognized lcp opt type */
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
@@ -85,7 +85,7 @@ static void test_gnrc_ppp_lcp_recv_cr_rej(void)
 static void test_gnrc_ppp_lcp_recv_cr_ack(void)
 {
 	/*Make fake ctrl prot*/
-	ppp_ctrl_prot_t fake_prot;
+	ppp_cp_t fake_prot;
 
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
 	uint8_t good_packet[8] = {0x01,0x00,0x00,0x08,0x01,0x04,0x00,0x01};

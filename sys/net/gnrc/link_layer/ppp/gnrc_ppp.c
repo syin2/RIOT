@@ -88,22 +88,21 @@ static int _read_lcp_pkt(uint8_t type, uint8_t *payload, size_t size, cp_opt_t *
 	}
 	return 0;/*TODO: Fix right value */
 }
-static int _parse_cp_options(ppp_ctrl_prot_t *l_lcp, uint8_t *payload, size_t p_size, opt_response_status_t *opt_status)
+static int _parse_cp_options(opt_stack_t *o_stack, uint8_t *payload, size_t p_size)
 {
-	opt_status->num=0;
+	o_stack->num_opts = 0;
+
 	/*Start iterating over options */
 	uint16_t cursor = 0;
 	
-	/* For now, only MRU is implemented */
 	uint8_t curr_type, curr_len;
-
 	uint8_t response_state;
 	uint8_t curr_status;
 
+	/* Current option status*/
 	cp_opt_t curr_opt_status;
 
-	/* Assume the configure request is OK */
-	response_state = CP_CREQ_ACK;
+	o_stack->content_flag=0;
 
 	/* TODO: Check default value (no opts sent)*/
 	while(cursor < p_size) {
@@ -118,38 +117,17 @@ static int _parse_cp_options(ppp_ctrl_prot_t *l_lcp, uint8_t *payload, size_t p_
 
 		DEBUG("Current status: %i\n",curr_status);
 
-		switch(response_state) {
-			case CP_CREQ_ACK:
-				response_state = curr_status;
-				if(response_state != CP_CREQ_ACK) {
-					opt_status->num = 0;
-				}
-				break;
-			case CP_CREQ_NAK:
-				if(response_state != CP_CREQ_ACK){
-					response_state = curr_status;
-					opt_status->num = 0;
-				}
-				break;
-			case CP_CREQ_REJ:
-				if(response_state != CP_CREQ_REJ)
-				{
-					response_state = curr_status;
-					opt_status->num = 0;
-				}
-				break;
-		}
-		l_lcp->_opt_buf[opt_status->num] = curr_opt_status;
-		opt_status->num += 1;
+		o_stack->content_flag |= 1<<curr_status;
+
+		*(o_stack->opts+o_stack->num_opts) = curr_opt_status;
+		o_stack->num_opts+=1;
 		cursor = cursor + curr_len;
 	}
-	l_lcp->_num_opt = opt_status->num;
-	opt_status->status = response_state;
 
 	return 0; /*TODO: Check return*/
 }
 
-static void _lcp_negotiate_nak(ppp_ctrl_prot_t *l_lcp)
+static void _lcp_negotiate_nak(ppp_cp_t *l_lcp)
 {
 	/* Iterate through every NAK'd option*/
 	uint16_t u16;
@@ -168,7 +146,7 @@ static void _lcp_negotiate_nak(ppp_ctrl_prot_t *l_lcp)
 		}
 	}
 }
-static int _handle_cp_rcr(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
+static int _handle_cp_rcr(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt)
 {
 	/* Get payload length */
 	uint8_t *data = (uint8_t*) pkt->data;
@@ -225,7 +203,7 @@ void ppp_send(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 	(void) pkt;
 }
 
-static void _handle_pkt_lcp(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
+static void _handle_pkt_lcp(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt)
 {
 	/*LCP type*/
 	uint8_t *data = (uint8_t*) pkt->data;
@@ -262,7 +240,7 @@ static void _handle_pkt_lcp(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
 	}
 }
 
-static void _handle_pkt_ncp(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
+static void _handle_pkt_ncp(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt)
 {
 	(void) l_lcp;
 	(void) pkt;
@@ -316,7 +294,7 @@ static int _ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 }
 #endif
 /* Used for unittest */
-void test_handle_cp_rcr(ppp_ctrl_prot_t *l_lcp, gnrc_pktsnip_t *pkt)
+void test_handle_cp_rcr(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt)
 {
 	DEBUG("Testing _handle_cp_rcr\n");
 	_handle_cp_rcr(l_lcp, pkt);
