@@ -219,14 +219,19 @@ typedef struct ppp_cp_t{
 	struct ppp_dev_t *dev;
 
 	/* Options of received packet */
-	opt_stack_t opts_stack;
+	opt_stack_t recv_opts;;
 
 	/* For Configure Request */
 	uint8_t cr_identifier;
-	uint8_t *cr_send_opts;
+	uint8_t *cr_sent_opts;
 
 	/* For terminate request */
 	uint8_t tr_identifier;
+
+	/* Pointer to another struct with CP options*/
+	void *cp_options;
+	/* Function for converting cp_opts to payload  */
+	void *cp_opts_to_payload(void *src, uint8_t dst);
 
 } ppp_cp_t;
 
