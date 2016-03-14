@@ -17,6 +17,7 @@
  */
 
 #include <errno.h>
+#include <string.h>
 
 #include "msg.h"
 #include "thread.h"
@@ -184,6 +185,29 @@ static int _handle_cp_rcr(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt)
 	}
 
 return 0; /*TODO: Fix output*/
+}
+static int _handle_cp_rca(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+{
+	/* Get payload length */
+	uint8_t *data = (uint8_t*) pkt->data;
+	uint8_t identifier = *(data+1);
+
+	uint16_t length = (*(data+2) << 8) + *(data+3); /*TODO: Change to OFFSET*/
+
+	/* Identifier should match */
+	if (identifier != cp->cr_identifier)
+	{
+		return -1; /* TODO: Fix error code*/
+	}
+	/* Sent options and ACK options should match */
+	if (memcmp(data, cp->cr_send_opts) != 0)
+	{
+		return -1; /* TODO: Error code*/
+	}
+
+	cp->event = E_RCA;
+
+
 }
 #if 0
 /*Add hdlc header to pkt, send*/

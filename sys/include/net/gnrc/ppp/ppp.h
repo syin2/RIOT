@@ -209,6 +209,10 @@ typedef struct ppp_cp_t{
 	/* Outgoing options stack*/
 	opt_stack_t outgoing_opts;
 
+	/* For ACK*/
+	uint8_t cr_identifier;
+	uint8_t *cr_send_opts;
+
 } ppp_cp_t;
 
 
