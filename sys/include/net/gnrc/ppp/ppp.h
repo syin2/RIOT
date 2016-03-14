@@ -179,6 +179,15 @@ typedef struct cp_opt_t{
 	size_t p_size;
 } cp_opt_t;
 
+/* Status of Control Protocol options response */
+typedef struct opt_stack_t
+{
+	uint8_t type; /* Status of the set of CP opt response (ACK, NAK, REJ)*/
+	uint8_t num_opts; /* Number of options in response */
+	cp_opt_t *opts;
+	uint8_t content_flag;
+}opt_stack_t;
+
 /* Control Protocol struct*/
 typedef struct ppp_cp_t{
 	uint8_t event;
@@ -217,14 +226,6 @@ typedef struct ppp_dev_t{
 void test_handle_cp_rcr(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt);
 void test_ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt);
 
-/* Status of Control Protocol options response */
-typedef struct opt_stack_t
-{
-	uint8_t type; /* Status of the set of CP opt response (ACK, NAK, REJ)*/
-	uint8_t num_opts; /* Number of options in response */
-	cp_opt_t *opts;
-	uint8_t content_flag;
-}opt_stack_t;
 
 
 void ppp_send(ppp_dev_t *dev, gnrc_pktsnip_t *pkt);
