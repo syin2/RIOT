@@ -257,6 +257,23 @@ static int _handle_cp_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 	l_lcp->event = E_RCJ;
 
 }
+
+static int _handle_cp_term_req(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+{
+	uint8_t *data = (uint8_t*) pkt->data;
+	uint8_t identifier = *(data+1);
+
+	cp->tr_identifier = identifier;
+	cp->event = E_RTR;
+}
+
+static int _handle_cp_term_ack(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+{
+	cp->event = E_RTA;
+}
+
+
+
 #if 0
 /*Add hdlc header to pkt, send*/
 void ppp_send(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
