@@ -28,14 +28,12 @@
 #endif
 
 /*Send Control Protocol. */
-static int send_cp(ppp_ctrl_prot_t  *l_lcp, uint8_t code)
+static int send_cp(ppp_ctrl_prot_t  *cp, uint8_t code, uint8_t identifier, uint8_t *payload, size_t p_size))
 {
-	ppp_dev_t *dev = l_lcp->dev;
+	ppp_dev_t *dev = cp->dev;
 	/* Set code, identifier, length*/
 	dev->_payload_buf[0] = code;
-	/*Identifier. For now, a random number*/
-	int id = 666;
-	dev->_payload_buf[1] = id;
+	dev->_payload_buf[1] = identifier;
 
 	/*TODO: Change number to labels*/
 	uint16_t cursor;
@@ -44,7 +42,7 @@ static int send_cp(ppp_ctrl_prot_t  *l_lcp, uint8_t code)
 	cp_opt_t *copt;
 	for(int i=0;i<l_lcp->_num_opt;i++)
 	{
-		copt = &(l_lcp->_opt_buf[i]);
+		copt = &(cp->outgoing_opts._opt_buf[i]);
 		dev->_payload_buf[4+cursor] = copt->type;
 		dev->_payload_buf[4+cursor+1] = copt->p_size+2;
 		for(int j=0;j<copt->p_size;j++)
@@ -53,12 +51,12 @@ static int send_cp(ppp_ctrl_prot_t  *l_lcp, uint8_t code)
 		}
 		cursor += copt->p_size+2;
 	}
-	uint16_t p_size = 4+cursor;
-	dev->_payload_buf[2] = p_size & 0xFF00;
-	dev->_payload_buf[3] = p_size & 0x00FF;
+	uint16_t length = 4+p_size;
+	dev->_payload_buf[2] = length & 0xFF00;
+	dev->_payload_buf[3] = length & 0x00FF;
 
 	/* Create pkt snip */
-	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, &dev->_payload_buf[0], p_size, GNRC_NETTYPE_UNDEF);
+	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, dev->_payload_buf, length, GNRC_NETTYPE_UNDEF);
 	if (pkt == NULL){
 		DEBUG("PPP: not enough space in pkt buffer");
 		return 0; /*TODO Fix*/
