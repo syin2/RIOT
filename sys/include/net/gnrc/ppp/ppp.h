@@ -169,6 +169,9 @@ const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 #define OPT_HAS_NAK (2)
 #define OPT_HAS_REJ (4)
 
+#define RC_SEL_CONF (0)
+#define RC_SEL_TERM (1)
+
 struct ppp_dev_t;
 
 /*Control Protocol configure option*/
@@ -197,6 +200,9 @@ typedef struct ppp_cp_t{
 	uint8_t l_lower_msg;
 	uint8_t up;
 	uint8_t state;
+
+	/* Select Configure or Terminate timer */
+	uint8_t timer_select;
 
 	uint32_t restart_time;
 	uint32_t restart_counter;

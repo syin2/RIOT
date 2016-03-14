@@ -28,7 +28,6 @@
 #endif
 
 /*Send Control Protocol. */
-#if 0
 static int send_cp(ppp_ctrl_prot_t  *l_lcp, uint8_t code)
 {
 	ppp_dev_t *dev = l_lcp->dev;
@@ -93,6 +92,19 @@ static void _tlf(ppp_ctrl_prot_t *l_lcp)
 static void _irc(ppp_ctrl_prot_t *l_lcp)
 {
 	/*Depending on the state, set the right value for restart counter*/
+	/* TODO: Activate restart timer with corresponding time out */
+	switch(l_lcp->timer_select)
+	{
+		case RC_SEL_CONF:
+			counter_term = PPP_MAX_TERMINATE;
+			break;
+		case RC_SEL_TERM:
+			restart_term = PPP_MAX_CONFIG;
+			break;
+		default:
+			/* Shouldn't be here */
+			break;
+	}
 }
 static void _zrc(ppp_ctrl_prot_t *l_lcp)
 {
@@ -165,4 +177,3 @@ static int lcp_fsm(ppp_ctrl_prot_t *l_lcp)
 	}
 	return 0; /*TODO*/
 }
-#endif
