@@ -219,7 +219,7 @@ typedef struct ppp_cp_t{
 	struct ppp_dev_t *dev;
 
 	/* Options of received packet */
-	opt_stack_t recv_opts;;
+	opt_stack_t recv_opts;
 
 	/* For Configure Request */
 	uint8_t cr_identifier;
@@ -228,10 +228,15 @@ typedef struct ppp_cp_t{
 	/* For terminate request */
 	uint8_t tr_identifier;
 
+
 	/* Pointer to another struct with CP options*/
 	void *cp_options;
 	/* Function for converting cp_opts to payload  */
-	void *cp_opts_to_payload(void *src, uint8_t dst);
+	void *cp_opts_to_payload(void *cp_options, uint8_t dst);
+	/* Negotiate nak */
+	void *negotiate_nak(opt_stack_t *opt_stack);
+	/* Hydrate cp opt */
+	int *hydrate_cp_opt(uint8_t type, uint8_t *payload, size_t size, cp_opt_t *opt_buf);
 
 } ppp_cp_t;
 
