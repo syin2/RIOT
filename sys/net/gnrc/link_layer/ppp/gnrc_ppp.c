@@ -209,6 +209,31 @@ static int _handle_cp_rca(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 
 
 }
+
+static int _handle_cp_nak(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+{
+	uint8_t *data = (uint8_t*) pkt->data;
+	uint8_t identifier = *(data+1);
+
+	uint16_t length = (*(data+2) << 8) + *(data+3); /*TODO: Change to OFFSET*/
+	if (length != pkt->size) {
+		/* TODO: Error code*/
+		return 0;
+	}
+	
+	DEBUG("gnrc_ppp: CP: Length of whole packet is %i \n", (int) length);
+	int status = _parse_cp_options(&(l_lcp->outgoing_opts), data+PPP_CP_HDR_BASE_SIZE,(size_t) (length-PPP_CP_HDR_BASE_SIZE));
+
+	if(status == 1000)
+	{
+		return 100;/*TODO: Fix error code*/
+	}
+
+
+	l_lcp->event = E_RCN;
+
+return 0; /*TODO: Fix output*/
+}
 #if 0
 /*Add hdlc header to pkt, send*/
 void ppp_send(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
