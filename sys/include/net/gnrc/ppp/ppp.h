@@ -218,8 +218,8 @@ typedef struct ppp_cp_t{
 
 	struct ppp_dev_t *dev;
 
-	/* Outgoing options stack*/
-	opt_stack_t outgoing_opts;
+	/* Options of received packet */
+	opt_stack_t opts_stack;
 
 	/* For Configure Request */
 	uint8_t cr_identifier;
