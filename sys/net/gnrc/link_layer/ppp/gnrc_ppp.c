@@ -272,6 +272,11 @@ static int _handle_cp_term_ack(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 	cp->event = E_RTA;
 }
 
+static int _handle_cp_code_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+{
+	cp->event = E_RXJm;
+}
+
 
 
 #if 0

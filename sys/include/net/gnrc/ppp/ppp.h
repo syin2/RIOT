@@ -213,6 +213,9 @@ typedef struct ppp_cp_t{
 	uint8_t cr_identifier;
 	uint8_t *cr_send_opts;
 
+	/* For terminate request */
+	uint8_t tr_identifier;
+
 } ppp_cp_t;
 
 
