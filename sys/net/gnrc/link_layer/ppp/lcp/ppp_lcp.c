@@ -96,10 +96,10 @@ static void _irc(ppp_ctrl_prot_t *l_lcp)
 	switch(l_lcp->timer_select)
 	{
 		case RC_SEL_CONF:
-			counter_term = PPP_MAX_TERMINATE;
+			l_lcp->counter_term = PPP_MAX_TERMINATE;
 			break;
 		case RC_SEL_TERM:
-			restart_term = PPP_MAX_CONFIG;
+			l_lcp->counter_conf = PPP_MAX_CONFIG;
 			break;
 		default:
 			/* Shouldn't be here */
@@ -109,30 +109,47 @@ static void _irc(ppp_ctrl_prot_t *l_lcp)
 static void _zrc(ppp_ctrl_prot_t *l_lcp)
 {
 	l_lcp->restart_counter = 0;
-	/* Set timer to appropiate value */
+	/* Set timer to appropiate value TODO*/
 }
 
 static void _src(ppp_ctrl_prot_t *l_lcp)
 {
+	/* Decrement configure counter */
+	l_lcp->counter_conf -= 1;
 	send_cp(l_lcp, PPP_CP_REQUEST_CONFIGURE);
+	/* TODO: Set timeout for SRC */
 }
 static void _sca(ppp_ctrl_prot_t *l_lcp)
 {
+	send_cp(l_lcp, PPP_CP_REQUEST_ACK);
 }
 static void _scn(ppp_ctrl_prot_t *l_lcp)
 {
+	/* Check the content of received options */
+	if(l_lcp->outgoing_opts->content_flag & OPT_HAS_REJ)
+	{
+		send_cp(l_lcp, PPP_CP_REQUEST_REJ);
+	}
+	else
+	{
+		send_cp(l_lcp, PPP_CP_REQUEST_NAK);
+	}
 }
 static void _str(ppp_ctrl_prot_t *l_lcp)
 {
+	send_cp(l_lcp, PPP_CP_TERM_REQUEST);
 }
 static void _sta(ppp_ctrl_prot_t *l_lcp)
 {
+	send_cp(l_lcp, PPP_CP_TERM_ACK);
 }
 static void _scj(ppp_ctrl_prot_t *l_lcp)
 {
+	send_cp(l_lcp, PPP_CP_CODE_REJ);
 }
 static void _ser(ppp_ctrl_prot_t *l_lcp)
 {
+	send_cp(l_lcp,PPP_CP_SER);
 }
 
 

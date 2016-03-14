@@ -164,6 +164,12 @@ const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 #define OPT_PAYLOAD_SIZE (20)
 
 #define PPP_CP_REQUEST_CONFIGURE (1)
+#define PPP_CP_REQUEST_ACK (2)
+#define PPP_CP_REQUEST_NAK (3)
+#define PPP_CP_REQUEST_REJ (4)
+#define PPP_CP_TERM_REQUEST (5)
+#define PPP_CP_TERM_ACK (6)
+#define PPP_CP_SER (7)
 
 #define OPT_HAS_ACK (1)
 #define OPT_HAS_NAK (2)
