@@ -226,9 +226,11 @@ typedef struct ppp_cp_t{
 	/* For Configure Request */
 	uint8_t cr_sent_identifier;
 	uint8_t cr_sent_opts[OPT_PAYLOAD_BUF_SIZE];
+	uint32_t cr_sent_size;
 
 	uint8_t cr_recv_identifier;
 	uint8_t cr_recv_opts[OPT_PAYLOAD_BUF_SIZE];
+	uint32_t cr_recv_size;
 
 	/* For terminate request */
 	uint8_t tr_identifier;

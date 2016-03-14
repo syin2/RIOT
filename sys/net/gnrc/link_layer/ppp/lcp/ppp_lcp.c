@@ -131,7 +131,7 @@ static void _src(ppp_cp_t *cp)
 }
 static void _sca(ppp_ctrl_prot_t *l_lcp)
 {
-	send_cp(l_lcp, PPP_CP_REQUEST_ACK);
+	send_cp(l_lcp, PPP_CP_REQUEST_ACK, cp->cr_recv_identifier, cp->cr_recv_opts, cp->recv_size);
 }
 static void _scn(ppp_ctrl_prot_t *l_lcp)
 {
