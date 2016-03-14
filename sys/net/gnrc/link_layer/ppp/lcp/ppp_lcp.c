@@ -28,7 +28,7 @@
 #endif
 
 /*Send Control Protocol. */
-static int send_cp(ppp_ctrl_prot_t  *cp, uint8_t code, uint8_t identifier, uint8_t *payload, size_t p_size))
+static int send_cp(ppp_ctrl_prot_t  *cp, uint8_t code, uint8_t identifier, uint8_t *opt_payload, size_t p_size))
 {
 	ppp_dev_t *dev = cp->dev;
 	/* Set code, identifier, length*/
@@ -110,11 +110,23 @@ static void _zrc(ppp_ctrl_prot_t *l_lcp)
 	/* Set timer to appropiate value TODO*/
 }
 
-static void _src(ppp_ctrl_prot_t *l_lcp)
+uint8_t *_get_cpopt_pointer(cp)
+{
+	return cp->dev->_hdlc_payload_buf+4; /* TODO: Fix offset*/
+}
+static void _src(ppp_cp_t *cp)
 {
 	/* Decrement configure counter */
-	l_lcp->counter_conf -= 1;
-	send_cp(l_lcp, PPP_CP_REQUEST_CONFIGURE);
+	cp->counter_conf -= 1;
+
+	/* Get pointer for opts*/
+	uint8_t *opt_pointer = _get_cpopt_pointer(cp);
+	/* Generate sending options*/
+	uint32_t opt_size = cp->cp_opts_to_payload(cp->cp_options, opt_pointer);
+
+	int id=666; /* TODO */
+	
+	send_cp(cp, PPP_CP_REQUEST_CONFIGURE, id, opt_pointer, opt_size);
 	/* TODO: Set timeout for SRC */
 }
 static void _sca(ppp_ctrl_prot_t *l_lcp)

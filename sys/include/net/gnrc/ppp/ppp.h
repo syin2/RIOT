@@ -178,6 +178,8 @@ const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 #define RC_SEL_CONF (0)
 #define RC_SEL_TERM (1)
 
+#define OPT_PAYLOAD_BUF_SIZE (100)
+
 struct ppp_dev_t;
 
 /*Control Protocol configure option*/
@@ -222,8 +224,11 @@ typedef struct ppp_cp_t{
 	opt_stack_t recv_opts;
 
 	/* For Configure Request */
-	uint8_t cr_identifier;
-	uint8_t *cr_sent_opts;
+	uint8_t cr_sent_identifier;
+	uint8_t cr_sent_opts[OPT_PAYLOAD_BUF_SIZE];
+
+	uint8_t cr_recv_identifier;
+	uint8_t cr_recv_opts[OPT_PAYLOAD_BUF_SIZE];
 
 	/* For terminate request */
 	uint8_t tr_identifier;
@@ -232,7 +237,7 @@ typedef struct ppp_cp_t{
 	/* Pointer to another struct with CP options*/
 	void *cp_options;
 	/* Function for converting cp_opts to payload  */
-	void *cp_opts_to_payload(void *cp_options, uint8_t dst);
+	uint32_t *cp_opts_to_payload(void *cp_options, uint8_t *dst);
 	/* Negotiate nak */
 	void *negotiate_nak(opt_stack_t *opt_stack);
 	/* Hydrate cp opt */
@@ -247,8 +252,8 @@ typedef struct ppp_dev_t{
 	struct ppp_cp_t *l_ncp;
 	gnrc_netdev2_t *dev;
 
-	uint8_t _payload_buf[PPP_PAYLOAD_BUF_SIZE];
-	uint8_t _payload_size;
+	uint8_t _hdlc_payload_buf[PPP_PAYLOAD_BUF_SIZE];
+	uint8_t _hdlc_payload_size;
 } ppp_dev_t;
 
 
