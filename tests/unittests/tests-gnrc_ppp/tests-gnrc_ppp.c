@@ -23,9 +23,9 @@
 #include "net/gnrc/ppp/lcp.h"
 #include "net/gnrc.h"
 
-
 static void test_gnrc_ppp_lcp_recv_cr_nak(void)
 {
+	printf("Hello");
 	/*Make fake ctrl prot*/
 	ppp_cp_t fake_prot;
 
@@ -39,18 +39,17 @@ static void test_gnrc_ppp_lcp_recv_cr_nak(void)
 	test_handle_cp_rcr(&fake_prot, pkt);
 	gnrc_pktbuf_release(pkt);
 
-	/* Event should be RCRm */
+	/* Event should be RCRp */
 	TEST_ASSERT_EQUAL_INT(E_RCRm,fake_prot.event);
-	/* Response should be NAK */
-	TEST_ASSERT_EQUAL_INT(CP_CREQ_NAK, fake_prot._opt_response_status);
+	/* Response should be ACK */
+	TEST_ASSERT_EQUAL_INT(1, (fake_prot.outgoing_opts.content_flag & OPT_HAS_NAK) > 0);
 	/* There should be only 1 options in opt_buffer*/
-	TEST_ASSERT_EQUAL_INT(1, fake_prot._num_opt);
-
-	/* And that option should have the right values (NAK corrected) */
-	TEST_ASSERT_EQUAL_INT(LCP_OPT_MRU, fake_prot._opt_buf[0].type);
-	TEST_ASSERT_EQUAL_INT((LCP_DEFAULT_MRU & 0xFF00) >> 8, fake_prot._opt_buf[0].payload[0]);
-	TEST_ASSERT_EQUAL_INT(LCP_DEFAULT_MRU & 0x00FF, fake_prot._opt_buf[0].payload[1]);
-	TEST_ASSERT_EQUAL_INT(2, (int) fake_prot._opt_buf[0].p_size);
+	TEST_ASSERT_EQUAL_INT(1, fake_prot.outgoing_opts.num_opts);
+	/* And that option should have the right values */
+	TEST_ASSERT_EQUAL_INT(LCP_OPT_MRU, fake_prot.outgoing_opts._opt_buf[0].type);
+	TEST_ASSERT_EQUAL_INT(0xFF, fake_prot.outgoing_opts._opt_buf[0].payload[0]);
+	TEST_ASSERT_EQUAL_INT(0xFF, fake_prot.outgoing_opts._opt_buf[0].payload[1]);
+	TEST_ASSERT_EQUAL_INT(2, (int) fake_prot.outgoing_opts._opt_buf[0].p_size);
 }
 
 static void test_gnrc_ppp_lcp_recv_cr_rej(void)
@@ -68,18 +67,18 @@ static void test_gnrc_ppp_lcp_recv_cr_rej(void)
 	test_handle_cp_rcr(&fake_prot, pkt);
 	gnrc_pktbuf_release(pkt);
 
-	/* Event should be RCRm */
+	/* Event should be RCRp */
 	TEST_ASSERT_EQUAL_INT(E_RCRm,fake_prot.event);
-	/* Response should be REJ */
-	TEST_ASSERT_EQUAL_INT(CP_CREQ_REJ, fake_prot._opt_response_status);
+	/* Response should be ACK */
+	TEST_ASSERT_EQUAL_INT(1, (fake_prot.outgoing_opts.content_flag & OPT_HAS_REJ) > 0);
 	/* There should be only 1 options in opt_buffer*/
-	TEST_ASSERT_EQUAL_INT(1, fake_prot._num_opt);
-
+	TEST_ASSERT_EQUAL_INT(1, fake_prot.outgoing_opts.num_opts);
 	/* And that option should have the right values */
-	TEST_ASSERT_EQUAL_INT(2, fake_prot._opt_buf[0].type);
-	TEST_ASSERT_EQUAL_INT(0xFF, fake_prot._opt_buf[0].payload[0]);
-	TEST_ASSERT_EQUAL_INT(0xFF, fake_prot._opt_buf[0].payload[1]);
-	TEST_ASSERT_EQUAL_INT(2, (int) fake_prot._opt_buf[0].p_size);
+	TEST_ASSERT_EQUAL_INT(2, fake_prot.outgoing_opts._opt_buf[0].type);
+	TEST_ASSERT_EQUAL_INT(0xFF, fake_prot.outgoing_opts._opt_buf[0].payload[0]);
+	TEST_ASSERT_EQUAL_INT(0xFF, fake_prot.outgoing_opts._opt_buf[0].payload[1]);
+	TEST_ASSERT_EQUAL_INT(2, (int) fake_prot.outgoing_opts._opt_buf[0].p_size);
+
 }
 
 static void test_gnrc_ppp_lcp_recv_cr_ack(void)
@@ -100,14 +99,14 @@ static void test_gnrc_ppp_lcp_recv_cr_ack(void)
 	/* Event should be RCRp */
 	TEST_ASSERT_EQUAL_INT(E_RCRp,fake_prot.event);
 	/* Response should be ACK */
-	TEST_ASSERT_EQUAL_INT(CP_CREQ_ACK, fake_prot._opt_response_status);
+	TEST_ASSERT_EQUAL_INT(1, (fake_prot.outgoing_opts.content_flag & OPT_HAS_ACK) > 0);
 	/* There should be only 1 options in opt_buffer*/
-	TEST_ASSERT_EQUAL_INT(1, fake_prot._num_opt);
+	TEST_ASSERT_EQUAL_INT(1, fake_prot.outgoing_opts.num_opts);
 	/* And that option should have the right values */
-	TEST_ASSERT_EQUAL_INT(LCP_OPT_MRU, fake_prot._opt_buf[0].type);
-	TEST_ASSERT_EQUAL_INT(0, fake_prot._opt_buf[0].payload[0]);
-	TEST_ASSERT_EQUAL_INT(1, fake_prot._opt_buf[0].payload[1]);
-	TEST_ASSERT_EQUAL_INT(2, (int) fake_prot._opt_buf[0].p_size);
+	TEST_ASSERT_EQUAL_INT(LCP_OPT_MRU, fake_prot.outgoing_opts._opt_buf[0].type);
+	TEST_ASSERT_EQUAL_INT(0, fake_prot.outgoing_opts._opt_buf[0].payload[0]);
+	TEST_ASSERT_EQUAL_INT(1, fake_prot.outgoing_opts._opt_buf[0].payload[1]);
+	TEST_ASSERT_EQUAL_INT(2, (int) fake_prot.outgoing_opts._opt_buf[0].p_size);
 }
 
 

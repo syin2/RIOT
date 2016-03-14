@@ -184,7 +184,9 @@ typedef struct opt_stack_t
 {
 	uint8_t type; /* Status of the set of CP opt response (ACK, NAK, REJ)*/
 	uint8_t num_opts; /* Number of options in response */
-	cp_opt_t *opts;
+
+	/* CP options to be sent are stored here, before copying to payload buffer*/
+	cp_opt_t _opt_buf[MAX_CP_OPTIONS];
 	uint8_t content_flag;
 }opt_stack_t;
 
@@ -205,10 +207,8 @@ typedef struct ppp_cp_t{
 	struct ppp_dev_t *dev;
 
 	/* Outgoing options stack*/
-	opt_stack_t *outgoing_opts;
+	opt_stack_t outgoing_opts;
 
-	/* CP options to be sent are stored here, before copying to payload buffer*/
-	cp_opt_t _opt_buf[MAX_CP_OPTIONS];
 } ppp_cp_t;
 
 

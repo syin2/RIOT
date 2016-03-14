@@ -96,7 +96,6 @@ static int _parse_cp_options(opt_stack_t *o_stack, uint8_t *payload, size_t p_si
 	uint16_t cursor = 0;
 	
 	uint8_t curr_type, curr_len;
-	uint8_t response_state;
 	uint8_t curr_status;
 
 	/* Current option status*/
@@ -119,26 +118,28 @@ static int _parse_cp_options(opt_stack_t *o_stack, uint8_t *payload, size_t p_si
 
 		o_stack->content_flag |= 1<<curr_status;
 
-		*(o_stack->opts+o_stack->num_opts) = curr_opt_status;
+		o_stack->_opt_buf[o_stack->num_opts] = curr_opt_status;
 		o_stack->num_opts+=1;
 		cursor = cursor + curr_len;
 	}
 
 	return 0; /*TODO: Check return*/
 }
-
-static void _lcp_negotiate_nak(ppp_cp_t *l_lcp)
+#if 0
+static void _lcp_negotiate_nak(opt_stack_t *opts)
 {
 	/* Iterate through every NAK'd option*/
 	uint16_t u16;
-	for(int i=0;i<l_lcp->_num_opt;i++)
+	cp_opt_t *curr_opt;
+	for(int i=0;i<opts->num_opts;i++)
 	{
-		switch(l_lcp->_opt_buf[i].type)
+		curr_opt = (opts->opts+i);
+		switch((*curr_opt).type)
 		{
 			case LCP_OPT_MRU:
 				u16 = LCP_DEFAULT_MRU;
-				l_lcp->_opt_buf[i].payload[0] = (u16 & 0xFF00) >> 8;
-				l_lcp->_opt_buf[i].payload[1] = u16 & 0x00FF;
+				(*curr_opt).payload[0] = (u16 & 0xFF00) >> 8;
+				(*curr_opt).payload[1] = u16 & 0x00FF;
 				break;
 			default:
 				/*Shouldn't reach here*/ /*TODO: Assert?*/
@@ -146,6 +147,7 @@ static void _lcp_negotiate_nak(ppp_cp_t *l_lcp)
 		}
 	}
 }
+#endif
 static int _handle_cp_rcr(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt)
 {
 	/* Get payload length */
@@ -162,36 +164,25 @@ static int _handle_cp_rcr(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt)
 		return 0;
 	}
 	
-	opt_response_status_t opt_status;
 	DEBUG("gnrc_ppp: CP: Length of whole packet is %i \n", (int) length);
-	int status = _parse_cp_options(l_lcp, data+PPP_CP_HDR_BASE_SIZE,(size_t) (length-PPP_CP_HDR_BASE_SIZE),
-	&opt_status);
+	int status = _parse_cp_options(&(l_lcp->outgoing_opts), data+PPP_CP_HDR_BASE_SIZE,(size_t) (length-PPP_CP_HDR_BASE_SIZE));
 
 	if(status == 1000)
 	{
 		return 100;/*TODO: Fix error code*/
 	}
-	int response_state = opt_status.status;
 
-	DEBUG("gnrc_ppp: CP: Response state of current packet-> %i\n",response_state);
 
 	/* At this point, we have the responses and type of responses. Process each one*/
-	switch(response_state){
-		case CP_CREQ_ACK:
-		l_lcp->event = E_RCRp;
-			break;
-		case CP_CREQ_NAK:
-		_lcp_negotiate_nak(l_lcp);
+	if (l_lcp->outgoing_opts.content_flag & (OPT_HAS_NAK | OPT_HAS_REJ))
+	{
 		l_lcp->event = E_RCRm;
-			break;
-		case CP_CREQ_REJ:
-		l_lcp->event = E_RCRm;
-			break;
-		default:
-			/*Shouldn't reach here*/
-			break;
 	}
-	l_lcp->_opt_response_status = response_state;
+	else
+	{
+		l_lcp->event = E_RCRp;
+	}
+
 return 0; /*TODO: Fix output*/
 }
 #if 0
