@@ -27,14 +27,16 @@
 #include <inttypes.h>
 #endif
 
-/*Send Control Protocol. */
-static int send_cp(ppp_ctrl_prot_t  *cp, uint8_t code, uint8_t identifier, uint8_t *opt_payload, size_t p_size))
+/*Send Control Protocol. Assumes the opt payload is loaded in HDLC Control Protocol Buffer. */
+static int send_cp(ppp_ctrl_prot_t  *cp, cp_pkt_t *pkt)
 {
 	ppp_dev_t *dev = cp->dev;
+
 	/* Set code, identifier, length*/
 	dev->_payload_buf[0] = code;
 	dev->_payload_buf[1] = identifier;
-
+	uint32_t length;
+	/* if size is not zero, the hdlc cp buffer was preloaded */
 	/*TODO: Change number to labels*/
 	uint16_t cursor;
 	/* Generate payload with corresponding options */
@@ -42,16 +44,16 @@ static int send_cp(ppp_ctrl_prot_t  *cp, uint8_t code, uint8_t identifier, uint8
 	cp_opt_t *copt;
 	for(int i=0;i<l_lcp->_num_opt;i++)
 	{
-		copt = &(cp->outgoing_opts._opt_buf[i]);
-		dev->_payload_buf[4+cursor] = copt->type;
-		dev->_payload_buf[4+cursor+1] = copt->p_size+2;
-		for(int j=0;j<copt->p_size;j++)
+		copt = &(opt_stack->_opt_buf[i]);
+		*(dst+cursor) = copt->type;
+		*(dst+cursor+1) = copt->p_size+2;
+		for(int j=0;j<copt->opt_size;j++)
 		{
-			dev->_payload_buf[4+cursor+2+i] = copt->payload[j];
+			*(dst+cursor+2+i) = copt->payload[j];
 		}
-		cursor += copt->p_size+2;
+		cursor += copt->opt_size+2;
 	}
-	uint16_t length = 4+p_size;
+	length =  opt_size+4;
 	dev->_payload_buf[2] = length & 0xFF00;
 	dev->_payload_buf[3] = length & 0x00FF;
 
@@ -112,42 +114,63 @@ static void _zrc(ppp_ctrl_prot_t *l_lcp)
 
 uint8_t *_get_cpopt_pointer(cp)
 {
-	return cp->dev->_hdlc_payload_buf+4; /* TODO: Fix offset*/
+	return cp->dev->_hdlc_cp_buf+4; /* TODO: Fix offset*/
 }
 static void _src(ppp_cp_t *cp)
 {
 	/* Decrement configure counter */
 	cp->counter_conf -= 1;
 
-	/* Get pointer for opts*/
-	uint8_t *opt_pointer = _get_cpopt_pointer(cp);
-	/* Generate sending options*/
-	uint32_t opt_size = cp->cp_opts_to_payload(cp->cp_options, opt_pointer);
-
 	int id=666; /* TODO */
+	cp_pkt_t pkt;
+	pkt.hdr.code = PPP_CP_REQUEST_CONFIGURE;
+	pkt.hdr.id = id;
+	cp->populate_opt_stack(cp->cp_options, &(pkt.opt_stack));
 	
-	send_cp(cp, PPP_CP_REQUEST_CONFIGURE, id, opt_pointer, opt_size);
+	send_cp(cp, &pkt);
 	/* TODO: Set timeout for SRC */
 }
-static void _sca(ppp_ctrl_prot_t *l_lcp)
+static void _sca(ppp_ctrl_prot_t *l_lcp, cp_pkt_t *pkt)
 {
-	send_cp(l_lcp, PPP_CP_REQUEST_ACK, cp->cr_recv_identifier, cp->cr_recv_opts, cp->recv_size);
+	pkt->hdr->code = PPP_CP_REQUEST_ACK;
+	send_cp(l_lcp, pkt);
 }
-static void _scn(ppp_ctrl_prot_t *l_lcp)
+static void _remove_opts_by_status(uint8_t status, opt_stack_t opt_stack)
+{
+	cp_opt_t *copt;
+	copt = opt_stack->opts;
+
+	cp_opt_t *last_linked_opt=NULL;
+
+	while(copt->next != NULL)
+	{
+		if (copt->status == status)
+		{
+			last_linked_opt->next = copt;
+			last_linked_opt = copt;
+		}
+	}
+}
+static void _scn(ppp_ctrl_prot_t *l_lcp, cp_pkt_t *pkt)
 {
 	/* Check the content of received options */
-	if(l_lcp->outgoing_opts->content_flag & OPT_HAS_REJ)
+	if(pkt->opts->content_flag & OPT_HAS_REJ)
 	{
-		send_cp(l_lcp, PPP_CP_REQUEST_REJ);
+		_remove_opts_by_status(PPP_CP_REQUEST_REJ, pkt->opts);
+		pkt->hdr->code = PPP_CP_REQUEST_REJ;
+		send_cp(l_lcp, pkt);
 	}
 	else
 	{
-		send_cp(l_lcp, PPP_CP_REQUEST_NAK);
+		_remove_opts_by_status(PPP_CP_REQUEST_NAK, pkt->opts);
+		pkt->hdr->code = PPP_CP_REQUEST_NAK;
+		send_cp(l_lcp, pkt);
 	}
 }
 static void _str(ppp_ctrl_prot_t *l_lcp)
 {
-	send_cp(l_lcp, PPP_CP_TERM_REQUEST);
+	int id = 666; /*TODO*/
+	send_cp(l_lcp, PPP_CP_TERM_REQUEST, id);
 }
 static void _sta(ppp_ctrl_prot_t *l_lcp)
 {

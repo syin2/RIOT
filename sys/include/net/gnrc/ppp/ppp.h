@@ -195,10 +195,10 @@ typedef struct opt_stack_t
 {
 	uint8_t type; /* Status of the set of CP opt response (ACK, NAK, REJ)*/
 	uint8_t num_opts; /* Number of options in response */
+	uint8_t content_flag;
 
 	/* CP options to be sent are stored here, before copying to payload buffer*/
 	cp_opt_t _opt_buf[MAX_CP_OPTIONS];
-	uint8_t content_flag;
 }opt_stack_t;
 
 /* Control Protocol struct*/
@@ -220,17 +220,13 @@ typedef struct ppp_cp_t{
 
 	struct ppp_dev_t *dev;
 
-	/* Options of received packet */
-	opt_stack_t recv_opts;
-
 	/* For Configure Request */
 	uint8_t cr_sent_identifier;
-	uint8_t cr_sent_opts[OPT_PAYLOAD_BUF_SIZE];
 	uint32_t cr_sent_size;
 
 	uint8_t cr_recv_identifier;
-	uint8_t cr_recv_opts[OPT_PAYLOAD_BUF_SIZE];
 	uint32_t cr_recv_size;
+
 
 	/* For terminate request */
 	uint8_t tr_identifier;
@@ -239,11 +235,13 @@ typedef struct ppp_cp_t{
 	/* Pointer to another struct with CP options*/
 	void *cp_options;
 	/* Function for converting cp_opts to payload  */
-	uint32_t *cp_opts_to_payload(void *cp_options, uint8_t *dst);
+	uint32_t *_load_specific_cp_opts(void *cp_options, uint8_t *dst);
 	/* Negotiate nak */
-	void *negotiate_nak(opt_stack_t *opt_stack);
+	void *negotiate_nak(void *cp_options, opt_stack_t *opt_stack);
 	/* Hydrate cp opt */
 	int *hydrate_cp_opt(uint8_t type, uint8_t *payload, size_t size, cp_opt_t *opt_buf);
+
+	void *populate_opt_stack(void *cp_options, opt_stack_t *opt_stack);
 
 } ppp_cp_t;
 
@@ -254,9 +252,23 @@ typedef struct ppp_dev_t{
 	struct ppp_cp_t *l_ncp;
 	gnrc_netdev2_t *dev;
 
-	uint8_t _hdlc_payload_buf[PPP_PAYLOAD_BUF_SIZE];
-	uint8_t _hdlc_payload_size;
+	uint8_t _hdlc_cp_buf[PPP_PAYLOAD_BUF_SIZE];
+	uint32_t _hdlc_cp_size;
 } ppp_dev_t;
+
+/* Control protocol header struct */
+typedef struct __attribute__((packed)){
+	uint8_t code;
+	uint8_t id;
+	uint16_t length;
+} cp_hdr_t;
+
+/* A Control Protocol packet*/
+typedef struct cp_pkt_t
+{
+	cp_hdr_t hdr;
+	opt_stack_t opts;
+} cp_pkt_t;
 
 
 void test_handle_cp_rcr(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt);

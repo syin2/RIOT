@@ -102,6 +102,8 @@ static int _parse_cp_options(opt_stack_t *o_stack, uint8_t *payload, size_t p_si
 	/* Current option status*/
 	cp_opt_t curr_opt_status;
 
+	cp_opt_t *last_opt= NULL;
+
 	o_stack->content_flag=0;
 
 	/* TODO: Check default value (no opts sent)*/
@@ -112,7 +114,12 @@ static int _parse_cp_options(opt_stack_t *o_stack, uint8_t *payload, size_t p_si
 		
 		/* TODO: If cursor + len > total_length, discard pkt*/
 
+		curr_opt_status.next = NULL;
 		_read_lcp_pkt(curr_type, payload+cursor+2, (size_t) curr_len, &curr_opt_status);
+		if(last_opt != NULL)
+		{
+			last_opt->next = &curr_opt_status;
+		}
 		curr_status =curr_opt_status.status;
 
 		DEBUG("Current status: %i\n",curr_status);
@@ -122,6 +129,7 @@ static int _parse_cp_options(opt_stack_t *o_stack, uint8_t *payload, size_t p_si
 		o_stack->_opt_buf[o_stack->num_opts] = curr_opt_status;
 		o_stack->num_opts+=1;
 		cursor = cursor + curr_len;
+		last_opt = &curr_opt_status;
 	}
 
 	return 0; /*TODO: Check return*/
@@ -149,33 +157,13 @@ static void _lcp_negotiate_nak(opt_stack_t *opts)
 	}
 }
 #endif
-static int _handle_cp_rcr(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt)
+static int _handle_cp_rcr(ppp_cp_t *l_lcp, cp_pkt_t *pkt)
 {
-	/* Get payload length */
-	uint8_t *data = (uint8_t*) pkt->data;
-	//uint8_t identifier = *(data+1); /*TODO: Change to OFFSET*/
-
 	/*Set the remote identifier*/
-	/*TODO*/
-
-	uint16_t length = (*(data+2) << 8) + *(data+3); /*TODO: Change to OFFSET*/
-	
-	if (length != pkt->size) {
-		/* TODO: Error code*/
-		return 0;
-	}
-	
-	DEBUG("gnrc_ppp: CP: Length of whole packet is %i \n", (int) length);
-	int status = _parse_cp_options(&(l_lcp->outgoing_opts), data+PPP_CP_HDR_BASE_SIZE,(size_t) (length-PPP_CP_HDR_BASE_SIZE));
-
-	if(status == 1000)
-	{
-		return 100;/*TODO: Fix error code*/
-	}
-
+	cp->cr_recv_identifier = pkt->hdr->id;
 
 	/* At this point, we have the responses and type of responses. Process each one*/
-	if (l_lcp->outgoing_opts.content_flag & (OPT_HAS_NAK | OPT_HAS_REJ))
+	if (pkt->opts->content_flag  & (OPT_HAS_NAK | OPT_HAS_REJ))
 	{
 		l_lcp->event = E_RCRm;
 	}
@@ -186,88 +174,72 @@ static int _handle_cp_rcr(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt)
 
 return 0; /*TODO: Fix output*/
 }
-static int _handle_cp_rca(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+static int _opts_are_equal(cp_opt_t *o1, cp_opt_t *o2)
 {
-	/* Get payload length */
-	uint8_t *data = (uint8_t*) pkt->data;
-	uint8_t identifier = *(data+1);
+	if (o1->type != o2->type || o1->status != o2->status || o1->p_size != o2->p_size || memcmp(o1->payload,
+	o2->payload,o1->p_size)){
+		return false;
+	}
+	return true;
+}
+static int _opt_stacks_are_equal(opt_stack_t *o1, opt_stack_t *o2)
+{
+	uint8_t len_1 = o1->num_opts;
+	uint8_t len_2= o2->num_opts;
 
-	uint16_t length = (*(data+2) << 8) + *(data+3); /*TODO: Change to OFFSET*/
-
+	if (len_1 != len_2)
+	{
+		return false;
+	}
+	for(int i=0;i<len_1;i++)
+	{
+		if(!_opt_are_equal(o1->_opt_buf[i], o2->_opt_buf[i]))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+static int _handle_cp_rca(ppp_cp_t *cp, cp_pkt_t *pkt)
+{
 	/* Identifier should match */
-	if (identifier != cp->cr_identifier)
+	if (pkt->id != cp->cr_sent_identifier)
 	{
 		return -1; /* TODO: Fix error code*/
 	}
-	/* Sent options and ACK options should match */
-	if (memcmp(data, cp->cr_send_opts) != 0)
+
+	/* Sent options and ACK options should match. */
+	opt_stack_t opt_stack;
+	cp->optpkt_to_optstack(cp->cp_options, &opt_stack);
+
+	if (!_opt_stacks_are_equal(opt_stack, pkt->opts))
 	{
 		return -1; /* TODO: Error code*/
 	}
 
 	cp->event = E_RCA;
-
-
 }
 
-static int _handle_cp_nak(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+/* Fix params for request */
+static int _handle_cp_nak(ppp_cp_t *cp, cp_pkt *pkt)
 {
-	uint8_t *data = (uint8_t*) pkt->data;
-	uint8_t identifier = *(data+1);
-
-	uint16_t length = (*(data+2) << 8) + *(data+3); /*TODO: Change to OFFSET*/
-	if (length != pkt->size) {
-		/* TODO: Error code*/
-		return 0;
-	}
-	
-	DEBUG("gnrc_ppp: CP: Length of whole packet is %i \n", (int) length);
-	int status = _parse_cp_options(&(l_lcp->outgoing_opts), data+PPP_CP_HDR_BASE_SIZE,(size_t) (length-PPP_CP_HDR_BASE_SIZE));
-
-	if(status == 1000)
-	{
-		return 100;/*TODO: Fix error code*/
-	}
-
-
+	cp->negotiate_nak(cp->cp_options, pkt->opts);
 	l_lcp->event = E_RCN;
-
-return 0; /*TODO: Fix output*/
+	return 0; /*TODO: Fix output*/
 }
 
-static int _handle_cp_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+static int _handle_cp_rej(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
-	uint8_t *data = (uint8_t*) pkt->data;
-	uint8_t identifier = *(data+1);
-
-	uint16_t length = (*(data+2) << 8) + *(data+3); /*TODO: Change to OFFSET*/
-	if (length != pkt->size) {
-		/* TODO: Error code*/
-		return 0;
-	}
-	
-	DEBUG("gnrc_ppp: CP: Length of whole packet is %i \n", (int) length);
-	int status = _parse_cp_options(&(l_lcp->outgoing_opts), data+PPP_CP_HDR_BASE_SIZE,(size_t) (length-PPP_CP_HDR_BASE_SIZE));
-
-	if(status == 1000)
-	{
-		return 100;/*TODO: Fix error code*/
-	}
-
 	l_lcp->event = E_RCJ;
-
 }
 
-static int _handle_cp_term_req(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+static int _handle_cp_term_req(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
-	uint8_t *data = (uint8_t*) pkt->data;
-	uint8_t identifier = *(data+1);
-
-	cp->tr_identifier = identifier;
+	cp->tr_identifier = cp_pkt->hdr->id;
 	cp->event = E_RTR;
 }
 
-static int _handle_cp_term_ack(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+static int _handle_cp_term_ack(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
 	cp->event = E_RTA;
 }
@@ -279,7 +251,6 @@ static int _handle_cp_code_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 
 
 
-#if 0
 /*Add hdlc header to pkt, send*/
 void ppp_send(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 {
@@ -288,11 +259,10 @@ void ppp_send(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 	(void) pkt;
 }
 
-static void _handle_pkt_lcp(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt)
+static void _handle_pkt_lcp(ppp_cp_t *l_lcp, cp_pkt_t *pkt)
 {
 	/*LCP type*/
-	uint8_t *data = (uint8_t*) pkt->data;
-	int type = (int) *(data);	
+	int type = pkt->hdr->code;	
 	
 	switch(type){
 		case PPP_CONF_REQ:
@@ -336,6 +306,20 @@ void _pktsnd_upper_layer(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 	(void) pkt;
 }
 
+/*TODO return error if populate went bad */
+static int _populate_recv_cp_pkt(gnrc_pktsnipt_t pkt, cp_pkt_t *cp_pkt)
+{
+	cp_hdr_t hdr = (cp_hdr_t*) pkt->data;
+	cp_pkt->hdr = &cp_data;
+
+	if (hdr->length != pkt->size) {
+		/* TODO: Error code*/
+		return 0;
+	}
+
+	int status = _parse_cp_options(cp_pkt->opts, pkt->data+sizeof(cp_hdr_t),(size_t) pkt->length-sizeof(cp_hdr_t));
+	return 0;
+}
 /*Wake up events for packet reception goes here*/
 static int _ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 {
@@ -348,7 +332,8 @@ static int _ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 	
 	hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t*) result->data;
 
-	/* Route the packet according to protocol */
+	cp_pkt_t cp_pkt;
+	/* Route the packet according to prot(ocol */
 	switch(hdlc_hdr->protocol)
 	{
 		case PPPTYPE_IPV4:
@@ -357,14 +342,17 @@ static int _ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 			{
 				break;
 			}
-			_pktsnd_upper_layer(dev, pkt);
+			_pktsnd_upper_layer(dev, &cp_pkt);
 			goto dont_discard;
 			break;
 		case PPPTYPE_LCP:
-			_handle_pkt_lcp(dev->l_lcp, pkt);
+			/* Populate received pkt */
+			_populate_recv_pkt(pkt, &cp_pkt);
+			_handle_pkt_lcp(dev->l_lcp, &cp_pkt);
 			break;
 		case PPPTYPE_NCP_IPV4:
-			_handle_pkt_ncp(dev->l_ncp, pkt);
+			_populate_recv_pkt(pkt, &cp_pkt);
+			_handle_pkt_ncp(dev->l_ncp, &cp_pkt);
 			break;
 		default:
 			break;
@@ -377,7 +365,6 @@ static int _ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 	dont_discard:
 		return 0;/*TODO: Fix right value */
 }
-#endif
 /* Used for unittest */
 void test_handle_cp_rcr(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt)
 {
