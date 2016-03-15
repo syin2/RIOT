@@ -36,11 +36,10 @@ static int ppp_pkt_populate(uint8_t *data, size_t length, cp_pkt_t *cp_pkt)
 	cp_hdr_t hdr = (cp_hdr_t*) pkt->data;
 	cp_pkt->hdr = &cp_data;
 
-	if (hdr->length != pkt->size) {
-		/* TODO: Error code*/
-		return 0;
+	if (hdr->length != length) {
+		return EBADMSG;
 	}
 
-	int status = _parse_cp_options(cp_pkt->opts, pkt->data+sizeof(cp_hdr_t),(size_t) pkt->length-sizeof(cp_hdr_t));
+	memcpy(cp_pkt->payload, data, length-sizeof(cp_hdr_t));
 	return 0;
 }

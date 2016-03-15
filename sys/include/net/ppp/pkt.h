@@ -19,10 +19,10 @@ typedef struct __attribute__((packed)){
 } cp_hdr_t;
 
 /* A Control Protocol packet*/
-typedef struct c__attribute__((packed))
+typedef struct __attribute__((packed))
 {
 	cp_hdr_t hdr;
-	void *payload; /* options, data */
+	uint8_t payload[CP_PAYLOAD_SIZE]; 
 } cp_pkt_t;
 
 
