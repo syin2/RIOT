@@ -37,15 +37,6 @@
 #endif
 
 
-/* Status of Control Protocol options response */
-typedef struct opt_stack_t
-{
-	uint8_t type; /* Status of the set of CP opt response (ACK, NAK, REJ)*/
-	uint8_t num_opts; /* Number of options in response */
-	uint8_t content_flag;
-	/* CP options to be sent are stored here */
-	cp_opt_t opts[MAX_CP_OPTIONS];
-}opt_stack_t;
 
 static int _handle_cp_rcr(ppp_cp_t *l_lcp, cp_pkt_t *pkt)
 {
