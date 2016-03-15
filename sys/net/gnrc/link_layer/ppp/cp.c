@@ -177,7 +177,7 @@ static int _handle_cp_code_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 	cp->event = E_RXJm;
 }
 
-static void _handle_pkt_cp(ppp_cp_t *cp, cp_pkt_t *pkt)
+static void _handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
 	/*LCP type*/
 	int type = pkt->hdr->code;	

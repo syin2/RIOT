@@ -158,11 +158,11 @@ static int _ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 		case PPPTYPE_LCP:
 			/* Populate received pkt */
 			_populate_recv_pkt(pkt, &cp_pkt);
-			_handle_pkt_lcp(dev->l_lcp, &cp_pkt);
+			_handle_cp_pkt(dev->l_lcp, &cp_pkt);
 			break;
 		case PPPTYPE_NCP_IPV4:
 			_populate_recv_pkt(pkt, &cp_pkt);
-			_handle_pkt_ncp(dev->l_ncp, &cp_pkt);
+			_handle_cp_pkt(dev->l_ncp, &cp_pkt);
 			break;
 		default:
 			break;
