@@ -62,12 +62,23 @@ static void test_ppp_pkt_get_set_id(void)
 	TEST_ASSERT_EQUAL_INT(id, ppp_pkt_get_id(&cp_pkt));
 }
 
+static void test_ppp_pkt_get_set_length(void)
+{
+	cp_pkt_t cp_pkt;
+	uint16_t length=13;
+	ppp_pkt_set_id(&cp_pkt, length);
+
+	TEST_ASSERT_EQUAL_INT(length, byteorder_ntohs(cp_pkt.hdr.length));
+	TEST_ASSERT_EQUAL_INT(length, ppp_pkt_get_length(&cp_pkt));
+}
+
 Test *tests_ppp_pkt_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture(test_ppp_pkt_populate),
         new_TestFixture(test_ppp_pkt_get_set_code),
         new_TestFixture(test_ppp_pkt_get_set_id),
+        new_TestFixture(test_ppp_pkt_get_set_length),
     };
 
     EMB_UNIT_TESTCALLER(ppp_pkt_tests, NULL, NULL, fixtures);
