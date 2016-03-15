@@ -182,24 +182,7 @@ const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 
 struct ppp_dev_t;
 
-/*Control Protocol configure option*/
-typedef struct cp_opt_t{
-	uint8_t type;
-	uint8_t status;
-	uint8_t payload[OPT_PAYLOAD_SIZE];
-	size_t p_size;
-} cp_opt_t;
 
-/* Status of Control Protocol options response */
-typedef struct opt_stack_t
-{
-	uint8_t type; /* Status of the set of CP opt response (ACK, NAK, REJ)*/
-	uint8_t num_opts; /* Number of options in response */
-	uint8_t content_flag;
-
-	/* CP options to be sent are stored here, before copying to payload buffer*/
-	cp_opt_t _opt_buf[MAX_CP_OPTIONS];
-}opt_stack_t;
 
 /* Control Protocol struct*/
 typedef struct ppp_cp_t{
@@ -256,19 +239,7 @@ typedef struct ppp_dev_t{
 	uint32_t _hdlc_cp_size;
 } ppp_dev_t;
 
-/* Control protocol header struct */
-typedef struct __attribute__((packed)){
-	uint8_t code;
-	uint8_t id;
-	uint16_t length;
-} cp_hdr_t;
 
-/* A Control Protocol packet*/
-typedef struct cp_pkt_t
-{
-	cp_hdr_t hdr;
-	opt_stack_t opts;
-} cp_pkt_t;
 
 
 void test_handle_cp_rcr(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt);

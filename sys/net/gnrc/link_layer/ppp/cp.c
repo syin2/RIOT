@@ -36,51 +36,6 @@
 #include <inttypes.h>
 #endif
 
-static int _parse_cp_options(opt_stack_t *o_stack, uint8_t *payload, size_t p_size)
-{
-	o_stack->num_opts = 0;
-
-	/*Start iterating over options */
-	uint16_t cursor = 0;
-	
-	uint8_t curr_type, curr_len;
-	uint8_t curr_status;
-
-	/* Current option status*/
-	cp_opt_t curr_opt_status;
-
-	cp_opt_t *last_opt= NULL;
-
-	o_stack->content_flag=0;
-
-	/* TODO: Check default value (no opts sent)*/
-	while(cursor < p_size) {
-		/* Read current option type */
-		curr_type = *(payload+cursor);
-		curr_len = *(payload+cursor+1);
-		
-		/* TODO: If cursor + len > total_length, discard pkt*/
-
-		curr_opt_status.next = NULL;
-		_read_lcp_pkt(curr_type, payload+cursor+2, (size_t) curr_len, &curr_opt_status);
-		if(last_opt != NULL)
-		{
-			last_opt->next = &curr_opt_status;
-		}
-		curr_status =curr_opt_status.status;
-
-		DEBUG("Current status: %i\n",curr_status);
-
-		o_stack->content_flag |= 1<<curr_status;
-
-		o_stack->_opt_buf[o_stack->num_opts] = curr_opt_status;
-		o_stack->num_opts+=1;
-		cursor = cursor + curr_len;
-		last_opt = &curr_opt_status;
-	}
-
-	return 0; /*TODO: Check return*/
-}
 
 static int _handle_cp_rcr(ppp_cp_t *l_lcp, cp_pkt_t *pkt)
 {
@@ -98,32 +53,6 @@ static int _handle_cp_rcr(ppp_cp_t *l_lcp, cp_pkt_t *pkt)
 	}
 
 return 0; /*TODO: Fix output*/
-}
-static int _opts_are_equal(cp_opt_t *o1, cp_opt_t *o2)
-{
-	if (o1->type != o2->type || o1->status != o2->status || o1->p_size != o2->p_size || memcmp(o1->payload,
-	o2->payload,o1->p_size)){
-		return false;
-	}
-	return true;
-}
-static int _opt_stacks_are_equal(opt_stack_t *o1, opt_stack_t *o2)
-{
-	uint8_t len_1 = o1->num_opts;
-	uint8_t len_2= o2->num_opts;
-
-	if (len_1 != len_2)
-	{
-		return false;
-	}
-	for(int i=0;i<len_1;i++)
-	{
-		if(!_opt_are_equal(o1->_opt_buf[i], o2->_opt_buf[i]))
-		{
-			return false;
-		}
-	}
-	return true;
 }
 static int _handle_cp_rca(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
@@ -172,4 +101,40 @@ static int _handle_cp_term_ack(ppp_cp_t *cp, cp_pkt_t *pkt)
 static int _handle_cp_code_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 {
 	cp->event = E_RXJm;
+}
+
+static void _handle_pkt_cp(ppp_cp_t *cp, cp_pkt_t *pkt)
+{
+	/*LCP type*/
+	int type = pkt->hdr->code;	
+	
+	switch(type){
+		case PPP_CONF_REQ:
+			_handle_cp_rcr(cp, pkt);
+			break;
+		case PPP_CONF_ACK:
+			break;
+		case PPP_CONF_NAK:
+			break;
+		case PPP_CONF_REJ:
+			break;
+		case PPP_TERM_REQ:
+			break;
+		case PPP_TERM_ACK:
+			break;
+		case PPP_CODE_REJ:
+			break;
+		case PPP_PROT_REJ:
+			break;
+		case PPP_ECHO_REQ:
+			break;
+		case PPP_ECHO_REP:
+			break;
+		case PPP_DISC_REQ:
+			break;
+		case PPP_IDENT:
+			break;
+		case PPP_TIME_REM:
+			break;
+	}
 }
