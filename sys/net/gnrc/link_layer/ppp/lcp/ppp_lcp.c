@@ -27,47 +27,6 @@
 #include <inttypes.h>
 #endif
 
-/*Send Control Protocol. Assumes the opt payload is loaded in HDLC Control Protocol Buffer. */
-static int send_cp(ppp_ctrl_prot_t  *cp, cp_pkt_t *pkt)
-{
-	ppp_dev_t *dev = cp->dev;
-
-	/* Set code, identifier, length*/
-	dev->_payload_buf[0] = code;
-	dev->_payload_buf[1] = identifier;
-	uint32_t length;
-	/* if size is not zero, the hdlc cp buffer was preloaded */
-	/*TODO: Change number to labels*/
-	uint16_t cursor;
-	/* Generate payload with corresponding options */
-	cursor = 0;
-	cp_opt_t *copt;
-	for(int i=0;i<l_lcp->_num_opt;i++)
-	{
-		copt = &(opt_stack->_opt_buf[i]);
-		*(dst+cursor) = copt->type;
-		*(dst+cursor+1) = copt->p_size+2;
-		for(int j=0;j<copt->opt_size;j++)
-		{
-			*(dst+cursor+2+i) = copt->payload[j];
-		}
-		cursor += copt->opt_size+2;
-	}
-	length =  opt_size+4;
-	dev->_payload_buf[2] = length & 0xFF00;
-	dev->_payload_buf[3] = length & 0x00FF;
-
-	/* Create pkt snip */
-	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, dev->_payload_buf, length, GNRC_NETTYPE_UNDEF);
-	if (pkt == NULL){
-		DEBUG("PPP: not enough space in pkt buffer");
-		return 0; /*TODO Fix*/
-	}
-	
-	/* Send pkt to ppp_send*/
-	ppp_send(dev, pkt);
-	return 0; /*TODO*/
-}
 
 static void _tlu(ppp_ctrl_prot_t *l_lcp)
 {
@@ -130,22 +89,6 @@ static void _sca(ppp_ctrl_prot_t *l_lcp, cp_pkt_t *pkt)
 {
 	pkt->hdr->code = PPP_CP_REQUEST_ACK;
 	send_cp(l_lcp, pkt);
-}
-static void _remove_opts_by_status(uint8_t status, opt_stack_t opt_stack)
-{
-	cp_opt_t *copt;
-	copt = opt_stack->opts;
-
-	cp_opt_t *last_linked_opt=NULL;
-
-	while(copt->next != NULL)
-	{
-		if (copt->status == status)
-		{
-			last_linked_opt->next = copt;
-			last_linked_opt = copt;
-		}
-	}
 }
 static void _scn(ppp_ctrl_prot_t *l_lcp, cp_pkt_t *pkt)
 {
@@ -221,7 +164,6 @@ static void _event_action(ppp_ctrl_prot_t *l_lcp)
 static int lcp_fsm(ppp_ctrl_prot_t *l_lcp)
 {
 	int8_t next_state;
-
 
 	/* Call the appropiate functions for each state */
 	_event_action(l_lcp);
