@@ -31,13 +31,13 @@ typedef struct __attribute__((packed))
 int ppp_pkt_populate(uint8_t *data, size_t length, cp_pkt_t *cp_pkt);
 
 uint8_t ppp_pkt_get_code(cp_pkt_t *cp_pkt);
-uint8_t ppp_pkt_set_code(cp_pkt_t *cp_pkt, uint8_t code);
+void ppp_pkt_set_code(cp_pkt_t *cp_pkt, uint8_t code);
 uint8_t ppp_pkt_get_id(cp_pkt_t *cp_pkt);
-uint8_t ppp_pkt_set_id(cp_pkt_t *cp_pkt, uint8_t id);
+void ppp_pkt_set_id(cp_pkt_t *cp_pkt, uint8_t id);
 uint16_t ppp_pkt_get_length(cp_pkt_t *cp_pkt);
-uint16_t ppp_pkt_set_length(cp_pkt_t *cp_pkt, uint16_t length);
-uint8_t ppp_pkt_get_payload(cp_pkt_t *cp_pkt);
-uint8_t ppp_pkt_set_payload(cp_pkt_t *cp_pkt, void *payload);
+void ppp_pkt_set_length(cp_pkt_t *cp_pkt, uint16_t length);
+uint8_t *ppp_pkt_get_payload(cp_pkt_t *cp_pkt);
+void ppp_pkt_set_payload(cp_pkt_t *cp_pkt, uint8_t *payload);
 
 #ifdef __cplusplus
 }

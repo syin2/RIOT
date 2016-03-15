@@ -38,3 +38,41 @@ int ppp_pkt_populate(uint8_t *data, size_t length, cp_pkt_t *cp_pkt)
 	cp_pkt->payload = data+sizeof(cp_hdr_t);
 	return 0;
 }
+
+uint8_t ppp_pkt_get_code(cp_pkt_t *cp_pkt)
+{
+	return cp_pkt->hdr->code;
+}
+
+void ppp_pkt_set_code(cp_pkt_t *cp_pkt, uint8_t code)
+{
+	cp_pkt->hdr->code = code;
+}
+
+uint8_t ppp_pkt_get_id(cp_pkt_t *cp_pkt)
+{
+	return cp_pkt->hdr->id;
+}
+
+void ppp_pkt_set_id(cp_pkt_t *cp_pkt, uint8_t id)
+{
+	cp_pkt->hdr->id = id;
+}
+
+uint16_t ppp_pkt_get_length(cp_pkt_t *cp_pkt)
+{
+	return byteorder_ntohs(cp_pkt->hdr->length);
+}
+
+void ppp_pkt_set_length(cp_pkt_t *cp_pkt, uint16_t length)
+{
+	cp_pkt->hdr->length = length;
+}
+uint8_t *ppp_pkt_get_payload(cp_pkt_t *cp_pkt)
+{
+	return cp_pkt->payload;
+}
+void ppp_pkt_set_payload(cp_pkt_t *cp_pkt, uint8_t *payload)
+{
+	cp_pkt->payload = payload;
+}
