@@ -72,6 +72,16 @@ static void test_ppp_pkt_get_set_length(void)
 	TEST_ASSERT_EQUAL_INT(length, ppp_pkt_get_length(&cp_pkt));
 }
 
+static void test_ppp_pkt_get_set_payload(void)
+{
+	cp_pkt_t cp_pkt;
+	uint8_t payload[5] = {'h','e','l','l','o'};
+
+	ppp_pkt_set_payload(&cp_pkt, payload);
+	uint8_t *p = ppp_pkt_get_payload(&cp_pkt);
+	TEST_ASSERT_EQUAL_INT(0, memcmp(p,payload,5));
+}
+
 Test *tests_ppp_pkt_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
@@ -79,6 +89,7 @@ Test *tests_ppp_pkt_tests(void)
         new_TestFixture(test_ppp_pkt_get_set_code),
         new_TestFixture(test_ppp_pkt_get_set_id),
         new_TestFixture(test_ppp_pkt_get_set_length),
+        new_TestFixture(test_ppp_pkt_get_set_payload),
     };
 
     EMB_UNIT_TESTCALLER(ppp_pkt_tests, NULL, NULL, fixtures);
