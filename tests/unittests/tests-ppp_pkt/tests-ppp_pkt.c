@@ -51,11 +51,23 @@ static void test_ppp_pkt_get_set_code(void)
 	TEST_ASSERT_EQUAL_INT(code, cp_pkt.hdr.code);
 	TEST_ASSERT_EQUAL_INT(code, ppp_pkt_get_code(&cp_pkt));
 }
+
+static void test_ppp_pkt_get_set_id(void)
+{
+	cp_pkt_t cp_pkt;
+	uint8_t id=13;
+	ppp_pkt_set_id(&cp_pkt, id);
+
+	TEST_ASSERT_EQUAL_INT(id, cp_pkt.hdr.id);
+	TEST_ASSERT_EQUAL_INT(id, ppp_pkt_get_id(&cp_pkt));
+}
+
 Test *tests_ppp_pkt_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture(test_ppp_pkt_populate),
         new_TestFixture(test_ppp_pkt_get_set_code),
+        new_TestFixture(test_ppp_pkt_get_set_id),
     };
 
     EMB_UNIT_TESTCALLER(ppp_pkt_tests, NULL, NULL, fixtures);
