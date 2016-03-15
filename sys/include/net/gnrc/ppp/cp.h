@@ -1,10 +1,9 @@
 
 /*Control Protocol option*/
-typedef struct cp_opt_t{
+typedef struct __attribute__((packed)){
 	uint8_t type;
-	size_t length;
-	void *payload;
-	cp_opt_t *next;
+	uint8_t length;
+	uint8_t *payload;
 } cp_opt_t;
 
 /* Status of Control Protocol options response */
