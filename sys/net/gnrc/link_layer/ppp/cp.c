@@ -37,10 +37,37 @@
 #endif
 
 
+int ppp_cp_opts_are_equal(cp_opt_t *o1, cp_opt_t *o2)
+{
+	if (o1->type != o2->type || o1->status != o2->status || o1->p_size != o2->p_size || memcmp(o1->payload,
+	o2->payload,o1->p_size)){
+		return false;
+	}
+	return true;
+}
+
+int ppp_cp_optstacks_are_equal(opt_stack_t *o1, opt_stack_t *o2)
+{
+	uint8_t len_1 = o1->num_opts;
+	uint8_t len_2= o2->num_opts;
+
+	if (len_1 != len_2)
+	{
+		return false;
+	}
+	for(int i=0;i<len_1;i++)
+	{
+		if(!_opt_are_equal(o1->_opt_buf[i], o2->_opt_buf[i]))
+		{
+			return false;
+		}
+	}
+	return true;
+}
 
 int ppp_cp_populate_options(opt_stack_t *o_stack, uint8_t *payload, size_t p_size)
 {
-	o_stack->num_opts = 0;
+	uint8_t num_opts = 0;
 
 	/*Start iterating over options */
 	uint16_t cursor = 0;
@@ -84,32 +111,25 @@ int ppp_cp_populate_options(opt_stack_t *o_stack, uint8_t *payload, size_t p_siz
 	return 0; /*TODO: Check return*/
 }
 
-int ppp_cp_opts_are_equal(cp_opt_t *o1, cp_opt_t *o2)
+int cp_opt_content_status_flag(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
-	if (o1->type != o2->type || o1->status != o2->status || o1->p_size != o2->p_size || memcmp(o1->payload,
-	o2->payload,o1->p_size)){
-		return false;
-	}
-	return true;
-}
+	uint16_t length = ppp_pkt_get_length(pkt);
+	uint16_t cursor=0;
 
-static int ppp_cp_optstacks_are_equal(opt_stack_t *o1, opt_stack_t *o2)
-{
-	uint8_t len_1 = o1->num_opts;
-	uint8_t len_2= o2->num_opts;
+	cp_opt_t *opt;
+	uint8_t *payload = ppp_pkt_get_payload(pkt);
 
-	if (len_1 != len_2)
+	/* Iterate over options */
+	while(cursor < length)
 	{
-		return false;
-	}
-	for(int i=0;i<len_1;i++)
-	{
-		if(!_opt_are_equal(o1->_opt_buf[i], o2->_opt_buf[i]))
+		opt = (cp_opt_t*) (payload+cursor);
+		cp->get_option_status();
+		switch(opt->type)
 		{
-			return false;
+			
 		}
 	}
-	return true;
+
 }
 static int _handle_cp_rcr(ppp_cp_t *l_lcp, cp_pkt_t *pkt)
 {
