@@ -10,6 +10,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define PPP_PAYLOAD_SIZE (2000)
 
 /*  PPP pkt header struct */
 typedef struct __attribute__((packed)){
@@ -22,11 +23,11 @@ typedef struct __attribute__((packed)){
 typedef struct __attribute__((packed))
 {
 	cp_hdr_t hdr;
-	uint8_t payload[CP_PAYLOAD_SIZE]; 
+	uint16_t payload[PPP_PAYLOAD_SIZE]; 
 } cp_pkt_t;
 
 
-static int ppp_pkt_populate(uint8_t *data, size_t length, cp_pkt_t *cp_pkt);
+int ppp_pkt_populate(uint8_t *data, size_t length, cp_pkt_t *cp_pkt);
 
 #ifdef __cplusplus
 }

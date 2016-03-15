@@ -20,18 +20,12 @@
 #include <errno.h>
 #include <string.h>
 
-#include "msg.h"
-#include "thread.h"
-#include "net/gnrc.h"
-#include "net/ppptype.h"
-#include "net/gnrc/ppp/ppp.h"
-#include "net/gnrc/ppp/lcp.h"
-#include "net/hdlc/hdr.h"
+#include "net/pkt/pkt.h"
 
 
 
 /*TODO return error if populate went bad */
-static int ppp_pkt_populate(uint8_t *data, size_t length, cp_pkt_t *cp_pkt)
+int ppp_pkt_populate(uint8_t *data, size_t length, cp_pkt_t *cp_pkt)
 {
 	cp_hdr_t hdr = (cp_hdr_t*) pkt->data;
 	cp_pkt->hdr = &cp_data;
