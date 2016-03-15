@@ -66,7 +66,7 @@ uint16_t ppp_pkt_get_length(cp_pkt_t *cp_pkt)
 
 void ppp_pkt_set_length(cp_pkt_t *cp_pkt, uint16_t length)
 {
-	cp_pkt->hdr.length.u16 = (uint16_t) length;
+	cp_pkt->hdr.length = byteorder_htons(length);
 }
 uint8_t *ppp_pkt_get_payload(cp_pkt_t *cp_pkt)
 {

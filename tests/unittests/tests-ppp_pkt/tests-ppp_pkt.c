@@ -66,7 +66,7 @@ static void test_ppp_pkt_get_set_length(void)
 {
 	cp_pkt_t cp_pkt;
 	uint16_t length=13;
-	ppp_pkt_set_id(&cp_pkt, length);
+	ppp_pkt_set_length(&cp_pkt, length);
 
 	TEST_ASSERT_EQUAL_INT(length, byteorder_ntohs(cp_pkt.hdr.length));
 	TEST_ASSERT_EQUAL_INT(length, ppp_pkt_get_length(&cp_pkt));
