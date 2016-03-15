@@ -118,12 +118,17 @@ typedef struct __attribute__((packed)){
 /* Status of Control Protocol options response */
 typedef struct opt_stack_t
 {
-	uint8_t type; /* Status of the set of CP opt response (ACK, NAK, REJ)*/
+	uint8_t status; /* Status of the set of CP opt response (ACK, NAK, REJ)*/
 	uint8_t num_opts; /* Number of options in response */
 	uint8_t content_flag;
-	/* CP options to be sent are stored here */
-	cp_opt_t opts[MAX_CP_OPTIONS];
+	cp_opt_t *opts;
 }opt_stack_t;
+
+typedef struct cp_pkt_metadata_t
+{
+	cp_pkt_t *pkt; /* Pointer to received packet */
+	uint8_t opts_status_flag;
+} cp_pkt_metadata_t;
 
 /* Control Protocol struct*/
 typedef struct ppp_cp_t{
@@ -154,6 +159,8 @@ typedef struct ppp_cp_t{
 
 	/* For terminate request */
 	uint8_t tr_identifier;
+
+	cp_pkt_metadata_t metadata; 
 
 
 	/* Pointer to another struct with CP options*/
