@@ -180,7 +180,7 @@ static int _handle_cp_code_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 static void _handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
 	/*LCP type*/
-	int type = pkt->hdr->code;	
+	int type = ppp_pkt_get_code(pkt);
 	
 	switch(type){
 		case PPP_CONF_REQ:
