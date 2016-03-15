@@ -112,10 +112,6 @@ static void _zrc(ppp_ctrl_prot_t *l_lcp)
 	/* Set timer to appropiate value TODO*/
 }
 
-uint8_t *_get_cpopt_pointer(cp)
-{
-	return cp->dev->_hdlc_cp_buf+4; /* TODO: Fix offset*/
-}
 static void _src(ppp_cp_t *cp)
 {
 	/* Decrement configure counter */
@@ -170,11 +166,22 @@ static void _scn(ppp_ctrl_prot_t *l_lcp, cp_pkt_t *pkt)
 static void _str(ppp_ctrl_prot_t *l_lcp)
 {
 	int id = 666; /*TODO*/
-	send_cp(l_lcp, PPP_CP_TERM_REQUEST, id);
+	cp_pkt_t pkt;
+	pkt->hdr->code = PPP_CP_TERM_REQUEST;
+	pkt->hdr->id = id;
+	pkt->hdr->length = 4;
+	pkt->opts->num_opts = 0;
+	send_cp(l_lcp, pkt);
 }
 static void _sta(ppp_ctrl_prot_t *l_lcp)
 {
-	send_cp(l_lcp, PPP_CP_TERM_ACK);
+	int id = 666; /*TODO*/
+	cp_pkt_t pkt;
+	pkt->hdr->code = PPP_CP_TERM_ACK;
+	pkt->hdr->id = id;
+	pkt->hdr->length = 4;
+	pkt->opts->num_opts = 0;
+	send_cp(l_lcp, pkt);
 }
 static void _scj(ppp_ctrl_prot_t *l_lcp)
 {
