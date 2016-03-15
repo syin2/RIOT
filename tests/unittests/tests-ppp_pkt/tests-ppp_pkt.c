@@ -33,9 +33,9 @@ static void test_ppp_pkt_populate(void)
 
 	ppp_pkt_populate(pkt, 8, &cp_pkt);
 
-	TEST_ASSERT_EQUAL_INT(code, cp_pkt.hdr->code);
-	TEST_ASSERT_EQUAL_INT(id, cp_pkt.hdr->id);
-	TEST_ASSERT_EQUAL_INT(length, byteorder_ntohs(cp_pkt.hdr->length));
+	TEST_ASSERT_EQUAL_INT(code, cp_pkt.hdr.code);
+	TEST_ASSERT_EQUAL_INT(id, cp_pkt.hdr.id);
+	TEST_ASSERT_EQUAL_INT(length, byteorder_ntohs(cp_pkt.hdr.length));
 	TEST_ASSERT_EQUAL_INT(length, ppp_pkt_get_length(&cp_pkt));
 	
 	TEST_ASSERT_EQUAL_INT(0,memcmp(pkt+4,cp_pkt.payload,4));
@@ -48,7 +48,7 @@ static void test_ppp_pkt_get_set_code(void)
 	uint8_t code=33;
 	ppp_pkt_set_code(&cp_pkt, code);
 
-	TEST_ASSERT_EQUAL_INT(code, cp_pkt.hdr->code);
+	TEST_ASSERT_EQUAL_INT(code, cp_pkt.hdr.code);
 	TEST_ASSERT_EQUAL_INT(code, ppp_pkt_get_code(&cp_pkt));
 }
 Test *tests_ppp_pkt_tests(void)
