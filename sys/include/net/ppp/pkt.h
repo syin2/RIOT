@@ -22,7 +22,7 @@ typedef struct __attribute__((packed)){
 /* A PPP packet*/
 typedef struct __attribute__((packed))
 {
-	cp_hdr_t hdr;
+	cp_hdr_t *hdr;
 	uint16_t payload[PPP_PAYLOAD_SIZE]; 
 } cp_pkt_t;
 
