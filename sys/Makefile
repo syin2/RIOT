@@ -43,6 +43,9 @@ endif
 ifneq (,$(filter inet_csum,$(USEMODULE)))
     DIRS += net/crosslayer/inet_csum
 endif
+ifneq (,$(filter ppp_pkt,$(USEMODULE)))
+    DIRS += net/link_layer/ppp
+endif
 ifneq (,$(filter cipher_modes,$(USEMODULE)))
     DIRS += crypto/modes
 endif
