@@ -23,7 +23,7 @@ typedef struct __attribute__((packed)){
 typedef struct __attribute__((packed))
 {
 	cp_hdr_t *hdr;
-	uint16_t payload[PPP_PAYLOAD_SIZE]; 
+	void *payload; 
 } cp_pkt_t;
 
 

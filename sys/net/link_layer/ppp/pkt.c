@@ -34,6 +34,6 @@ int ppp_pkt_populate(uint8_t *data, size_t length, cp_pkt_t *cp_pkt)
 		return EBADMSG;
 	}
 
-	memcpy(cp_pkt->payload, data, length-sizeof(cp_hdr_t));
+	cp_pkt->payload = data+sizeof(cp_hdr_t);
 	return 0;
 }
