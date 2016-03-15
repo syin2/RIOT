@@ -11,13 +11,17 @@
 extern "C" {
 #endif
 
+/* Control protocol header struct */
+typedef struct __attribute__((packed)){
+	uint8_t code;
+	uint8_t id;
+	uint16_t length;
+} cp_hdr_t;
 
 /* A Control Protocol packet*/
 typedef struct c__attribute__((packed))
 {
-	uint8_t code;
-	uint8_t id;
-	uint16_t length;
+	cp_hdr_t hdr;
 	void *payload; /* options, data */
 } cp_pkt_t;
 
