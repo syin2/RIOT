@@ -174,6 +174,7 @@ int cp_opt_content_status_flag(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
 	uint16_t length = ppp_pkt_get_length(pkt);
 	uint16_t cursor=0;
+	uint8_t flag=0;
 
 	cp_opt_t *opt;
 	uint8_t *payload = ppp_pkt_get_payload(pkt);
@@ -182,12 +183,23 @@ int cp_opt_content_status_flag(ppp_cp_t *cp, cp_pkt_t *pkt)
 	while(cursor < length)
 	{
 		opt = (cp_opt_t*) (payload+cursor);
-		cp->get_option_status();
+		cp->get_option_status(opt);
 		switch(opt->type)
 		{
-			
+			case CP_CREQ_ACK:
+				flag |= OPT_HAS_ACK;
+				break;
+			case CP_CREQ_NAK:
+				flag |= OPT_HAS_NAK;
+				break;
+			case CP_CREQ_REJ:
+				flag |= OPT_HAS_REJ;
+				break;
 		}
+		cursor += opt->length;
 	}
+	/* Fill metadata */
+	cp->metadata.
 
 }
 static int _handle_cp_rcr(ppp_cp_t *l_lcp, cp_pkt_t *pkt)
