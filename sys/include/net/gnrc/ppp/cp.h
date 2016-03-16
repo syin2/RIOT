@@ -145,7 +145,7 @@ typedef struct ppp_cp_t{
 	/* Hydrate cp opt */
 	int *hydrate_cp_opt(uint8_t type, uint8_t *payload, size_t size, cp_opt_t *opt_buf);
 
-	void *get_option_status(cp_opt_t *opt);t diff
+	int *get_option_status(cp_opt_t *opt);
 
 
 
