@@ -170,21 +170,26 @@ int ppp_cp_populate_options(opt_stack_t *o_stack, uint8_t *payload, size_t p_siz
 	return 0; /*TODO: Check return*/
 }
 
-int cp_opt_content_status_flag(ppp_cp_t *cp, cp_pkt_t *pkt)
-{
+int populate_opt_metadata(ppp_cp_t *cp)
+
+	cp_pkt_t *pkt=cp->metadata.pkt;
 	uint16_t length = ppp_pkt_get_length(pkt);
 	uint16_t cursor=0;
 	uint8_t flag=0;
 
 	cp_opt_t *opt;
-	uint8_t *payload = ppp_pkt_get_payload(pkt);
+	opt_metadata_t opt_tag;
+	uint8_t *payload = pkt->payload;
+	uint8_t status;
+
+	cp_opt **previous_next_pointer=NULL;
 
 	/* Iterate over options */
 	while(cursor < length)
 	{
 		opt = (cp_opt_t*) (payload+cursor);
-		cp->get_option_status(opt);
-		switch(opt->type)
+		status = cp->get_option_status(opt);
+		switch(status)
 		{
 			case CP_CREQ_ACK:
 				flag |= OPT_HAS_ACK;
@@ -197,15 +202,24 @@ int cp_opt_content_status_flag(ppp_cp_t *cp, cp_pkt_t *pkt)
 				break;
 		}
 		cursor += opt->length;
+		/*Tag option */
+		if (previous_next_pointer != NULL)
+		{
+			*previous_next_pointer = &opt;
+		}
+		opt_tag.opt = opt;
+		opt_tag.status = status;
+		previous_next_pointer = &(opt_tag.next);
+		cp->metadata.tagget_opts[cp->metadata.num_tagged_opts] = opt_tag;
 	}
 	/* Fill metadata */
-	cp->metadata.
+	cp->metadata.opt_status_flag = flag;
 
 }
 static int _handle_cp_rcr(ppp_cp_t *l_lcp, cp_pkt_t *pkt)
 {
-	/*Set the remote identifier*/
-	cp->cr_recv_identifier = pkt->hdr->id;
+	/* Populate opt metadata */
+	populate_opt_metadata(cp);
 
 	/* At this point, we have the responses and type of responses. Process each one*/
 	if (pkt->opts->content_flag  & (OPT_HAS_NAK | OPT_HAS_REJ))
@@ -270,6 +284,7 @@ static int _handle_cp_code_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 
 static void _handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
+	cp->metadata.pkt = pkt;
 	/*LCP type*/
 	int type = ppp_pkt_get_code(pkt);
 	

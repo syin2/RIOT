@@ -98,6 +98,7 @@ typedef struct cp_pkt_metadata_t
 	cp_pkt_t *pkt; /* Pointer to received packet */
 	uint8_t opts_status_flag; /* In case of CP options*/
 	opt_metadata_t tagged_opts[CPOPT_MAX_OPT];
+	uint8_t num_tagged_opt;
 	cp_pkt_t sent_ack;
 
 } cp_pkt_metadata_t;
@@ -144,7 +145,9 @@ typedef struct ppp_cp_t{
 	/* Hydrate cp opt */
 	int *hydrate_cp_opt(uint8_t type, uint8_t *payload, size_t size, cp_opt_t *opt_buf);
 
-	void *populate_opt_stack(void *cp_options, opt_stack_t *opt_stack);
+	void *get_option_status(cp_opt_t *opt);t diff
+
+
 
 } ppp_cp_t;
 
