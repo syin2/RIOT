@@ -153,6 +153,7 @@ static int _handle_cp_rcr(ppp_cp_t *l_lcp, cp_pkt_t *pkt)
 
 return 0; /*TODO: Fix output*/
 }
+#if 0
 static int _handle_cp_rca(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
 	populate_opt_metadata(cp);
@@ -203,7 +204,7 @@ static int _handle_cp_code_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 {
 	cp->event = E_RXJm;
 }
-
+#endif
 static void _handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
 	cp->metadata.pkt = pkt;
