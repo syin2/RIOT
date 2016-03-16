@@ -37,22 +37,6 @@
 #endif
 
 
-static void _remove_opts_by_status(uint8_t status, opt_stack_t opt_stack)
-{
-	cp_opt_t *copt;
-	copt = opt_stack->opts;
-
-	cp_opt_t *last_linked_opt=NULL;
-
-	while(copt->next != NULL)
-	{
-		if (copt->status == status)
-		{
-			last_linked_opt->next = copt;
-			last_linked_opt = copt;
-		}
-	}
-}
 
 /*Send Control Protocol. Assumes the opt payload is loaded in HDLC Control Protocol Buffer. */
 static int send_cp(ppp_ctrl_prot_t  *cp, cp_pkt_t *pkt)
