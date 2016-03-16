@@ -96,7 +96,7 @@ static int send_cp(ppp_ctrl_prot_t  *cp, cp_pkt_t *pkt)
 	return 0; /*TODO*/
 }
 
-int ppp_cp_opts_are_equal(cp_opt_t *o1, cp_opt_t *o2)
+int ppp_cp_optchain_are_equal(cp_opt_t *o1, cp_opt_t *o2)
 {
 	if (o1->type != o2->type || o1->status != o2->status || o1->p_size != o2->p_size || memcmp(o1->payload,
 	o2->payload,o1->p_size)){
@@ -105,24 +105,6 @@ int ppp_cp_opts_are_equal(cp_opt_t *o1, cp_opt_t *o2)
 	return true;
 }
 
-int ppp_cp_optstacks_are_equal(opt_stack_t *o1, opt_stack_t *o2)
-{
-	uint8_t len_1 = o1->num_opts;
-	uint8_t len_2= o2->num_opts;
-
-	if (len_1 != len_2)
-	{
-		return false;
-	}
-	for(int i=0;i<len_1;i++)
-	{
-		if(!_opt_are_equal(o1->_opt_buf[i], o2->_opt_buf[i]))
-		{
-			return false;
-		}
-	}
-	return true;
-}
 
 int ppp_cp_populate_options(opt_stack_t *o_stack, uint8_t *payload, size_t p_size)
 {
@@ -222,7 +204,7 @@ static int _handle_cp_rcr(ppp_cp_t *l_lcp, cp_pkt_t *pkt)
 	populate_opt_metadata(cp);
 
 	/* At this point, we have the responses and type of responses. Process each one*/
-	if (pkt->opts->content_flag  & (OPT_HAS_NAK | OPT_HAS_REJ))
+	if (pkt->opts->opt_status_flag  & (OPT_HAS_NAK | OPT_HAS_REJ))
 	{
 		l_lcp->event = E_RCRm;
 	}
@@ -235,6 +217,8 @@ return 0; /*TODO: Fix output*/
 }
 static int _handle_cp_rca(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
+	populate_opt_metadata(cp);
+
 	/* Identifier should match */
 	if (pkt->id != cp->cr_sent_identifier)
 	{
