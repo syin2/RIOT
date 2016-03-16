@@ -25,20 +25,6 @@
 
 
 
-/*TODO return error if populate went bad */
-int ppp_pkt_populate(uint8_t *data, size_t length, cp_pkt_t *cp_pkt)
-{
-	cp_hdr_t *hdr = (cp_hdr_t*) data;
-	cp_pkt->hdr = *hdr;
-
-	if (byteorder_ntohs(hdr->length) != (int)length) {
-		return EBADMSG;
-	}
-
-	cp_pkt->payload = data+sizeof(cp_hdr_t);
-	return 0;
-}
-
 uint8_t ppp_pkt_get_code(cp_pkt_t *cp_pkt)
 {
 	return cp_pkt->hdr.code;
@@ -68,11 +54,21 @@ void ppp_pkt_set_length(cp_pkt_t *cp_pkt, uint16_t length)
 {
 	cp_pkt->hdr.length = byteorder_htons(length);
 }
-uint8_t *ppp_pkt_get_payload(cp_pkt_t *cp_pkt)
+
+/*TODO return error if populate went bad */
+int ppp_pkt_populate(uint8_t *data, size_t length, cp_pkt_t *cp_pkt)
 {
-	return cp_pkt->payload;
+	cp_hdr_t *hdr = (cp_hdr_t*) data;
+	cp_pkt->hdr = *hdr;
+
+	int pkt_length = byteorder_ntohs(hdr->length);
+	/*TODO Padding... */
+	if (pkt_length != (int)length) {
+		return EBADMSG;
+	}
+
+	memcpy(cp_pkt->payload, data+sizeof(cp_hdr_t), pkt_length-sizeof(cp_hdr_t));
+	/* Copy payload */
+	return 0;
 }
-void ppp_pkt_set_payload(cp_pkt_t *cp_pkt, uint8_t *payload)
-{
-	cp_pkt->payload = payload;
-}
+
