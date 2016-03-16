@@ -124,10 +124,20 @@ typedef struct opt_stack_t
 	cp_opt_t *opts;
 }opt_stack_t;
 
+typedef struct opt_metadada_t
+{
+	cp_opt_t *opt;
+	uint8_t status;
+	cp_opt_t *next;
+} opt_metadata_t
+
 typedef struct cp_pkt_metadata_t
 {
 	cp_pkt_t *pkt; /* Pointer to received packet */
-	uint8_t opts_status_flag;
+	uint8_t opts_status_flag; /* In case of CP options*/
+	opt_metadata_t tagged_opts[CPOPT_MAX_OPT];
+	cp_pkt_t sent_ack;
+
 } cp_pkt_metadata_t;
 
 /* Control Protocol struct*/
