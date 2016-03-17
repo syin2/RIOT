@@ -97,6 +97,25 @@ Test *tests_ppp_pkt_tests(void)
     return (Test *)&ppp_pkt_tests;
 }
 
+/* Dummy get_option_status for testing fake prot*/
+static int *fakeprot_get_option_status(cp_opt_t *opt)
+{
+	/* if type < 2, reject */
+	if (opt->type < 2)
+	{
+		return CP_CREQ_REJ;
+	}
+	
+	/* Nak every packet with u16 payload < 10 */
+	uint16_t u16 = *(opt->payload)<<8 + *(opt->payload+1)
+	if (u16 < 10)
+	{
+		return CP_CREQ_NAK;
+	}
+	return CP_CREQ_ACK;
+
+}
+
 void tests_ppp_pkt(void)
 {
     TESTS_RUN(tests_ppp_pkt_tests());
