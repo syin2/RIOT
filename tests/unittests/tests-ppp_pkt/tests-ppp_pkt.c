@@ -21,28 +21,6 @@
 #include "unittests-constants.h"
 #include "tests-ppp_pkt.h"
 #include "net/ppp/pkt.h"
-/* Dummy get_option_status for testing fake prot*/
-static int fakeprot_get_option_status(cp_opt_hdr_t *opt)
-{
-	/* if type > 2, reject */
-	if (opt->type > 2)
-	{
-		return CP_CREQ_REJ;
-	}
-	
-	/* Nak every packet with u16 payload < 10 */
-	uint8_t *p = (uint8_t*) opt;
-	printf("Value 0: %i\n", (*p));
-	printf("Value 1: %i\n", *(p+1));
-	uint16_t u16 = (*(p+sizeof(cp_opt_hdr_t))<<8) + *(p+sizeof(cp_opt_hdr_t)+1);
-	printf("Value type: %i\n", u16);
-	if (u16 > 10)
-	{
-		return CP_CREQ_NAK;
-	}
-	return CP_CREQ_ACK;
-
-}
 
 static void test_ppp_pkt_init(void)
 {
@@ -117,6 +95,23 @@ static void test_ppp_pkt_get_set_length(void)
 	printf("Finished length\n");
 }
 
+static void test_ppp_pkt_get_set_payload(void)
+{
+	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
+	uint8_t code = 0x01;
+	uint8_t id = 33;
+	uint16_t length = 8;
+	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
+	cp_pkt_t cp_pkt;
+	ppp_pkt_init(pkt, 8, &cp_pkt);
+
+	uint8_t new_payload[4]=['h','o','l','a'];
+	ppp_pkt_set_payload(&cp_pkt, new_payload, 4);
+
+	TEST_ASSERT_EQUAL_INT(0, memcmp(ppp_pkt_get_payload(&cp_pkt),new_payload,4));
+	printf("Finished length\n");
+}
+
 /* Not a test, but useful info*/
 static void test_show_structs_size(void)
 {
@@ -154,6 +149,7 @@ Test *tests_ppp_pkt_tests(void)
         new_TestFixture(test_ppp_pkt_get_set_length),
         new_TestFixture(test_show_structs_size),
         new_TestFixture(test_ppp_pkt_metadata),
+        new_TestFixture(test_ppp_pkt_get_set_payload),
     };
 
     EMB_UNIT_TESTCALLER(ppp_pkt_tests, NULL, NULL, fixtures);
