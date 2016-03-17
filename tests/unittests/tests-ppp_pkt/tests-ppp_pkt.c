@@ -64,14 +64,20 @@ static void test_ppp_pkt_init(void)
 
 static void test_ppp_pkt_get_set_code(void)
 {
+	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
+	uint8_t code = 0x01;
+	uint8_t id = 33;
+	uint16_t length = 8;
+	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
 	cp_pkt_t cp_pkt;
-	uint8_t code=33;
-	printf("I'm here at code\n");
-	ppp_pkt_set_code(&cp_pkt, code);
+	ppp_pkt_init(pkt, 8, &cp_pkt);
 
-	TEST_ASSERT_EQUAL_INT(code, cp_pkt.hdr->code);
-	TEST_ASSERT_EQUAL_INT(code, ppp_pkt_get_code(&cp_pkt));
-	printf("Finished code\n");
+	uint8_t new_code = 47
+
+	ppp_pkt_set_code(&cp_pkt, new_code);
+
+	TEST_ASSERT_EQUAL_INT(new_code, cp_pkt.hdr->code);
+	TEST_ASSERT_EQUAL_INT(new_code, ppp_pkt_get_code(&cp_pkt));
 }
 
 static void test_ppp_pkt_get_set_id(void)
@@ -115,9 +121,11 @@ Test *tests_ppp_pkt_tests(void)
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture(test_ppp_pkt_init),
         new_TestFixture(test_ppp_pkt_get_set_code),
+		#if 0
         new_TestFixture(test_ppp_pkt_get_set_id),
         new_TestFixture(test_ppp_pkt_get_set_length),
         new_TestFixture(test_ppp_pkt_get_set_payload),
+		#endif
     };
 
     EMB_UNIT_TESTCALLER(ppp_pkt_tests, NULL, NULL, fixtures);
