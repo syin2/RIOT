@@ -51,7 +51,8 @@ static void test_ppp_pkt_populate(void)
 	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
 	cp_pkt_t *cp_pkt;
 
-	printf("%i", (int)sizeof(cp_pkt_t));
+	printf("Size of header%i\n", (int)sizeof(cp_hdr_t));
+	printf("Size of pkt %i\n", (int)sizeof(cp_pkt_t));
 	cp_pkt = ppp_pkt_populate(pkt, 8);
 	
 
