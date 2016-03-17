@@ -67,16 +67,6 @@ typedef struct cp_pkt_metadata_t
 } cp_pkt_metadata_t;
 
 
-/* Status of Control Protocol options response */
-typedef struct opt_stack_t
-{
-	uint8_t status; /* Status of the set of CP opt response (ACK, NAK, REJ)*/
-	uint8_t num_opts; /* Number of options in response */
-	uint8_t content_flag;
-	cp_opt_hdr_t *opts;
-}opt_stack_t;
-
-
 int ppp_pkt_init(uint8_t *data, size_t length, cp_pkt_t *cp_pkt);
 /* Function for option tagging */
 /* Init metadata, tag options if necessary */
