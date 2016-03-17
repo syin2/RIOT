@@ -72,7 +72,7 @@ static void test_ppp_pkt_get_set_code(void)
 	cp_pkt_t cp_pkt;
 	ppp_pkt_init(pkt, 8, &cp_pkt);
 
-	uint8_t new_code = 47
+	uint8_t new_code = 47;
 
 	ppp_pkt_set_code(&cp_pkt, new_code);
 
@@ -82,38 +82,37 @@ static void test_ppp_pkt_get_set_code(void)
 
 static void test_ppp_pkt_get_set_id(void)
 {
+	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
+	uint8_t code = 0x01;
+	uint8_t id = 33;
+	uint16_t length = 8;
+	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
 	cp_pkt_t cp_pkt;
-	uint8_t id=13;
-	printf("I'm here at id\n");
-	ppp_pkt_set_id(&cp_pkt, id);
+	ppp_pkt_init(pkt, 8, &cp_pkt);
 
-	TEST_ASSERT_EQUAL_INT(id, cp_pkt.hdr->id);
-	TEST_ASSERT_EQUAL_INT(id, ppp_pkt_get_id(&cp_pkt));
-	printf("Finished id\n");
+	uint8_t new_id=13;
+	ppp_pkt_set_id(&cp_pkt, new_id);
+
+	TEST_ASSERT_EQUAL_INT(new_id, cp_pkt.hdr->id);
+	TEST_ASSERT_EQUAL_INT(new_id, ppp_pkt_get_id(&cp_pkt));
 }
 
 static void test_ppp_pkt_get_set_length(void)
 {
+	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
+	uint8_t code = 0x01;
+	uint8_t id = 33;
+	uint16_t length = 8;
+	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
 	cp_pkt_t cp_pkt;
-	uint16_t length=13;
-	printf("I'm here at length\n");
-	ppp_pkt_set_length(&cp_pkt, length);
+	ppp_pkt_init(pkt, 8, &cp_pkt);
 
-	TEST_ASSERT_EQUAL_INT(length, byteorder_ntohs(cp_pkt.hdr->length));
-	TEST_ASSERT_EQUAL_INT(length, ppp_pkt_get_length(&cp_pkt));
+	uint16_t new_length=13;
+	ppp_pkt_set_length(&cp_pkt, new_length);
+
+	TEST_ASSERT_EQUAL_INT(new_length, byteorder_ntohs(cp_pkt.hdr->length));
+	TEST_ASSERT_EQUAL_INT(new_length, ppp_pkt_get_length(&cp_pkt));
 	printf("Finished length\n");
-}
-
-static void test_ppp_pkt_get_set_payload(void)
-{
-	cp_pkt_t cp_pkt;
-	uint8_t payload[5] = {'h','e','l','l','o'};
-	printf("I'm here at payload\n");
-
-	memcpy(cp_pkt.payload, payload, 5);
-	uint8_t *p = cp_pkt.payload;
-	TEST_ASSERT_EQUAL_INT(0, memcmp(p,payload,5));
-	printf("Finished payload\n");
 }
 
 Test *tests_ppp_pkt_tests(void)
@@ -121,11 +120,8 @@ Test *tests_ppp_pkt_tests(void)
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture(test_ppp_pkt_init),
         new_TestFixture(test_ppp_pkt_get_set_code),
-		#if 0
         new_TestFixture(test_ppp_pkt_get_set_id),
         new_TestFixture(test_ppp_pkt_get_set_length),
-        new_TestFixture(test_ppp_pkt_get_set_payload),
-		#endif
     };
 
     EMB_UNIT_TESTCALLER(ppp_pkt_tests, NULL, NULL, fixtures);
