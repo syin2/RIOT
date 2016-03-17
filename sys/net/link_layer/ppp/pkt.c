@@ -56,6 +56,15 @@ void ppp_pkt_set_length(cp_pkt_t *cp_pkt, uint16_t length)
 	cp_pkt->hdr->length = byteorder_htons(length);
 }
 
+uint8_t * ppp_pkt_get_payload(cp_pkt_t *cp_pkt)
+{
+	return cp_pkt->payload;
+}
+int ppp_pkt_set_payload(cp_pkt_t *cp_pkt, uint8_t *data, size_t size)
+{
+	memcpy(cp_pkt->payload, data, (int) size);
+}
+
 /*TODO return error if populate went bad */
 int ppp_pkt_init(uint8_t *data, size_t length, cp_pkt_t *cp_pkt)
 {

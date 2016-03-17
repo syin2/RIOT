@@ -83,6 +83,8 @@ void ppp_pkt_set_id(cp_pkt_t *cp_pkt, uint8_t id);
 uint16_t ppp_pkt_get_length(cp_pkt_t *cp_pkt);
 void ppp_pkt_set_length(cp_pkt_t *cp_pkt, uint16_t length);
 int ppp_pkt_is_configure(cp_pkt_t *pkt);
+void ppp_pkt_get_payload(cp_pkt_t *cp_pkt)
+void ppp_pkt_set_payload(cp_pkt_t *cp_pkt, void *data, size_t size)
 
 
 
