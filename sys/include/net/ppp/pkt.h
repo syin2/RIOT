@@ -46,11 +46,9 @@ typedef struct __attribute__((packed))
 typedef struct cp_pkt_metadata_t
 {
 	cp_pkt_t *pkt; /* Pointer to received packet */
-	uint8_t opts_status_flag; /* In case of CP options*/
+	uint8_t opts_status_content; /* In case of CP options*/
 	opt_metadata_t tagged_opts[CPOPT_MAX_OPT];
-	uint8_t num_tagged_opt;
-	cp_pkt_t sent_ack;
-
+	uint8_t num_tagged_opts;
 } cp_pkt_metadata_t;
 
 
@@ -85,6 +83,7 @@ uint8_t ppp_pkt_get_id(cp_pkt_t *cp_pkt);
 void ppp_pkt_set_id(cp_pkt_t *cp_pkt, uint8_t id);
 uint16_t ppp_pkt_get_length(cp_pkt_t *cp_pkt);
 void ppp_pkt_set_length(cp_pkt_t *cp_pkt, uint16_t length);
+int ppp_pkt_is_configure(cp_pkt_t *pkt);
 
 
 

@@ -36,62 +36,8 @@
 #include <inttypes.h>
 #endif
 
-int ppp_cp_optchain_are_equal(cp_opt_t *o1, cp_opt_t *o2)
-{
-	if (o1->type != o2->type || o1->status != o2->status || o1->p_size != o2->p_size || memcmp(o1->payload,
-	o2->payload,o1->p_size)){
-		return false;
-	}
-	return true;
-}
 
 
-int populate_opt_metadata(ppp_cp_t *cp)
-
-	cp_pkt_t *pkt=cp->metadata.pkt;
-	uint16_t length = ppp_pkt_get_length(pkt);
-	uint16_t cursor=0;
-	uint8_t flag=0;
-
-	cp_opt_t *opt;
-	opt_metadata_t opt_tag;
-	uint8_t *payload = pkt->payload;
-	uint8_t status;
-
-	cp_opt **previous_next_pointer=NULL;
-
-	/* Iterate over options */
-	while(cursor < length)
-	{
-		opt = (cp_opt_t*) (payload+cursor);
-		status = cp->get_option_status(opt);
-		switch(status)
-		{
-			case CP_CREQ_ACK:
-				flag |= OPT_HAS_ACK;
-				break;
-			case CP_CREQ_NAK:
-				flag |= OPT_HAS_NAK;
-				break;
-			case CP_CREQ_REJ:
-				flag |= OPT_HAS_REJ;
-				break;
-		}
-		cursor += opt->length;
-		/*Tag option */
-		if (previous_next_pointer != NULL)
-		{
-			*previous_next_pointer = &opt;
-		}
-		opt_tag.opt = opt;
-		opt_tag.status = status;
-		previous_next_pointer = &(opt_tag.next);
-		cp->metadata.tagget_opts[cp->metadata.num_tagged_opts] = opt_tag;
-	}
-	/* Fill metadata */
-	cp->metadata.opt_status_flag = flag;
-
-}
 static int _handle_cp_rcr(ppp_cp_t *l_lcp, cp_pkt_t *pkt)
 {
 	/* Populate opt metadata */
