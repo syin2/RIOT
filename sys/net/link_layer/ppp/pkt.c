@@ -68,15 +68,12 @@ void ppp_pkt_set_length(cp_pkt_t *cp_pkt, uint16_t length)
 /*TODO return error if populate went bad */
 cp_pkt_t *ppp_pkt_populate(uint8_t *data, size_t length)
 {
-	cp_pkt_t *cp_pkt = (cp_pkt_t*) data;
+	cp_pkt_t cp_pkt;
+	cp_hdr_t *hdr = (cp_hdr_t*) data;
+	cp_pkt.hdr = hdr;
+	cp_pkt.payload = data+sizeof(cp_hdr_t);
 
-	int pkt_length = byteorder_ntohs(cp_pkt->hdr.length);
-	/*TODO Padding... */
-	if (pkt_length != (int)length) {
-		return NULL;
-	}
-
-	return 0;
+	return &cp_pkt;
 }
 
 int ppp_pkt_is_configure(cp_pkt_t *pkt)
