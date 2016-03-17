@@ -105,7 +105,7 @@ static void test_ppp_pkt_get_set_payload(void)
 	cp_pkt_t cp_pkt;
 	ppp_pkt_init(pkt, 8, &cp_pkt);
 
-	uint8_t new_payload[4]=['h','o','l','a'];
+	uint8_t new_payload[4]={'h','o','l','a'};
 	ppp_pkt_set_payload(&cp_pkt, new_payload, 4);
 
 	TEST_ASSERT_EQUAL_INT(0, memcmp(ppp_pkt_get_payload(&cp_pkt),new_payload,4));
