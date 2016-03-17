@@ -42,9 +42,6 @@
 
 #define GNRC_PPP_MSG_QUEUE_SIZE (20)
 
-#define CP_CREQ_ACK (0)
-#define CP_CREQ_NAK (1)
-#define CP_CREQ_REJ (2)
 
 
 #define MAX_CP_OPTIONS (20)
@@ -58,9 +55,6 @@
 #define PPP_CP_TERM_ACK (6)
 #define PPP_CP_SER (7)
 
-#define OPT_HAS_ACK (1)
-#define OPT_HAS_NAK (2)
-#define OPT_HAS_REJ (4)
 
 #define RC_SEL_CONF (0)
 #define RC_SEL_TERM (1)
@@ -70,38 +64,7 @@
 #define CP_OPT_MAX (20)
 
 
-/*Control Protocol option*/
-typedef struct __attribute__((packed)){
-	uint8_t type;
-	uint8_t length;
-	uint8_t *payload;
-} cp_opt_t;
 
-/* Status of Control Protocol options response */
-typedef struct opt_stack_t
-{
-	uint8_t status; /* Status of the set of CP opt response (ACK, NAK, REJ)*/
-	uint8_t num_opts; /* Number of options in response */
-	uint8_t content_flag;
-	cp_opt_t *opts;
-}opt_stack_t;
-
-typedef struct opt_metadada_t
-{
-	cp_opt_t *opt;
-	uint8_t status;
-	cp_opt_t *next;
-} opt_metadata_t
-
-typedef struct cp_pkt_metadata_t
-{
-	cp_pkt_t *pkt; /* Pointer to received packet */
-	uint8_t opts_status_flag; /* In case of CP options*/
-	opt_metadata_t tagged_opts[CPOPT_MAX_OPT];
-	uint8_t num_tagged_opt;
-	cp_pkt_t sent_ack;
-
-} cp_pkt_metadata_t;
 
 /* Control Protocol struct*/
 typedef struct ppp_cp_t{
@@ -151,7 +114,4 @@ typedef struct ppp_cp_t{
 
 } ppp_cp_t;
 
-int ppp_cp_populate_options(opt_stack *o_stack, uint8_t *payload, size_t p_size);
-int ppp_cp_opts_are_equal(cp_opt_t *o1, cp_opt_t *o2);
-int ppp_cp_optstacks_are_equal(opt_stack_t *s1, opt_stack_t *s2);
 void handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt);
