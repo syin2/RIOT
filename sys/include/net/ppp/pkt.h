@@ -53,7 +53,7 @@ typedef struct opt_metadada_t
 /* A PPP packet*/
 typedef struct __attribute__((packed))
 {
-	cp_hdr_t hdr;
+	cp_hdr_t *hdr;
 	uint8_t *payload;
 } cp_pkt_t;
 
