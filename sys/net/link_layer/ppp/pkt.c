@@ -60,7 +60,7 @@ uint8_t * ppp_pkt_get_payload(cp_pkt_t *cp_pkt)
 {
 	return cp_pkt->payload;
 }
-int ppp_pkt_set_payload(cp_pkt_t *cp_pkt, uint8_t *data, size_t size)
+void ppp_pkt_set_payload(cp_pkt_t *cp_pkt, uint8_t *data, size_t size)
 {
 	memcpy(cp_pkt->payload, data, (int) size);
 }
