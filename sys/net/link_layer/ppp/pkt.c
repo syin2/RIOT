@@ -76,6 +76,7 @@ int ppp_pkt_is_configure(cp_pkt_t *pkt)
 void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_opt_status)(cp_opt_hdr_t*))
 {
 	uint8_t code = ppp_pkt_get_code(pkt);
+	metadata->pkt = pkt;
 	metadata->opts_status_content=0;
 
 	cp_opt_hdr_t *curr_opt;
