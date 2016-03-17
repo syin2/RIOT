@@ -42,7 +42,7 @@ static int fakeprot_get_option_status(cp_opt_t *opt)
 }
 #endif
 
-static void test_ppp_pkt_populate(void)
+static void test_ppp_pkt_init(void)
 {
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
 	uint8_t code = 0x01;
@@ -51,7 +51,7 @@ static void test_ppp_pkt_populate(void)
 	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
 	cp_pkt_t cp_pkt;
 
-	ppp_pkt_populate(pkt, 8, &cp_pkt);
+	ppp_pkt_init(pkt, 8, &cp_pkt);
 	
 
 	TEST_ASSERT_EQUAL_INT(code, cp_pkt.hdr->code);
@@ -62,51 +62,62 @@ static void test_ppp_pkt_populate(void)
 	TEST_ASSERT_EQUAL_INT(0,memcmp(pkt+4,cp_pkt.payload,4));
 }
 
-#if 0
 static void test_ppp_pkt_get_set_code(void)
 {
 	cp_pkt_t cp_pkt;
 	uint8_t code=33;
+	printf("I'm here at code\n");
 	ppp_pkt_set_code(&cp_pkt, code);
 
-	TEST_ASSERT_EQUAL_INT(code, cp_pkt.hdr.code);
+	TEST_ASSERT_EQUAL_INT(code, cp_pkt.hdr->code);
 	TEST_ASSERT_EQUAL_INT(code, ppp_pkt_get_code(&cp_pkt));
+	printf("Finished code\n");
 }
 
 static void test_ppp_pkt_get_set_id(void)
 {
 	cp_pkt_t cp_pkt;
 	uint8_t id=13;
+	printf("I'm here at id\n");
 	ppp_pkt_set_id(&cp_pkt, id);
 
-	TEST_ASSERT_EQUAL_INT(id, cp_pkt.hdr.id);
+	TEST_ASSERT_EQUAL_INT(id, cp_pkt.hdr->id);
 	TEST_ASSERT_EQUAL_INT(id, ppp_pkt_get_id(&cp_pkt));
+	printf("Finished id\n");
 }
 
 static void test_ppp_pkt_get_set_length(void)
 {
 	cp_pkt_t cp_pkt;
 	uint16_t length=13;
+	printf("I'm here at length\n");
 	ppp_pkt_set_length(&cp_pkt, length);
 
-	TEST_ASSERT_EQUAL_INT(length, byteorder_ntohs(cp_pkt.hdr.length));
+	TEST_ASSERT_EQUAL_INT(length, byteorder_ntohs(cp_pkt.hdr->length));
 	TEST_ASSERT_EQUAL_INT(length, ppp_pkt_get_length(&cp_pkt));
+	printf("Finished length\n");
 }
 
 static void test_ppp_pkt_get_set_payload(void)
 {
 	cp_pkt_t cp_pkt;
 	uint8_t payload[5] = {'h','e','l','l','o'};
+	printf("I'm here at payload\n");
 
 	memcpy(cp_pkt.payload, payload, 5);
 	uint8_t *p = cp_pkt.payload;
 	TEST_ASSERT_EQUAL_INT(0, memcmp(p,payload,5));
+	printf("Finished payload\n");
 }
-#endif
+
 Test *tests_ppp_pkt_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
-        new_TestFixture(test_ppp_pkt_populate),
+        new_TestFixture(test_ppp_pkt_init),
+        new_TestFixture(test_ppp_pkt_get_set_code),
+        new_TestFixture(test_ppp_pkt_get_set_id),
+        new_TestFixture(test_ppp_pkt_get_set_length),
+        new_TestFixture(test_ppp_pkt_get_set_payload),
     };
 
     EMB_UNIT_TESTCALLER(ppp_pkt_tests, NULL, NULL, fixtures);

@@ -66,7 +66,7 @@ void ppp_pkt_set_length(cp_pkt_t *cp_pkt, uint16_t length)
 }
 
 /*TODO return error if populate went bad */
-int ppp_pkt_populate(uint8_t *data, size_t length, cp_pkt_t *cp_pkt)
+int ppp_pkt_init(uint8_t *data, size_t length, cp_pkt_t *cp_pkt)
 {
 	cp_hdr_t *hdr = (cp_hdr_t*) data;
 	cp_pkt->hdr = hdr;
