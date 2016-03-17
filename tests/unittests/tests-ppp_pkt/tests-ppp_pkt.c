@@ -22,6 +22,28 @@
 #include "tests-ppp_pkt.h"
 #include "net/ppp/pkt.h"
 
+/* Dummy get_option_status for testing fake prot*/
+static int fakeprot_get_option_status(cp_opt_hdr_t *opt)
+{
+	/* if type > 2, reject */
+	if (opt->type > 2)
+	{
+		return CP_CREQ_REJ;
+	}
+	
+	/* Nak every packet with u16 payload < 10 */
+	uint8_t *p = (uint8_t*) opt;
+	printf("Value 0: %i\n", (*p));
+	printf("Value 1: %i\n", *(p+1));
+	uint16_t u16 = (*(p+sizeof(cp_opt_hdr_t))<<8) + *(p+sizeof(cp_opt_hdr_t)+1);
+	printf("Value type: %i\n", u16);
+	if (u16 > 10)
+	{
+		return CP_CREQ_NAK;
+	}
+	return CP_CREQ_ACK;
+
+}
 static void test_ppp_pkt_init(void)
 {
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
