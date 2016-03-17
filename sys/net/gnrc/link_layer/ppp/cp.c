@@ -40,11 +40,7 @@
 
 static int _handle_cp_rcr(ppp_cp_t *l_lcp, cp_pkt_t *pkt)
 {
-	/* Populate opt metadata */
-	populate_opt_metadata(cp);
-
-	/* At this point, we have the responses and type of responses. Process each one*/
-	if (pkt->opts->opt_status_flag  & (OPT_HAS_NAK | OPT_HAS_REJ))
+	if (cp->metadata->opts_status_content  & (OPT_HAS_NAK | OPT_HAS_REJ))
 	{
 		l_lcp->event = E_RCRm;
 	}
@@ -110,7 +106,8 @@ static int _handle_cp_code_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 void handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
 	cp->metadata.pkt = pkt;
-	/*LCP type*/
+	ppp_pkt_gen_metadata(cp->metadata, pkt, cp->get_opt_status);
+
 	int type = ppp_pkt_get_code(pkt);
 	
 	switch(type){
