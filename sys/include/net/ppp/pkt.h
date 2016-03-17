@@ -42,11 +42,11 @@ typedef struct __attribute__((packed)){
 	uint8_t type;
 	uint8_t length;
 	uint8_t *payload;
-} cp_opt_t;
+} cp_opt_hdr_t;
 
 typedef struct opt_metadada_t
 {
-	cp_opt_t *opt;
+	cp_opt_hdr_t *opt;
 	uint8_t status;
 } opt_metadata_t;
 
@@ -73,7 +73,7 @@ typedef struct opt_stack_t
 	uint8_t status; /* Status of the set of CP opt response (ACK, NAK, REJ)*/
 	uint8_t num_opts; /* Number of options in response */
 	uint8_t content_flag;
-	cp_opt_t *opts;
+	cp_opt_hdr_t *opts;
 }opt_stack_t;
 
 
@@ -85,7 +85,7 @@ void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt);
 void _ppp_pkt_metadata_tag_cr_opts(cp_pkt_metadata_t);
 
 int _ppp_cr_populate_options(uint8_t *payload, size_t p_size);
-int ppp_cr_opts_are_equal(cp_opt_t *o1, cp_opt_t *o2);
+int ppp_cr_opts_are_equal(cp_opt_hdr_t *o1, cp_opt_hdr_t *o2);
 
 uint8_t ppp_pkt_get_code(cp_pkt_t *cp_pkt);
 void ppp_pkt_set_code(cp_pkt_t *cp_pkt, uint8_t code);

@@ -26,7 +26,7 @@
 
 
 
-int ppp_cp_optchain_are_equal(cp_opt_t *o1, cp_opt_t *o2)
+int ppp_cp_optchain_are_equal(cp_opt_hdr_t *o1, cp_opt_hdr_t *o2)
 {
 	if (o1->type != o2->type || o1->length!= o2->length || memcmp(o1->payload,
 	o2->payload,o1->length)){
@@ -82,12 +82,12 @@ int ppp_pkt_is_configure(cp_pkt_t *pkt)
 	return (code == PPP_CONF_REQ || code == PPP_CONF_ACK || code == PPP_CONF_NAK || code == PPP_CONF_REJ);
 }
 
-void ppp_pkt_get_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_opt_status)(cp_opt_t*))
+void ppp_pkt_get_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_opt_status)(cp_opt_hdr_t*))
 {
 	uint8_t code = ppp_pkt_get_code(pkt);
 	metadata->opts_status_content=0;
 
-	cp_opt_t *curr_opt;
+	cp_opt_hdr_t *curr_opt;
 	uint16_t curr_status;
 	uint16_t cursor = 0;
 
@@ -97,7 +97,7 @@ void ppp_pkt_get_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_
 	if (code == PPP_CONF_REQ)
 	{
 		/* Iterate through options */
-		curr_opt = (cp_opt_t*) (pkt->payload+cursor);
+		curr_opt = (cp_opt_hdr_t*) (pkt->payload+cursor);
 		curr_status = get_opt_status(curr_opt);
 		switch(curr_status)
 		{
