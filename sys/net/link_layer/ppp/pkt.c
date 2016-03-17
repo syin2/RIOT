@@ -37,43 +37,42 @@ int ppp_cp_optchain_are_equal(cp_opt_t *o1, cp_opt_t *o2)
 
 uint8_t ppp_pkt_get_code(cp_pkt_t *cp_pkt)
 {
-	return cp_pkt->hdr.code;
+	return cp_pkt->hdr->code;
 }
 
 void ppp_pkt_set_code(cp_pkt_t *cp_pkt, uint8_t code)
 {
-	cp_pkt->hdr.code = code;
+	cp_pkt->hdr->code = code;
 }
 
 uint8_t ppp_pkt_get_id(cp_pkt_t *cp_pkt)
 {
-	return cp_pkt->hdr.id;
+	return cp_pkt->hdr->id;
 }
 
 void ppp_pkt_set_id(cp_pkt_t *cp_pkt, uint8_t id)
 {
-	cp_pkt->hdr.id = id;
+	cp_pkt->hdr->id = id;
 }
 
 uint16_t ppp_pkt_get_length(cp_pkt_t *cp_pkt)
 {
-	return byteorder_ntohs(cp_pkt->hdr.length);
+	return byteorder_ntohs(cp_pkt->hdr->length);
 }
 
 void ppp_pkt_set_length(cp_pkt_t *cp_pkt, uint16_t length)
 {
-	cp_pkt->hdr.length = byteorder_htons(length);
+	cp_pkt->hdr->length = byteorder_htons(length);
 }
 
 /*TODO return error if populate went bad */
-cp_pkt_t *ppp_pkt_populate(uint8_t *data, size_t length)
+int ppp_pkt_populate(uint8_t *data, size_t length, cp_pkt_t *cp_pkt)
 {
-	cp_pkt_t cp_pkt;
 	cp_hdr_t *hdr = (cp_hdr_t*) data;
-	cp_pkt.hdr = hdr;
-	cp_pkt.payload = data+sizeof(cp_hdr_t);
+	cp_pkt->hdr = hdr;
+	cp_pkt->payload = data+sizeof(cp_hdr_t);
 
-	return &cp_pkt;
+	return 0;
 }
 
 int ppp_pkt_is_configure(cp_pkt_t *pkt)
