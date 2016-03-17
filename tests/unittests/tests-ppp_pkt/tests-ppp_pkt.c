@@ -115,6 +115,16 @@ static void test_ppp_pkt_get_set_length(void)
 	printf("Finished length\n");
 }
 
+/* Not a test, but useful info*/
+static void test_show_structs_size(void)
+{
+	printf("Size of cp_pkt_t: %i\n",(int) sizeof(cp_pkt_t));
+	printf("Size of cp_hdr_t: %i\n",(int) sizeof(cp_hdr_t));
+	printf("Size of cp_opt_hdr_t: %i\n",(int) sizeof(cp_opt_hdr_t));
+	printf("Size of opt_metadata_t: %i\n",(int) sizeof(opt_metadata_t));
+	printf("Size of cp_pkt_metadata_t: %i\n",(int) sizeof(cp_pkt_metadata_t));
+}
+
 Test *tests_ppp_pkt_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
@@ -122,6 +132,7 @@ Test *tests_ppp_pkt_tests(void)
         new_TestFixture(test_ppp_pkt_get_set_code),
         new_TestFixture(test_ppp_pkt_get_set_id),
         new_TestFixture(test_ppp_pkt_get_set_length),
+        new_TestFixture(test_show_structs_size),
     };
 
     EMB_UNIT_TESTCALLER(ppp_pkt_tests, NULL, NULL, fixtures);
