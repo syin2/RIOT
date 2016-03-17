@@ -41,7 +41,6 @@ typedef struct __attribute__((packed)){
 typedef struct __attribute__((packed)){
 	uint8_t type;
 	uint8_t length;
-	uint8_t *payload;
 } cp_opt_hdr_t;
 
 typedef struct opt_metadada_t
@@ -70,7 +69,7 @@ typedef struct cp_pkt_metadata_t
 int ppp_pkt_init(uint8_t *data, size_t length, cp_pkt_t *cp_pkt);
 /* Function for option tagging */
 /* Init metadata, tag options if necessary */
-void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt);
+void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_opt_status)(cp_opt_hdr_t*));
 /* Tag each options with corresponding status, add info to metadata*/
 void _ppp_pkt_metadata_tag_cr_opts(cp_pkt_metadata_t);
 
