@@ -22,64 +22,19 @@
 
 #include "net/ppp/pkt.h"
 #include "byteorder.h"
+#include <errno.h>
 
 
 
 int ppp_cp_optchain_are_equal(cp_opt_t *o1, cp_opt_t *o2)
 {
-	if (o1->type != o2->type || o1->status != o2->status || o1->p_size != o2->p_size || memcmp(o1->payload,
-	o2->payload,o1->p_size)){
+	if (o1->type != o2->type || o1->length!= o2->length || memcmp(o1->payload,
+	o2->payload,o1->length)){
 		return false;
 	}
 	return true;
 }
 
-int populate_opt_metadata()
-
-	cp_pkt_t *pkt=cp->metadata.pkt;
-	uint16_t length = ppp_pkt_get_length(pkt);
-	uint16_t cursor=0;
-	uint8_t flag=0;
-
-	cp_opt_t *opt;
-	opt_metadata_t opt_tag;
-	uint8_t *payload = pkt->payload;
-	uint8_t status;
-
-	cp_opt **previous_next_pointer=NULL;
-
-	/* Iterate over options */
-	while(cursor < length)
-	{
-		opt = (cp_opt_t*) (payload+cursor);
-		status = cp->get_option_status(opt);
-		switch(status)
-		{
-			case CP_CREQ_ACK:
-				flag |= OPT_HAS_ACK;
-				break;
-			case CP_CREQ_NAK:
-				flag |= OPT_HAS_NAK;
-				break;
-			case CP_CREQ_REJ:
-				flag |= OPT_HAS_REJ;
-				break;
-		}
-		cursor += opt->length;
-		/*Tag option */
-		if (previous_next_pointer != NULL)
-		{
-			*previous_next_pointer = &opt;
-		}
-		opt_tag.opt = opt;
-		opt_tag.status = status;
-		previous_next_pointer = &(opt_tag.next);
-		cp->metadata.tagget_opts[cp->metadata.num_tagged_opts] = opt_tag;
-	}
-	/* Fill metadata */
-	cp->metadata.opt_status_flag = flag;
-
-}
 uint8_t ppp_pkt_get_code(cp_pkt_t *cp_pkt)
 {
 	return cp_pkt->hdr.code;
@@ -111,19 +66,16 @@ void ppp_pkt_set_length(cp_pkt_t *cp_pkt, uint16_t length)
 }
 
 /*TODO return error if populate went bad */
-int ppp_pkt_populate(uint8_t *data, size_t length)
+cp_pkt_t *ppp_pkt_populate(uint8_t *data, size_t length)
 {
-	cp_hdr_t *hdr = (cp_hdr_t*) data;
-	cp_pkt->hdr = *hdr;
+	cp_pkt_t *cp_pkt = (cp_pkt_t*) data;
 
-	int pkt_length = byteorder_ntohs(hdr->length);
+	int pkt_length = byteorder_ntohs(cp_pkt->hdr.length);
 	/*TODO Padding... */
 	if (pkt_length != (int)length) {
-		return EBADMSG;
+		return NULL;
 	}
 
-	memcpy(cp_pkt->payload, data+sizeof(cp_hdr_t), pkt_length-sizeof(cp_hdr_t));
-	/* Copy payload */
 	return 0;
 }
 
@@ -133,10 +85,10 @@ int ppp_pkt_is_configure(cp_pkt_t *pkt)
 	return (code == PPP_CONF_REQ || code == PPP_CONF_ACK || code == PPP_CONF_NAK || code == PPP_CONF_REJ);
 }
 
-void ppp_pkt_get_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_opt_status)(cp_opt*))
+void ppp_pkt_get_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_opt_status)(cp_opt_t*))
 {
 	uint8_t code = ppp_pkt_get_code(pkt);
-	metadata->opt_status_content=0;
+	metadata->opts_status_content=0;
 
 	cp_opt_t *curr_opt;
 	uint16_t curr_status;
@@ -153,16 +105,16 @@ void ppp_pkt_get_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_
 		switch(curr_status)
 		{
 			case CP_CREQ_ACK:
-				metadata->opt_status_content |= OPT_HAS_ACK;
+				metadata->opts_status_content |= OPT_HAS_ACK;
 				break;
 			case CP_CREQ_NAK:
-				metadata->opt_status_content |= OPT_HAS_NAK;
+				metadata->opts_status_content |= OPT_HAS_NAK;
 				break;
 			case CP_CREQ_REJ:
-				metadata->opt_status_content |= OPT_HAS_REJ;
+				metadata->opts_status_content |= OPT_HAS_REJ;
 				break;
 		}
-		metadata->tagged_opts[num_tagged].status = curr_status
+		metadata->tagged_opts[num_tagged].status = curr_status;
 		metadata->tagged_opts[num_tagged].opt = curr_opt;
 		cursor+=curr_opt->length;
 		num_tagged+=1;

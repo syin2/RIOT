@@ -12,6 +12,7 @@
 extern "C" {
 #endif
 #define PPP_PAYLOAD_SIZE (200)
+#define CPOPT_MAX_OPT (25)
 
 #define OPT_HAS_ACK (1)
 #define OPT_HAS_NAK (2)
@@ -20,6 +21,14 @@ extern "C" {
 #define CP_CREQ_ACK (0)
 #define CP_CREQ_NAK (1)
 #define CP_CREQ_REJ (2)
+
+#define PPP_CONF_REQ (1)
+#define PPP_CONF_ACK (2)
+#define PPP_CONF_NAK (3)
+#define PPP_CONF_REJ (4)
+#define PPP_CP_TERM_REQUEST (5)
+#define PPP_CP_TERM_ACK (6)
+#define PPP_CP_SER (7)
 
 /*  PPP pkt header struct */
 typedef struct __attribute__((packed)){
@@ -34,6 +43,12 @@ typedef struct __attribute__((packed)){
 	uint8_t length;
 	uint8_t *payload;
 } cp_opt_t;
+
+typedef struct opt_metadada_t
+{
+	cp_opt_t *opt;
+	uint8_t status;
+} opt_metadata_t;
 
 /* A PPP packet*/
 typedef struct __attribute__((packed))
@@ -61,13 +76,8 @@ typedef struct opt_stack_t
 	cp_opt_t *opts;
 }opt_stack_t;
 
-typedef struct opt_metadada_t
-{
-	cp_opt_t *opt;
-	uint8_t status;
-} opt_metadata_t
 
-int ppp_pkt_populate(uint8_t *data, size_t length);
+cp_pkt_t *ppp_pkt_populate(uint8_t *data, size_t length);
 /* Function for option tagging */
 /* Init metadata, tag options if necessary */
 void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt);

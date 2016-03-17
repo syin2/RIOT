@@ -47,13 +47,6 @@
 #define MAX_CP_OPTIONS (20)
 #define OPT_PAYLOAD_SIZE (20)
 
-#define PPP_CP_REQUEST_CONFIGURE (1)
-#define PPP_CP_REQUEST_ACK (2)
-#define PPP_CP_REQUEST_NAK (3)
-#define PPP_CP_REQUEST_REJ (4)
-#define PPP_CP_TERM_REQUEST (5)
-#define PPP_CP_TERM_ACK (6)
-#define PPP_CP_SER (7)
 
 
 #define RC_SEL_CONF (0)
