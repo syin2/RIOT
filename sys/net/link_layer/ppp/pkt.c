@@ -72,6 +72,7 @@ int ppp_pkt_populate(uint8_t *data, size_t length, cp_pkt_t *cp_pkt)
 	cp_pkt->hdr = hdr;
 	cp_pkt->payload = data+sizeof(cp_hdr_t);
 
+	(void) length;
 	return 0;
 }
 

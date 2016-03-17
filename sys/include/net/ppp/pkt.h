@@ -77,7 +77,7 @@ typedef struct opt_stack_t
 }opt_stack_t;
 
 
-int ppp_pkt_populate(uint8_t *data, size_t length, cp_pt_t *cp_pkt);
+int ppp_pkt_populate(uint8_t *data, size_t length, cp_pkt_t *cp_pkt);
 /* Function for option tagging */
 /* Init metadata, tag options if necessary */
 void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt);
