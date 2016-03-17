@@ -81,24 +81,6 @@ static void test_gnrc_ppp_lcp_recv_cr_rej(void)
 
 }
 
-/* Dummy get_option_status for testing fake prot*/
-static int *fakeprot_get_option_status(cp_opt_t *opt)
-{
-	/* if type < 2, reject */
-	if (opt->type < 2)
-	{
-		return CP_CREQ_REJ;
-	}
-	
-	/* Nak every packet with u16 payload < 10 */
-	uint16_t u16 = *(opt->payload)<<8 + *(opt->payload+1)
-	if (u16 < 10)
-	{
-		return CP_CREQ_NAK;
-	}
-	return CP_CREQ_ACK;
-
-}
 static void test_gnrc_ppp_lcp_recv_cr_ack(void)
 {
 	/*Make fake ctrl prot*/
