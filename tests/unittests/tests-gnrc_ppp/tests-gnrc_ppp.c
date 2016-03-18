@@ -118,12 +118,30 @@ static void test_ppp_pkt_metadata(void)
 	TEST_ASSERT_EQUAL_INT(1, metadata.opts_status_content & OPT_HAS_ACK);
 }
 
+static void test_gnrc_ppp_lcp_recv_ack(void)
+{
+	/*Make fake ctrl prot*/
+	ppp_cp_t fake_prot;
+	fake_prot.get_option_status = &fakeprot_get_option_status;
+
+	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
+	uint8_t good_pkt[8] = {0x02,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
+	cp_pkt_t cp_pkt;
+	ppp_pkt_init(good_pkt, 8, &cp_pkt);
+
+	handle_cp_pkt(&fake_prot, &cp_pkt);
+
+	/* In this case, we are expecting an E_RCA*/
+	TEST_ASSERT_EQUAL_INT(E_RCA, fake_prot.event);
+}
+
 Test *tests_gnrc_ppp_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture(test_gnrc_ppp_lcp_recv_cr_ack),
         new_TestFixture(test_gnrc_ppp_lcp_recv_cr_nak),
         new_TestFixture(test_gnrc_ppp_lcp_recv_cr_rej),
+        new_TestFixture(test_gnrc_ppp_lcp_recv_ack),
         new_TestFixture(test_ppp_pkt_metadata),
     };
 
