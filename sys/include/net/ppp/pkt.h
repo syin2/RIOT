@@ -37,17 +37,6 @@ typedef struct __attribute__((packed)){
 	network_uint16_t length;
 } cp_hdr_t;
 
-/*Control Protocol option*/
-typedef struct __attribute__((packed)){
-	uint8_t type;
-	uint8_t length;
-} cp_opt_hdr_t;
-
-typedef struct opt_metadada_t
-{
-	cp_opt_hdr_t *opt;
-	uint8_t status;
-} opt_metadata_t;
 
 /* A PPP packet*/
 typedef struct __attribute__((packed))
@@ -57,21 +46,9 @@ typedef struct __attribute__((packed))
 } cp_pkt_t;
 
 
-typedef struct cp_pkt_metadata_t
-{
-	cp_pkt_t *pkt; /* Pointer to received packet */
-	uint8_t opts_status_content; /* In case of CP options*/
-	opt_metadata_t tagged_opts[CPOPT_MAX_OPT];
-	uint8_t num_tagged_opts;
-} cp_pkt_metadata_t;
 
 
 int ppp_pkt_init(uint8_t *data, size_t length, cp_pkt_t *cp_pkt);
-/* Function for option tagging */
-/* Init metadata, tag options if necessary */
-void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_opt_status)(cp_opt_hdr_t*));
-/* Tag each options with corresponding status, add info to metadata*/
-void _ppp_pkt_metadata_tag_cr_opts(cp_pkt_metadata_t);
 
 int _ppp_cr_populate_options(uint8_t *payload, size_t p_size);
 int ppp_cr_opts_are_equal(cp_opt_hdr_t *o1, cp_opt_hdr_t *o2);
