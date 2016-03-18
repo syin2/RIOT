@@ -22,28 +22,6 @@
 #include "tests-ppp_pkt.h"
 #include "net/ppp/pkt.h"
 
-/* Dummy get_option_status for testing fake prot*/
-static int fakeprot_get_option_status(cp_opt_hdr_t *opt)
-{
-	/* if type > 2, reject */
-	if (opt->type > 2)
-	{
-		return CP_CREQ_REJ;
-	}
-	
-	/* Nak every packet with u16 payload < 10 */
-	uint8_t *p = (uint8_t*) opt;
-	printf("Value 0: %i\n", (*p));
-	printf("Value 1: %i\n", *(p+1));
-	uint16_t u16 = (*(p+sizeof(cp_opt_hdr_t))<<8) + *(p+sizeof(cp_opt_hdr_t)+1);
-	printf("Value type: %i\n", u16);
-	if (u16 > 10)
-	{
-		return CP_CREQ_NAK;
-	}
-	return CP_CREQ_ACK;
-
-}
 static void test_ppp_pkt_init(void)
 {
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
@@ -134,16 +112,6 @@ static void test_ppp_pkt_get_set_payload(void)
 	printf("Finished length\n");
 }
 
-/* Not a test, but useful info*/
-static void test_show_structs_size(void)
-{
-	printf("Size of cp_pkt_t: %i\n",(int) sizeof(cp_pkt_t));
-	printf("Size of cp_hdr_t: %i\n",(int) sizeof(cp_hdr_t));
-	printf("Size of cp_opt_hdr_t: %i\n",(int) sizeof(cp_opt_hdr_t));
-	printf("Size of opt_metadata_t: %i\n",(int) sizeof(opt_metadata_t));
-	printf("Size of cp_pkt_metadata_t: %i\n",(int) sizeof(cp_pkt_metadata_t));
-}
-
 
 Test *tests_ppp_pkt_tests(void)
 {
@@ -152,7 +120,6 @@ Test *tests_ppp_pkt_tests(void)
         new_TestFixture(test_ppp_pkt_get_set_code),
         new_TestFixture(test_ppp_pkt_get_set_id),
         new_TestFixture(test_ppp_pkt_get_set_length),
-        new_TestFixture(test_show_structs_size),
         new_TestFixture(test_ppp_pkt_get_set_payload),
     };
 
