@@ -144,23 +144,6 @@ static void test_show_structs_size(void)
 	printf("Size of cp_pkt_metadata_t: %i\n",(int) sizeof(cp_pkt_metadata_t));
 }
 
-static void test_ppp_pkt_metadata(void)
-{
-	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
-	uint8_t code = 0x01;
-	uint8_t id = 33;
-	uint16_t length = 8;
-	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
-	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, 8, &cp_pkt);
-
-	cp_pkt_metadata_t metadata;
-	ppp_pkt_gen_metadata(&metadata, &cp_pkt, &fakeprot_get_option_status);
-
-	TEST_ASSERT_EQUAL_INT(1, metadata.num_tagged_opts);
-	/* In this case, data should have ACK flag*/
-	TEST_ASSERT_EQUAL_INT(1, metadata.opts_status_content & OPT_HAS_ACK);
-}
 
 Test *tests_ppp_pkt_tests(void)
 {
@@ -170,7 +153,6 @@ Test *tests_ppp_pkt_tests(void)
         new_TestFixture(test_ppp_pkt_get_set_id),
         new_TestFixture(test_ppp_pkt_get_set_length),
         new_TestFixture(test_show_structs_size),
-        new_TestFixture(test_ppp_pkt_metadata),
         new_TestFixture(test_ppp_pkt_get_set_payload),
     };
 

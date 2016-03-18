@@ -59,11 +59,29 @@ static void test_gnrc_ppp_lcp_recv_cr_ack(void)
 
 }
 
+static void test_ppp_pkt_metadata(void)
+{
+	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
+	uint8_t code = 0x01;
+	uint8_t id = 33;
+	uint16_t length = 8;
+	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
+	cp_pkt_t cp_pkt;
+	ppp_pkt_init(pkt, 8, &cp_pkt);
+
+	cp_pkt_metadata_t metadata;
+	ppp_pkt_gen_metadata(&metadata, &cp_pkt, &fakeprot_get_option_status);
+
+	TEST_ASSERT_EQUAL_INT(1, metadata.num_tagged_opts);
+	/* In this case, data should have ACK flag*/
+	TEST_ASSERT_EQUAL_INT(1, metadata.opts_status_content & OPT_HAS_ACK);
+}
 
 Test *tests_gnrc_ppp_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture(test_gnrc_ppp_lcp_recv_cr_ack),
+        new_TestFixture(test_ppp_pkt_metadata),
     };
 
     EMB_UNIT_TESTCALLER(gnrc_ppp_tests, NULL, NULL, fixtures);
