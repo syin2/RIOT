@@ -51,7 +51,6 @@ typedef struct __attribute__((packed))
 int ppp_pkt_init(uint8_t *data, size_t length, cp_pkt_t *cp_pkt);
 
 int _ppp_cr_populate_options(uint8_t *payload, size_t p_size);
-int ppp_cr_opts_are_equal(cp_opt_hdr_t *o1, cp_opt_hdr_t *o2);
 
 uint8_t ppp_pkt_get_code(cp_pkt_t *cp_pkt);
 void ppp_pkt_set_code(cp_pkt_t *cp_pkt, uint8_t code);

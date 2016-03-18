@@ -49,7 +49,6 @@ typedef struct ppp_dev_t{
 
 
 
-
 void test_handle_cp_rcr(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt);
 void test_ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt);
 

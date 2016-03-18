@@ -139,6 +139,7 @@ void handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt);
 void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_opt_status)(cp_opt_hdr_t*));
 /* Tag each options with corresponding status, add info to metadata*/
 void _ppp_pkt_metadata_tag_cr_opts(cp_pkt_metadata_t);
+int ppp_cr_opts_are_equal(cp_opt_hdr_t *o1, cp_opt_hdr_t *o2);
 
 #ifdef __cplusplus
 }

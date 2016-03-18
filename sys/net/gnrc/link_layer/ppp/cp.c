@@ -141,3 +141,41 @@ void handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt)
 			break;
 	}
 }
+
+void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_opt_status)(cp_opt_hdr_t*))
+{
+	uint8_t code = ppp_pkt_get_code(pkt);
+	metadata->pkt = pkt;
+	metadata->opts_status_content=0;
+
+	cp_opt_hdr_t *curr_opt;
+	uint16_t curr_status;
+	uint16_t cursor = 0;
+
+	uint16_t num_tagged = 0;
+
+	/* Check if current code has options */
+	if (code == PPP_CONF_REQ)
+	{
+		/* Iterate through options */
+		curr_opt = (cp_opt_hdr_t*) (pkt->payload+cursor);
+		curr_status = get_opt_status(curr_opt);
+		switch(curr_status)
+		{
+			case CP_CREQ_ACK:
+				metadata->opts_status_content |= OPT_HAS_ACK;
+				break;
+			case CP_CREQ_NAK:
+				metadata->opts_status_content |= OPT_HAS_NAK;
+				break;
+			case CP_CREQ_REJ:
+				metadata->opts_status_content |= OPT_HAS_REJ;
+				break;
+		}
+		metadata->tagged_opts[num_tagged].status = curr_status;
+		metadata->tagged_opts[num_tagged].opt = curr_opt;
+		cursor+=curr_opt->length;
+		num_tagged+=1;
+	}
+	metadata->num_tagged_opts = num_tagged;
+}
