@@ -20,6 +20,7 @@
 #include "unittests-constants.h"
 #include "tests-gnrc_ppp.h"
 #include "net/gnrc/ppp/cp.h"
+#include "net/gnrc/ppp/cp_fsm.h"
 
 
 /* Dummy get_option_status for testing fake prot*/
@@ -44,6 +45,44 @@ static int fakeprot_get_option_status(cp_opt_hdr_t *opt)
 	return CP_CREQ_ACK;
 
 }
+static void test_gnrc_ppp_lcp_recv_cr_nak(void)
+{
+	/*Make fake ctrl prot*/
+	ppp_cp_t fake_prot;
+	fake_prot.get_option_status = &fakeprot_get_option_status;
+
+	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
+	uint8_t nak_pkt[8] = {0x01,0x00,0x00,0x08,0x01,0x04,0x00,0xF1};
+	cp_pkt_t cp_pkt;
+	ppp_pkt_init(nak_pkt, 8, &cp_pkt);
+
+	handle_cp_pkt(&fake_prot, &cp_pkt);
+
+	/* In this case, we are expecting an E_RCRm*/
+	TEST_ASSERT_EQUAL_INT(E_RCRm, fake_prot.event);
+	/* See if packet has NAK */
+	TEST_ASSERT_EQUAL_INT(1, (fake_prot.metadata.opts_status_content&OPT_HAS_NAK) > 0);
+}
+
+static void test_gnrc_ppp_lcp_recv_cr_rej(void)
+{
+	/*Make fake ctrl prot*/
+	ppp_cp_t fake_prot;
+	fake_prot.get_option_status = &fakeprot_get_option_status;
+
+	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
+	uint8_t rej_pkt[8] = {0x01,0x00,0x00,0x08,0x05,0x04,0x00,0xF1};
+	cp_pkt_t cp_pkt;
+	ppp_pkt_init(rej_pkt, 8, &cp_pkt);
+
+	handle_cp_pkt(&fake_prot, &cp_pkt);
+
+	/* In this case, we are expecting an E_RCRm*/
+	TEST_ASSERT_EQUAL_INT(E_RCRm, fake_prot.event);
+	/* See if packet has REJ */
+	TEST_ASSERT_EQUAL_INT(1, (fake_prot.metadata.opts_status_content&OPT_HAS_REJ) > 0);
+}
+
 static void test_gnrc_ppp_lcp_recv_cr_ack(void)
 {
 	/*Make fake ctrl prot*/
@@ -51,11 +90,14 @@ static void test_gnrc_ppp_lcp_recv_cr_ack(void)
 	fake_prot.get_option_status = &fakeprot_get_option_status;
 
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
-	uint8_t good_packet[8] = {0x01,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
+	uint8_t good_pkt[8] = {0x01,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
 	cp_pkt_t cp_pkt;
 	ppp_pkt_init(good_pkt, 8, &cp_pkt);
 
 	handle_cp_pkt(&fake_prot, &cp_pkt);
+
+	/* In this case, we are expecting an E_RCRp*/
+	TEST_ASSERT_EQUAL_INT(E_RCRp, fake_prot.event);
 
 }
 static void test_ppp_pkt_metadata(void)
@@ -80,6 +122,8 @@ Test *tests_gnrc_ppp_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture(test_gnrc_ppp_lcp_recv_cr_ack),
+        new_TestFixture(test_gnrc_ppp_lcp_recv_cr_nak),
+        new_TestFixture(test_gnrc_ppp_lcp_recv_cr_rej),
         new_TestFixture(test_ppp_pkt_metadata),
     };
 
