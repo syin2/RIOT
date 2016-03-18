@@ -1,4 +1,12 @@
 
+#ifndef GNRC_PPP_CP_H_
+#define GNRC_PPP_CP_H_
+#include "net/ppp/pkt.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PPP_CONF_REQ (1)
 #define PPP_CONF_ACK (2)
 #define PPP_CONF_NAK (3)
@@ -101,10 +109,15 @@ typedef struct ppp_cp_t{
 	/* Hydrate cp opt */
 	int *hydrate_cp_opt(uint8_t type, uint8_t *payload, size_t size, cp_opt_t *opt_buf);
 
-	int *get_option_status(cp_opt_t *opt);
+	int *get_option_status(cp_opt_hdr_t *opt);
 
 
 
 } ppp_cp_t;
 
 void handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt);
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* GNRC_PPP_CP_H_ */

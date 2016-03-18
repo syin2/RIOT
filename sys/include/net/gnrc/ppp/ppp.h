@@ -27,11 +27,13 @@
 
 #include "net/gnrc.h"
 #include "net/gnrc/netdev2.h"
+#include "net/gnrc/ppp/cp.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define PPP_BUF_SIZE (200)
 
 struct ppp_dev_t;
 
@@ -41,8 +43,8 @@ typedef struct ppp_dev_t{
 	struct ppp_cp_t *l_ncp;
 	gnrc_netdev2_t *dev;
 
-	uint8_t _hdlc_cp_buf[PPP_PAYLOAD_BUF_SIZE];
-	uint32_t _hdlc_cp_size;
+	uint8_t ppp_buf[PPP_BUF_SIZE];
+	uint32_t ppp_buf_size;
 } ppp_dev_t;
 
 
