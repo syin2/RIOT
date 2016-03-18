@@ -54,22 +54,15 @@ static int _handle_cp_rcr(ppp_cp_t *cp)
 
 return 0; /*TODO: Fix output*/
 }
-#if 0
 static int _handle_cp_rca(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
-	populate_opt_metadata(cp);
-
 	/* Identifier should match */
 	if (pkt->id != cp->cr_sent_identifier)
 	{
 		return -1; /* TODO: Fix error code*/
 	}
 
-	/* Sent options and ACK options should match. */
-	opt_stack_t opt_stack;
-	cp->optpkt_to_optstack(cp->cp_options, &opt_stack);
-
-	if (!_opt_stacks_are_equal(opt_stack, pkt->opts))
+	if (cp->cr_sent_size != pkt->length || !memcmp(cp->cr_sent_opts,pkt->payload,pkt->length))
 	{
 		return -1; /* TODO: Error code*/
 	}
@@ -77,6 +70,7 @@ static int _handle_cp_rca(ppp_cp_t *cp, cp_pkt_t *pkt)
 	cp->event = E_RCA;
 }
 
+#if 0
 /* Fix params for request */
 static int _handle_cp_nak(ppp_cp_t *cp, cp_pkt *pkt)
 {
@@ -119,6 +113,7 @@ void handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt)
 			_handle_cp_rcr(cp);
 			break;
 		case PPP_CONF_ACK:
+			_handle_cp_rca(cp);
 			break;
 		case PPP_CONF_NAK:
 			break;
