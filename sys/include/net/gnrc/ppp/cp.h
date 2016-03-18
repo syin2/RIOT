@@ -108,9 +108,8 @@ typedef struct ppp_cp_t{
 	uint8_t cr_sent_identifier;
 	uint32_t cr_sent_size;
 
-	uint8_t cr_recv_identifier;
-	uint32_t cr_recv_size;
-
+	uint8_t cr_sent_opts[OPT_PAYLOAD_BUF_SIZE];
+	uint16_t cr_sent_size;
 
 	/* For terminate request */
 	uint8_t tr_identifier;
