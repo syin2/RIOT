@@ -129,8 +129,13 @@ static void test_gnrc_ppp_lcp_recv_ack(void)
 	cp_pkt_t cp_pkt;
 	ppp_pkt_init(good_pkt, 8, &cp_pkt);
 
-	handle_cp_pkt(&fake_prot, &cp_pkt);
 
+	fake_prot.cr_sent_identifier = 0;
+	memcpy(fake_prot.cr_sent_opts,good_pkt+4,4);
+	fake_prot.cr_sent_size = 8;
+
+	handle_cp_pkt(&fake_prot, &cp_pkt);
+	
 	/* In this case, we are expecting an E_RCA*/
 	TEST_ASSERT_EQUAL_INT(E_RCA, fake_prot.event);
 }
