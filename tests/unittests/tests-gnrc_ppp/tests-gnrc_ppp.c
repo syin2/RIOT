@@ -19,6 +19,7 @@
 
 #include "unittests-constants.h"
 #include "tests-gnrc_ppp.h"
+#include "net/gnrc/ppp/cp.h"
 
 
 /* Dummy get_option_status for testing fake prot*/
@@ -43,12 +44,11 @@ static int fakeprot_get_option_status(cp_opt_hdr_t *opt)
 	return CP_CREQ_ACK;
 
 }
-
 static void test_gnrc_ppp_lcp_recv_cr_ack(void)
 {
 	/*Make fake ctrl prot*/
 	ppp_cp_t fake_prot;
-	fake_prot.get_opt_status = &fakeprot_get_option_status;
+	fake_prot.get_option_status = &fakeprot_get_option_status;
 
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
 	uint8_t good_packet[8] = {0x01,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
@@ -58,7 +58,6 @@ static void test_gnrc_ppp_lcp_recv_cr_ack(void)
 	handle_cp_pkt(&fake_prot, &cp_pkt);
 
 }
-
 static void test_ppp_pkt_metadata(void)
 {
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */

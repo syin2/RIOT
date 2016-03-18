@@ -58,7 +58,6 @@ static void _event_cb(gnrc_netdev_event_t event, void *data)
         }
     }
 }
-#endif
 static int _read_lcp_pkt(uint8_t type, uint8_t *payload, size_t size, cp_opt_t *opt_buf)
 {
 	uint16_t u16;
@@ -279,4 +278,5 @@ kernel_pid_t gnrc_ppp_init(char *stack, int stacksize, char priority,
     }
     return res;
 }
+#endif
 #endif

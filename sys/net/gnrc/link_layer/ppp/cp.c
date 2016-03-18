@@ -27,6 +27,9 @@
 #include "net/gnrc/ppp/ppp.h"
 #include "net/gnrc/ppp/lcp.h"
 #include "net/hdlc/hdr.h"
+#include "net/gnrc/ppp/cp.h"
+#include "net/gnrc/ppp/cp_fsm.h"
+#include "net/ppp/pkt.h"
 
 #define ENABLE_DEBUG    (1)
 #include "debug.h"
@@ -38,15 +41,15 @@
 
 
 
-static int _handle_cp_rcr(ppp_cp_t *l_lcp, cp_pkt_t *pkt)
+static int _handle_cp_rcr(ppp_cp_t *cp)
 {
-	if (cp->metadata->opts_status_content  & (OPT_HAS_NAK | OPT_HAS_REJ))
+	if (cp->metadata.opts_status_content  & (OPT_HAS_NAK | OPT_HAS_REJ))
 	{
-		l_lcp->event = E_RCRm;
+		cp->event = E_RCRm;
 	}
 	else
 	{
-		l_lcp->event = E_RCRp;
+		cp->event = E_RCRp;
 	}
 
 return 0; /*TODO: Fix output*/
@@ -107,13 +110,13 @@ static int _handle_cp_code_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 void handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
 	cp->metadata.pkt = pkt;
-	ppp_pkt_gen_metadata(cp->metadata, pkt, cp->get_opt_status);
+	ppp_pkt_gen_metadata(&cp->metadata, pkt, cp->get_option_status);
 
 	int type = ppp_pkt_get_code(pkt);
 	
 	switch(type){
 		case PPP_CONF_REQ:
-			_handle_cp_rcr(cp, pkt);
+			_handle_cp_rcr(cp);
 			break;
 		case PPP_CONF_ACK:
 			break;

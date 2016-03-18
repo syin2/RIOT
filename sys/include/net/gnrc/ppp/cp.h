@@ -64,15 +64,6 @@ extern "C" {
 
 #define CP_OPT_MAX (20)
 
-
-typedef struct cp_pkt_metadata_t
-{
-	cp_pkt_t *pkt; /* Pointer to received packet */
-	uint8_t opts_status_content; /* In case of CP options*/
-	opt_metadata_t tagged_opts[CPOPT_MAX_OPT];
-	uint8_t num_tagged_opts;
-} cp_pkt_metadata_t;
-
 /*Control Protocol option*/
 typedef struct __attribute__((packed)){
 	uint8_t type;
@@ -84,6 +75,15 @@ typedef struct opt_metadada_t
 	cp_opt_hdr_t *opt;
 	uint8_t status;
 } opt_metadata_t;
+
+typedef struct cp_pkt_metadata_t
+{
+	cp_pkt_t *pkt; /* Pointer to received packet */
+	uint8_t opts_status_content; /* In case of CP options*/
+	opt_metadata_t tagged_opts[CPOPT_MAX_OPT];
+	uint8_t num_tagged_opts;
+} cp_pkt_metadata_t;
+
 
 /* Control Protocol struct*/
 typedef struct ppp_cp_t{
@@ -121,13 +121,11 @@ typedef struct ppp_cp_t{
 	/* Pointer to another struct with CP options*/
 	void *cp_options;
 	/* Function for converting cp_opts to payload  */
-	uint32_t *_load_specific_cp_opts(void *cp_options, uint8_t *dst);
+	uint32_t (*_load_specific_cp_opts)(void *cp_options, uint8_t *dst);
 	/* Negotiate nak */
-	void *negotiate_nak(void *cp_options, opt_stack_t *opt_stack);
-	/* Hydrate cp opt */
-	int *hydrate_cp_opt(uint8_t type, uint8_t *payload, size_t size, cp_opt_t *opt_buf);
+	void (*negotiate_nak)(void *cp_options, cp_pkt_t *pkt);
 
-	int *get_option_status(cp_opt_hdr_t *opt);
+	int (*get_option_status)(cp_opt_hdr_t *opt);
 
 
 
