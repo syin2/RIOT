@@ -138,6 +138,22 @@ static void test_gnrc_ppp_lcp_recv_ack(void)
 	
 	/* In this case, we are expecting an E_RCA*/
 	TEST_ASSERT_EQUAL_INT(E_RCA, fake_prot.event);
+
+	/* Pkt with different id*/
+
+	/* Should only be done in testing context...*/
+	fake_prot.event = 0;
+	fake_prot.cr_sent_identifier = 8;
+	handle_cp_pkt(&fake_prot, &cp_pkt);
+	/* In this case, we are not expecting an E_RCA*/
+	TEST_ASSERT_EQUAL_INT(1, fake_prot.event != E_RCA);
+
+	/* Payload mismatch */
+	good_pkt[7] = 0;
+	fake_prot.cr_sent_identifier = 0;
+	handle_cp_pkt(&fake_prot, &cp_pkt);
+	/* In this case, we are not expecting an E_RCA*/
+	TEST_ASSERT_EQUAL_INT(1, fake_prot.event != E_RCA);
 }
 
 Test *tests_gnrc_ppp_tests(void)
