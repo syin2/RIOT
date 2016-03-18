@@ -54,20 +54,24 @@ static int _handle_cp_rcr(ppp_cp_t *cp)
 
 return 0; /*TODO: Fix output*/
 }
-static int _handle_cp_rca(ppp_cp_t *cp, cp_pkt_t *pkt)
+static int _handle_cp_rca(ppp_cp_t *cp)
 {
+	cp_pkt_t *pkt = cp->metadata.pkt;
 	/* Identifier should match */
-	if (pkt->id != cp->cr_sent_identifier)
+	uint8_t pkt_id = ppp_pkt_get_id(pkt);
+	uint8_t pkt_length = ppp_pkt_get_length(pkt);
+	if (pkt_id != cp->cr_sent_identifier)
 	{
 		return -1; /* TODO: Fix error code*/
 	}
 
-	if (cp->cr_sent_size != pkt->length || !memcmp(cp->cr_sent_opts,pkt->payload,pkt->length))
+	if (cp->cr_sent_size != pkt_length || !memcmp(cp->cr_sent_opts,pkt->payload,pkt_length))
 	{
 		return -1; /* TODO: Error code*/
 	}
 
 	cp->event = E_RCA;
+return 0; /*TODO: Fix output*/
 }
 
 #if 0
