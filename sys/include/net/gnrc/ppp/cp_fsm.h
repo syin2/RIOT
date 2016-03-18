@@ -20,8 +20,8 @@
  * @author      Hauke Petersen <hauke.petersen@fu-berlin.de>
  */
 
-#ifndef GNRC_PPP_FSM_H
-#define GNRC_PPP_FSM_H
+#ifndef GNRC_PPP_FSM_H_
+#define GNRC_PPP_FSM_H_
 
 #include <inttypes.h>
 
@@ -68,7 +68,7 @@ typedef enum{
 } ppp_state_t;
 
 /* Functions flags for each state */
-const uint16_t actions[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
+static const uint16_t actions[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 {0,F_IRC | F_SRC,0,0,0,0,0,0,0,0},
 {0,0,0,F_TLS,0,0,0,0,0,F_TLD},
 {F_TLS,0,F_IRC | F_SRC, 0,0,0,0,0,0,0},
@@ -89,7 +89,7 @@ const uint16_t actions[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 
 
 /* state transition for control layer FSM */
-const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
+static const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 {S_CLOSED,S_REQ_SENT,S_UNDEF,S_UNDEF,S_UNDEF,S_UNDEF,S_UNDEF,S_UNDEF,S_UNDEF,S_UNDEF},
 {S_UNDEF,S_UNDEF,S_INITIAL,S_STARTING,S_INITIAL,S_STARTING,S_STARTING,S_STARTING,S_STARTING,S_STARTING},
 {S_STARTING,S_STARTING,S_REQ_SENT,S_STOPPED,S_STOPPING,S_STOPPING,S_REQ_SENT,S_ACK_RCVD,S_ACK_SENT,S_OPENED},
