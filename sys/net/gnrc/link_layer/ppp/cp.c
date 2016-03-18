@@ -60,12 +60,13 @@ static int _handle_cp_rca(ppp_cp_t *cp)
 	/* Identifier should match */
 	uint8_t pkt_id = ppp_pkt_get_id(pkt);
 	uint8_t pkt_length = ppp_pkt_get_length(pkt);
+
 	if (pkt_id != cp->cr_sent_identifier)
 	{
 		return -1; /* TODO: Fix error code*/
 	}
 
-	if (cp->cr_sent_size != pkt_length || !memcmp(cp->cr_sent_opts,pkt->payload,pkt_length))
+	if (cp->cr_sent_size != pkt_length || memcmp(cp->cr_sent_opts,pkt->payload,pkt_length-sizeof(cp_opt_hdr_t)))
 	{
 		return -1; /* TODO: Error code*/
 	}
