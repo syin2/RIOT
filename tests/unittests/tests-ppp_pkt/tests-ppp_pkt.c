@@ -93,7 +93,6 @@ static void test_ppp_pkt_get_set_length(void)
 
 	TEST_ASSERT_EQUAL_INT(new_length, byteorder_ntohs(cp_pkt.hdr->length));
 	TEST_ASSERT_EQUAL_INT(new_length, ppp_pkt_get_length(&cp_pkt));
-	printf("Finished length\n");
 }
 
 static void test_ppp_pkt_get_set_payload(void)
@@ -110,7 +109,6 @@ static void test_ppp_pkt_get_set_payload(void)
 	ppp_pkt_set_payload(&cp_pkt, new_payload, 4);
 
 	TEST_ASSERT_EQUAL_INT(0, memcmp(ppp_pkt_get_payload(&cp_pkt),new_payload,4));
-	printf("Finished length\n");
 }
 
 static void test_ppp_opts_init(void)
@@ -180,17 +178,34 @@ static void test_ppp_opts_next(void)
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
 	uint8_t code = 0x01;
 	uint8_t id = 33;
-	uint16_t length = 20;
-	uint8_t pkt[20] = {code,id,0x00,length,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x04,0x00,0x01,0x04,0x04,0xF0,0x01};
+	uint16_t length = 21;
+	uint8_t pkt[21] = {code,id,0x00,length,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x05,0x00,0x00,0x01,0x04,0x04,0xF0,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, 20, &cp_pkt);
+	ppp_pkt_init(pkt, 21, &cp_pkt);
 
 	opt_metadata_t opt_metadata;
 	ppp_opts_init(&opt_metadata, &cp_pkt);
 
 	void *p;
 	p = ppp_opts_next(&opt_metadata);
-	TEST_ASSERT_EQUAL_INT(2, (uint8_t) (((uint8_t* )p)+1));
+	TEST_ASSERT_EQUAL_INT(1, p == pkt+8);
+	p = ppp_opts_next(&opt_metadata);
+	TEST_ASSERT_EQUAL_INT(1, p == pkt+12);
+	p = ppp_opts_next(&opt_metadata);
+	TEST_ASSERT_EQUAL_INT(1, p == pkt+17);
+	p = ppp_opts_next(&opt_metadata);
+	TEST_ASSERT_NULL(p);
+}
+
+static void test_ppp_opt_get_type(void)
+{
+	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
+	uint8_t code = 0x01;
+	uint8_t id = 33;
+	uint16_t length = 21;
+	uint8_t pkt[21] = {code,id,0x00,length,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x05,0x00,0x00,0x01,0x04,0x04,0xF0,0x01};
+	
+	TEST_ASSERT_EQUAL_INT(1,ppp_opt_get_type((void*) (pkt+4)));
 }
 
 Test *tests_ppp_pkt_tests(void)
@@ -205,6 +220,7 @@ Test *tests_ppp_pkt_tests(void)
         new_TestFixture(test_ppp_opts_get_head),
         new_TestFixture(test_ppp_opts_reset),
         new_TestFixture(test_ppp_opts_next),
+        new_TestFixture(test_ppp_opt_get_type),
     };
 
     EMB_UNIT_TESTCALLER(ppp_pkt_tests, NULL, NULL, fixtures);
