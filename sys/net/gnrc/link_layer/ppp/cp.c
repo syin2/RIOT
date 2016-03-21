@@ -75,15 +75,15 @@ static int _handle_cp_rca(ppp_cp_t *cp)
 return 0; /*TODO: Fix output*/
 }
 
-#if 0
 /* Fix params for request */
 static int _handle_cp_nak(ppp_cp_t *cp, cp_pkt *pkt)
 {
-	cp->negotiate_nak(cp->cp_options, pkt->opts);
+	cp->negotiate_nak(cp->cp_options, pkt);
 	l_lcp->event = E_RCN;
 	return 0; /*TODO: Fix output*/
 }
 
+#if 0
 static int _handle_cp_rej(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
 	l_lcp->event = E_RCJ;

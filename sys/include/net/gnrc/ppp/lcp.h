@@ -30,6 +30,8 @@ typedef struct{
 	int b_acfc;
 } lcp_opt_t;
 
+void lcp_negotiate_nak(void *lcp_opt, cp_pkt_t *pkt);
+
 
 #ifdef __cplusplus
 }
