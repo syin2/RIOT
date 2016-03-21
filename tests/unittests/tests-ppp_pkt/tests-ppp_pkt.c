@@ -175,6 +175,24 @@ static void test_ppp_opts_reset(void)
 	TEST_ASSERT_EQUAL_INT(1, opt_metadata.current == opt_metadata.head);
 }
 
+static void test_ppp_opts_next(void)
+{
+	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
+	uint8_t code = 0x01;
+	uint8_t id = 33;
+	uint16_t length = 20;
+	uint8_t pkt[20] = {code,id,0x00,length,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x04,0x00,0x01,0x04,0x04,0xF0,0x01};
+	cp_pkt_t cp_pkt;
+	ppp_pkt_init(pkt, 20, &cp_pkt);
+
+	opt_metadata_t opt_metadata;
+	ppp_opts_init(&opt_metadata, &cp_pkt);
+
+	void *p;
+	p = ppp_opts_next(&opt_metadata);
+	TEST_ASSERT_EQUAL_INT(2, (uint8_t) (((uint8_t* )p)+1));
+}
+
 Test *tests_ppp_pkt_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
@@ -186,6 +204,7 @@ Test *tests_ppp_pkt_tests(void)
         new_TestFixture(test_ppp_opts_init),
         new_TestFixture(test_ppp_opts_get_head),
         new_TestFixture(test_ppp_opts_reset),
+        new_TestFixture(test_ppp_opts_next),
     };
 
     EMB_UNIT_TESTCALLER(ppp_pkt_tests, NULL, NULL, fixtures);
