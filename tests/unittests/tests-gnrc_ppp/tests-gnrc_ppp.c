@@ -44,7 +44,7 @@ static int fakeprot_get_option_status(void *opt)
 	return CP_CREQ_ACK;
 
 }
-#if 0
+
 static void test_gnrc_ppp_lcp_recv_cr_nak(void)
 {
 	/*Make fake ctrl prot*/
@@ -100,7 +100,6 @@ static void test_gnrc_ppp_lcp_recv_cr_ack(void)
 	TEST_ASSERT_EQUAL_INT(E_RCRp, fake_prot.event);
 
 }
-#endif
 static void test_ppp_pkt_metadata(void)
 {
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
@@ -136,8 +135,6 @@ static void test_gnrc_ppp_lcp_recv_nak(void)
 	fake_prot.cr_sent_size = 8;
 
 	handle_cp_pkt(&fake_prot, &cp_pkt);
-
-
 }
 static void test_gnrc_ppp_lcp_recv_ack(void)
 {
@@ -181,9 +178,9 @@ static void test_gnrc_ppp_lcp_recv_ack(void)
 Test *tests_gnrc_ppp_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
-        //new_TestFixture(test_gnrc_ppp_lcp_recv_cr_ack),
-        //new_TestFixture(test_gnrc_ppp_lcp_recv_cr_nak),
-        //new_TestFixture(test_gnrc_ppp_lcp_recv_cr_rej),
+        new_TestFixture(test_gnrc_ppp_lcp_recv_cr_ack),
+        new_TestFixture(test_gnrc_ppp_lcp_recv_cr_nak),
+        new_TestFixture(test_gnrc_ppp_lcp_recv_cr_rej),
         new_TestFixture(test_gnrc_ppp_lcp_recv_ack),
         new_TestFixture(test_gnrc_ppp_lcp_recv_nak),
         new_TestFixture(test_ppp_pkt_metadata),
