@@ -151,7 +151,7 @@ static void test_ppp_opts_get_head(void)
 	ppp_pkt_init(pkt, 20, &cp_pkt);
 
 	opt_metadata_t opt_metadata;
-	int status = ppp_opts_init(&opt_metadata, &cp_pkt);
+	ppp_opts_init(&opt_metadata, &cp_pkt);
 
 	/* Get head */
 	TEST_ASSERT_EQUAL_INT(1, ppp_opts_get_head(&opt_metadata) == pkt+4);
@@ -167,7 +167,7 @@ Test *tests_ppp_pkt_tests(void)
         new_TestFixture(test_ppp_pkt_get_set_length),
         new_TestFixture(test_ppp_pkt_get_set_payload),
         new_TestFixture(test_ppp_opts_init),
-        new_TestFixture(test_opts_get_head),
+        new_TestFixture(test_ppp_opts_get_head),
     };
 
     EMB_UNIT_TESTCALLER(ppp_pkt_tests, NULL, NULL, fixtures);
