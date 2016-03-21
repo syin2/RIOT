@@ -83,6 +83,11 @@ static inline int ppp_opts_get_num(opt_metadata_t *opt_metadata)
 	return opt_metadata->num;
 }
 
+static inline int ppp_opts_get_opt_num(opt_metadata_t *opt_metadata)
+{
+	return opt_metadata->_co;
+}
+
 static inline uint8_t ppp_opt_get_type(void *opt)
 {
 	return (uint8_t) *((uint8_t *) opt);
