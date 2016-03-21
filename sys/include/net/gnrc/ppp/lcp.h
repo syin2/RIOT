@@ -19,7 +19,7 @@ extern "C" {
 #define LCP_MAX_MRU (2000)
 #define LCP_DEFAULT_MRU (1500)
 
-typedef struct{
+typedef struct __atribute__((packed)){
 	uint16_t flags;
 	uint16_t mru;
 	uint16_t auth;
