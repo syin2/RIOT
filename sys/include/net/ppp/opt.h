@@ -72,7 +72,9 @@ void *ppp_opts_next(opt_metadata_t *opt_metadata)
 
 	if(opt_metadata->_co < opt_metadata->num)
 	{
-		return (void*) (((int*) current)+opt_size);
+		opt_metadata->current = (void*) (((uint8_t*) current)+opt_size);
+		opt_metadata->_co += 1;
+		return opt_metadata->current; 
 	}
 	return NULL;
 }
