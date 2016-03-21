@@ -112,7 +112,7 @@ typedef struct ppp_cp_t{
 	/* Negotiate nak */
 	void (*negotiate_nak)(void *cp_options, opt_metadata_t *recv_opts, uint8_t recv_num);
 
-	int (*get_option_status)(cp_opt_hdr_t *opt);
+	int (*get_option_status)(void *opt);
 
 
 
