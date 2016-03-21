@@ -36,9 +36,11 @@ static inline int _get_num_opt(void *head_opt, uint16_t opts_length)
 
 	while(cursor < opts_length)
 	{
-		if(*((uint8_t*) p) < 4)
+		if(*((uint8_t*) p) < 2)
 			return -EBADMSG;
 		cursor += *p;
+		if(cursor-1 > opts_length)
+			return -EBADMSG;
 		p += *p;
 		num += 1;
 	}
