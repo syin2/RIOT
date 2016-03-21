@@ -70,7 +70,7 @@ void *ppp_opts_next(opt_metadata_t *opt_metadata)
 	void *current = opt_metadata->current;
 	uint8_t opt_size = *((uint8_t*)current+1);
 
-	if(opt_metadata->_co < opt_metadata->num)
+	if(opt_metadata->_co < opt_metadata->num-1)
 	{
 		opt_metadata->current = (void*) (((uint8_t*) current)+opt_size);
 		opt_metadata->_co += 1;
