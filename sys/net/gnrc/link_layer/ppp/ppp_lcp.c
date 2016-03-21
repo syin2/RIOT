@@ -18,6 +18,8 @@
 
 #include "net/gnrc/ppp/lcp.h"
 #include "net/gnrc/ppp/ppp.h"
+#include "net/gnrc/ppp/cp.h"
+#include "net/ppp/opt.h"
 
 #define ENABLE_DEBUG    (0)
 #include "debug.h"
@@ -28,19 +30,26 @@
 #endif
 
 /* Negotiate local LCP options with NAK opts sent by peer */
-void lcp_negotiate_nak(void *lcp_opt, opt_metadata_t *recv_opts, uint8_t num_recv)
+void lcp_negotiate_nak(void *lcp_opt, cp_pkt_metadata_t *metadata)
 {
 	/* Cast lcp_opt to corresponding struct */
 	lcp_opt_t *opts = (lcp_opt_t*) lcp_opt;
 
-	void *payload;
+	void *curr_opt;
+	uint8_t ctype;
 	uint16_t suggested_value;
+	uint8_t *payload;
 
+	opt_metadata_t *opts_handler = &metadata->opts;
+
+	curr_opt = ppp_opts_get_head(opts_handler);
+	int num_opts = ppp_opts_get_num(opts_handler);
 	/* Iterate through every pkt option */
-	for(int i=0;i<num_recv;i++)
+	for(int i=0;i<num_opts;i++)
 	{
-		payload = (recv_opts+i)+(int)sizeof(cp_opt_hdr_t);
-		switch(recv_opt[i].type)
+		ctype = ppp_opt_get_type(curr_opt);
+		payload = (uint8_t*) ppp_opt_get_payload(curr_opt);
+		switch(ctype)
 		{
 			case LCP_OPT_MRU:
 				suggested_value = ((*payload)<<8) + *(payload+1);
@@ -56,5 +65,6 @@ void lcp_negotiate_nak(void *lcp_opt, opt_metadata_t *recv_opts, uint8_t num_rec
 			default:
 				break;
 		}
+		curr_opt = ppp_opts_next(opts_handler);
 	}
 }

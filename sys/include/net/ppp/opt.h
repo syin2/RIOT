@@ -28,7 +28,7 @@ static inline int _get_num_opt(void *head_opt, uint16_t opts_length)
 {
 	if (opts_length == 0)
 		return 0;
-	if (opts_length <= 4)
+	if (opts_length < 4)
 		return -EBADMSG;
 	int num=0;
 	uint16_t cursor=1;
@@ -50,6 +50,7 @@ static inline int ppp_opts_init(opt_metadata_t *opt_metadata, cp_pkt_t *pkt)
 	opt_metadata->head = opt_metadata->current = pkt->payload;
 	opt_metadata->_co = 0;
 	uint16_t pkt_length = ppp_pkt_get_length(pkt);
+
 	int num = _get_num_opt(pkt->payload, pkt_length-sizeof(cp_hdr_t));
 	if (num == -EBADMSG)
 		return -1;
@@ -65,7 +66,7 @@ static inline void ppp_opts_reset(opt_metadata_t *opt_metadata)
 {
 	opt_metadata->current = opt_metadata->head;
 }
-void *ppp_opts_next(opt_metadata_t *opt_metadata)
+static inline void *ppp_opts_next(opt_metadata_t *opt_metadata)
 {
 	void *current = opt_metadata->current;
 	uint8_t opt_size = *((uint8_t*)current+1);

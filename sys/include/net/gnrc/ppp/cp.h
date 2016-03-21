@@ -111,8 +111,7 @@ typedef struct ppp_cp_t{
 	/* Function for converting cp_opts to payload  */
 	uint32_t (*_load_specific_cp_opts)(void *cp_options, uint8_t *dst);
 	/* Negotiate nak */
-	void (*negotiate_nak)(void *cp_options, opt_metadata_t *recv_opts, uint8_t recv_num);
-
+	void (*negotiate_nak)(void *cp_options, cp_pkt_metadata_t *metadata);
 	int (*get_option_status)(void *opt);
 
 
@@ -122,7 +121,7 @@ typedef struct ppp_cp_t{
 void handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt);
 /* Function for option tagging */
 /* Init metadata, tag options if necessary */
-void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_opt_status)(cp_opt_hdr_t*));
+void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_opt_status)(void*));
 /* Tag each options with corresponding status, add info to metadata*/
 void _ppp_pkt_metadata_tag_cr_opts(cp_pkt_metadata_t);
 int ppp_cr_opts_are_equal(cp_opt_hdr_t *o1, cp_opt_hdr_t *o2);

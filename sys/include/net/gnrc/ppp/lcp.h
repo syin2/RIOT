@@ -31,7 +31,7 @@ typedef struct lcp_opt_t{
 	int b_acfc;
 } lcp_opt_t;
 
-void lcp_negotiate_nak(void *lcp_opt, opt_metadata_t *recv_opts, uint8_t recv_num);
+void lcp_negotiate_nak(void *lcp_opt, cp_pkt_metadata_t *metadata);
 
 
 #ifdef __cplusplus

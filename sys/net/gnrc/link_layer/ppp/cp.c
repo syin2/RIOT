@@ -66,8 +66,9 @@ static int _handle_cp_rca(ppp_cp_t *cp)
 		return -1; /* TODO: Fix error code*/
 	}
 
-	if (cp->cr_sent_size != pkt_length || memcmp(cp->cr_sent_opts,pkt->payload,pkt_length-sizeof(cp_opt_hdr_t)))
+	if (cp->cr_sent_size != pkt_length || memcmp(cp->cr_sent_opts,pkt->payload,pkt_length-sizeof(cp_hdr_t)))
 	{
+		printf("I'm here\n");
 		return -1; /* TODO: Error code*/
 	}
 
@@ -78,7 +79,7 @@ return 0; /*TODO: Fix output*/
 /* Fix params for request */
 static int _handle_cp_nak(ppp_cp_t *cp)
 {
-	cp->negotiate_nak(cp->cp_options, cp->metadata.tagged_opts, cp->metadata.num_tagged_opts);
+	cp->negotiate_nak(cp->cp_options, &cp->metadata);
 	cp->event = E_RCN;
 	return 0; /*TODO: Fix output*/
 }
@@ -146,7 +147,7 @@ void handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt)
 	}
 }
 
-void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_opt_status)(cp_opt_hdr_t*))
+void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_opt_status)(void*))
 {
 	uint8_t code = ppp_pkt_get_code(pkt);
 	metadata->pkt = pkt;
@@ -158,8 +159,8 @@ void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_
 	/* Check if current code has options */
 	if (code == PPP_CONF_REQ)
 	{
-		ppp_opts_init(&metadata->opts);
-		curr_opt = ppp_opts_get_head();
+		ppp_opts_init(&metadata->opts, pkt);
+		curr_opt = ppp_opts_get_head(&metadata->opts);
 		for(int i=0; i<ppp_opts_get_num(&metadata->opts); i++)
 		{
 			curr_status = get_opt_status(curr_opt);
@@ -175,7 +176,7 @@ void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_
 					metadata->opts_status_content |= OPT_HAS_REJ;
 					break;
 			}
-			curr_opt = ppp_opts_get_next(&metadata->opts);
+			curr_opt = ppp_opts_next(&metadata->opts);
 			metadata->tagged_opts[i] = curr_status;
 		}
 	}
