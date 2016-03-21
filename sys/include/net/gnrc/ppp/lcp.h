@@ -4,6 +4,7 @@
 #include <inttypes.h>
 
 #include "net/gnrc.h"
+#include "net/gnrc/ppp/cp.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,7 +20,7 @@ extern "C" {
 #define LCP_MAX_MRU (2000)
 #define LCP_DEFAULT_MRU (1500)
 
-typedef struct __atribute__((packed)){
+typedef struct lcp_opt_t{
 	uint16_t flags;
 	uint16_t mru;
 	uint16_t auth;
@@ -30,7 +31,7 @@ typedef struct __atribute__((packed)){
 	int b_acfc;
 } lcp_opt_t;
 
-void lcp_negotiate_nak(void *lcp_opt, cp_pkt_t *pkt);
+void lcp_negotiate_nak(void *lcp_opt, opt_metadata_t *recv_opts, uint8_t recv_num);
 
 
 #ifdef __cplusplus

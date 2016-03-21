@@ -121,7 +121,7 @@ typedef struct ppp_cp_t{
 	/* Function for converting cp_opts to payload  */
 	uint32_t (*_load_specific_cp_opts)(void *cp_options, uint8_t *dst);
 	/* Negotiate nak */
-	void (*negotiate_nak)(void *cp_options, cp_pkt_t *pkt);
+	void (*negotiate_nak)(void *cp_options, opt_metadata_t *recv_opts, uint8_t recv_num);
 
 	int (*get_option_status)(cp_opt_hdr_t *opt);
 

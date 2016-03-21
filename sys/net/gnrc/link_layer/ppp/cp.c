@@ -76,10 +76,10 @@ return 0; /*TODO: Fix output*/
 }
 
 /* Fix params for request */
-static int _handle_cp_nak(ppp_cp_t *cp, cp_pkt *pkt)
+static int _handle_cp_nak(ppp_cp_t *cp)
 {
-	cp->negotiate_nak(cp->cp_options, pkt);
-	l_lcp->event = E_RCN;
+	cp->negotiate_nak(cp->cp_options, cp->metadata.tagged_opts, cp->metadata.num_tagged_opts);
+	cp->event = E_RCN;
 	return 0; /*TODO: Fix output*/
 }
 
@@ -121,6 +121,7 @@ void handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt)
 			_handle_cp_rca(cp);
 			break;
 		case PPP_CONF_NAK:
+			_handle_cp_nak(cp);
 			break;
 		case PPP_CONF_REJ:
 			break;

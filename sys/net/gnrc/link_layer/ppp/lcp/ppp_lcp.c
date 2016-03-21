@@ -18,6 +18,7 @@
 
 #include "net/gnrc/ppp/lcp.h"
 #include "net/gnrc/ppp/ppp.h"
+#include "net/gnrc/ppp/cp.h"
 
 #define ENABLE_DEBUG    (0)
 #include "debug.h"
@@ -31,7 +32,7 @@
 void lcp_negotiate_nak(void *lcp_opt, opt_metadata_t *recv_opts, uint8_t num_recv)
 {
 	/* Cast lcp_opt to corresponding struct */
-	lcp_opt_t *opts = (*lcp_opt_t) lcp_opt;
+	lcp_opt_t *opts = (lcp_opt_t*) lcp_opt;
 
 	void *payload;
 	uint16_t suggested_value;
