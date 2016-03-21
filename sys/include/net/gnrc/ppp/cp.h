@@ -2,6 +2,7 @@
 #ifndef GNRC_PPP_CP_H_
 #define GNRC_PPP_CP_H_
 #include "net/ppp/pkt.h"
+#include "net/ppp/opt.h"
 
 #ifdef __cplusplus
 extern "C" {

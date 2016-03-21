@@ -152,34 +152,31 @@ void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_
 	metadata->pkt = pkt;
 	metadata->opts_status_content=0;
 
-	cp_opt_hdr_t *curr_opt;
+	void *curr_opt;
 	uint16_t curr_status;
-	uint16_t cursor = 0;
-
-	uint16_t num_tagged = 0;
 
 	/* Check if current code has options */
 	if (code == PPP_CONF_REQ)
 	{
-		/* Iterate through options */
-		curr_opt = (cp_opt_hdr_t*) (pkt->payload+cursor);
-		curr_status = get_opt_status(curr_opt);
-		switch(curr_status)
+		ppp_opts_init(&metadata->opts);
+		curr_opt = ppp_opts_get_head();
+		for(int i=0; i<ppp_opts_get_num(&metadata->opts); i++)
 		{
-			case CP_CREQ_ACK:
-				metadata->opts_status_content |= OPT_HAS_ACK;
-				break;
-			case CP_CREQ_NAK:
-				metadata->opts_status_content |= OPT_HAS_NAK;
-				break;
-			case CP_CREQ_REJ:
-				metadata->opts_status_content |= OPT_HAS_REJ;
-				break;
+			curr_status = get_opt_status(curr_opt);
+			switch(curr_status)
+			{
+				case CP_CREQ_ACK:
+					metadata->opts_status_content |= OPT_HAS_ACK;
+					break;
+				case CP_CREQ_NAK:
+					metadata->opts_status_content |= OPT_HAS_NAK;
+					break;
+				case CP_CREQ_REJ:
+					metadata->opts_status_content |= OPT_HAS_REJ;
+					break;
+			}
+			curr_opt = ppp_opts_get_next(&metadata->opts);
+			metadata->tagged_opts[i] = curr_status;
 		}
-		metadata->tagged_opts[num_tagged].status = curr_status;
-		metadata->tagged_opts[num_tagged].opt = curr_opt;
-		cursor+=curr_opt->length;
-		num_tagged+=1;
 	}
-	metadata->num_tagged_opts = num_tagged;
 }
