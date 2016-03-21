@@ -64,17 +64,6 @@ extern "C" {
 
 #define CP_OPT_MAX (20)
 
-/*Control Protocol option*/
-typedef struct __attribute__((packed)){
-	uint8_t type;
-	uint8_t length;
-} cp_opt_hdr_t;
-
-typedef struct opt_metadada_t
-{
-	cp_opt_hdr_t *opt;
-	uint8_t status;
-} opt_metadata_t;
 
 typedef struct cp_pkt_metadata_t
 {
