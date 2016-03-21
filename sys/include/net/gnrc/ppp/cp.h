@@ -69,8 +69,8 @@ typedef struct cp_pkt_metadata_t
 {
 	cp_pkt_t *pkt; /* Pointer to received packet */
 	uint8_t opts_status_content; /* In case of CP options*/
-	opt_metadata_t tagged_opts[CPOPT_MAX_OPT];
-	uint8_t num_tagged_opts;
+	uint8_t tagged_opts[CPOPT_MAX_OPT];
+	opt_metadata_t opts;
 } cp_pkt_metadata_t;
 
 
