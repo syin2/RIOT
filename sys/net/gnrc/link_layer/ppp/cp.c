@@ -156,7 +156,7 @@ void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_
 	uint16_t curr_status;
 
 	/* Check if current code has optio=ns */
-	if (code == PPP_CONF_REQ || code == PPP_CONF_NAK)
+	if (code == PPP_CONF_REQ || code == PPP_CONF_NAK || code == PPP_CONF_REJ)
 	{
 		ppp_opts_init(&metadata->opts, pkt);
 		curr_opt = ppp_opts_get_head(&metadata->opts);
