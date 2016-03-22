@@ -24,6 +24,11 @@
 #include "net/gnrc/ppp/lcp.h"
 #include "net/ppp/opt.h"
 
+typedef struct fakeprot_opts
+{
+	int option;
+} fakeprot_opts;
+
 /* Dummy get_option_status for testing fake prot*/
 static int fakeprot_get_option_status(void *opt)
 {
@@ -43,6 +48,42 @@ static int fakeprot_get_option_status(void *opt)
 	}
 	return CP_CREQ_ACK;
 
+}
+static void fakeprot_negotiate_nak(void *fp_opts, cp_pkt_metadata_t *metadata)
+{
+	fakeprot_opts *opts = (fakeprot_opts*) fp_opts;
+
+	void *curr_opt;
+	uint8_t ctype;
+	uint16_t suggested_value;
+	uint8_t *payload;
+
+	opt_metadata_t *opts_handler = &metadata->opts;
+
+	curr_opt = ppp_opts_get_head(opts_handler);
+	int num_opts = ppp_opts_get_num(opts_handler);
+
+
+	for(int i=0;i<num_opts; i++)
+	{
+		ctype = ppp_opt_get_type(curr_opt);
+		payload = (uint8_t*) ppp_opt_get_payload(curr_opt);
+		switch(ctype)
+		{
+			case 1:
+				suggested_value = ((*payload)<<8)+*(payload+1);
+				if(suggested_value > 5){
+					opts->option = 5;
+				}
+				else
+				{
+					opts->option = suggested_value;
+				}
+				break;
+			default:
+				break;
+		}
+	}
 }
 
 static void test_gnrc_ppp_lcp_recv_cr_nak(void)
@@ -122,7 +163,7 @@ static void test_gnrc_ppp_lcp_recv_nak(void)
 	/*Make fake ctrl prot*/
 	ppp_cp_t fake_prot;
 	fake_prot.get_option_status = &fakeprot_get_option_status;
-	fake_prot.negotiate_nak = &lcp_negotiate_nak;
+	fake_prot.negotiate_nak = &fakeprot_negotiate_nak;
 
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
 	uint8_t good_pkt[8] = {0x02,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
