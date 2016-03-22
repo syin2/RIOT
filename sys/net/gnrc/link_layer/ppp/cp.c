@@ -68,7 +68,6 @@ static int _handle_cp_rca(ppp_cp_t *cp)
 
 	if (cp->cr_sent_size != pkt_length || memcmp(cp->cr_sent_opts,pkt->payload,pkt_length-sizeof(cp_hdr_t)))
 	{
-		printf("I'm here\n");
 		return -1; /* TODO: Error code*/
 	}
 
