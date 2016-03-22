@@ -83,11 +83,23 @@ static int _handle_cp_nak(ppp_cp_t *cp)
 	return 0; /*TODO: Fix output*/
 }
 
-#if 0
-static int _handle_cp_rej(ppp_cp_t *cp, cp_pkt_t *pkt)
+static int _handle_cp_rej(ppp_cp_t *cp)
 {
+	/* Turn off every option that is not allowed by peer */
+	opt_metadata_t *opt_handler = cp->metadata.opts;
+	void *curr_opt = ppp_opts_get_head(opt_handler);
+	int num_opts = ppp_opts_get_num(opt_handler);
+
+	int curr_type;
+
+	for(int i=0;i<num_opts;i++)
+	{
+		curr_type = ppp_opt_get_tye(curr_opt);
+
+	}
 	l_lcp->event = E_RCJ;
 }
+#if 0
 
 static int _handle_cp_term_req(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
@@ -110,6 +122,8 @@ void handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt)
 {
 	cp->metadata.pkt = pkt;
 	ppp_pkt_gen_metadata(&cp->metadata, pkt, cp->get_option_status);
+
+	/* Check options recv are subset of opts sent */
 
 	int type = ppp_pkt_get_code(pkt);
 	
