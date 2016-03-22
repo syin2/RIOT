@@ -108,6 +108,7 @@ typedef struct ppp_cp_t{
 
 	/* Pointer to another struct with CP options*/
 	void *cp_options;
+	uint16_t enabled_options:
 	/* Function for converting cp_opts to payload  */
 	uint32_t (*_load_specific_cp_opts)(void *cp_options, uint8_t *dst);
 	/* Negotiate nak */
