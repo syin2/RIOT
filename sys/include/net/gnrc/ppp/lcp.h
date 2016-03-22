@@ -20,6 +20,8 @@ extern "C" {
 #define LCP_MAX_MRU (2000)
 #define LCP_DEFAULT_MRU (1500)
 
+#define LCP_MRU_EN (1)
+
 typedef struct lcp_opt_t{
 	uint16_t flags;
 	uint16_t mru;
