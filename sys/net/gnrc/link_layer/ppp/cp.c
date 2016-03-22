@@ -179,4 +179,5 @@ void ppp_pkt_gen_metadata(cp_pkt_metadata_t *metadata, cp_pkt_t *pkt, int (*get_
 			metadata->tagged_opts[i] = curr_status;
 		}
 	}
+	ppp_opts_reset(&metadata->opts);
 }
