@@ -292,13 +292,6 @@ int lcp_handle_code(cp_pkt_t *pkt)
 	}
 }
 
-int lcp_handle_echo(ppp_cp_t *lcp, cp_pkt_t *pkt)
-{
-	(void) lcp;
-	(void) pkt;
-	return 0;
-}
-
 int lcp_handle_term(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
 	(void) lcp;
@@ -344,7 +337,8 @@ int lcp_handle_pkt(ppp_cp_t *lcp, cp_pkt_t *pkt)
 			break;
 		case PPP_ECHO_REQ:
 		case PPP_ECHO_REP:
-			event = lcp_handle_echo(lcp, pkt);
+		case PPP_DISC_REQ:
+			event = E_RXR;
 			break;
 		default:
 			event = E_RUC;
