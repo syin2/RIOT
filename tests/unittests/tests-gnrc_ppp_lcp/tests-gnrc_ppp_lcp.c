@@ -113,12 +113,33 @@ static void test_lcp_recv_nakrej(void)
 	TEST_ASSERT_EQUAL_INT(E_RCN, event);
 }
 
+static void test_lcp_recv_coderej(void)
+{
+	ppp_cp_t lcp;
+	uint8_t coderej_notcritical_pkt[8] = {0x07,0x00,0x00,0x08,0x09,0x04,0x00,0x01};
+	uint8_t coderej_critical_pkt[8] = {0x07,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
+	int event;
+	
+	cp_pkt_t critical_pkt;
+	cp_pkt_t notcritical_pkt;
+
+	ppp_pkt_init(coderej_notcritical_pkt, 8, &notcritical_pkt);
+	ppp_pkt_init(coderej_critical_pkt, 8, &critical_pkt);
+
+	event = lcp_handle_pkt(&lcp, &critical_pkt);
+	TEST_ASSERT_EQUAL_INT(E_RJXm, event);
+
+	event = lcp_handle_pkt(&lcp, &notcritical_pkt);
+	TEST_ASSERT_EQUAL_INT(E_RJXp, event);
+}
+
 Test *tests_gnrc_ppp_lcp_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture(test_lcp_recv_rcr),
         new_TestFixture(test_lcp_recv_ack),
         new_TestFixture(test_lcp_recv_nakrej),
+        new_TestFixture(test_lcp_recv_coderej),
     };
 
     EMB_UNIT_TESTCALLER(gnrc_ppp_lcp_tests, NULL, NULL, fixtures);
