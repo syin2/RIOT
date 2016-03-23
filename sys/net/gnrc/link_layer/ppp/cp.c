@@ -48,6 +48,7 @@ void handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt)
 	ppp_pkt_gen_metadata(&cp->metadata, pkt, cp->get_option_status);
 
 	/* Check options recv are subset of opts sent */
+	/* Check pkt sanity */
 
 	int type = ppp_pkt_get_code(pkt);
 	
