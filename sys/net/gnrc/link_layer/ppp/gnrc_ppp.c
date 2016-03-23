@@ -282,7 +282,7 @@ kernel_pid_t gnrc_ppp_init(char *stack, int stacksize, char priority,
 #endif
 
 /*Send Control Protocol. Assumes the opt payload is loaded in HDLC Control Protocol Buffer. */
-static int send_cp(ppp_ctrl_prot_t  *cp, cp_pkt_t *pkt)
+static int send_ppp_pkt(ppp_ctrl_prot_t  *cp, cp_pkt_t *pkt)
 {
 	ppp_dev_t *dev = cp->dev;
 
