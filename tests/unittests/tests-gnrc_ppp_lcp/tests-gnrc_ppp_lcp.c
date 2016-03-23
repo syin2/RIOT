@@ -126,11 +126,11 @@ static void test_lcp_recv_coderej(void)
 	ppp_pkt_init(coderej_notcritical_pkt, 8, &notcritical_pkt);
 	ppp_pkt_init(coderej_critical_pkt, 8, &critical_pkt);
 
-	event = lcp_handle_pkt(&lcp, &critical_pkt);
-	TEST_ASSERT_EQUAL_INT(E_RJXm, event);
-
 	event = lcp_handle_pkt(&lcp, &notcritical_pkt);
-	TEST_ASSERT_EQUAL_INT(E_RJXp, event);
+	TEST_ASSERT_EQUAL_INT(E_RXJp, event);
+
+	event = lcp_handle_pkt(&lcp, &critical_pkt);
+	TEST_ASSERT_EQUAL_INT(E_RXJm, event);
 }
 
 Test *tests_gnrc_ppp_lcp_tests(void)
