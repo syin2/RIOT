@@ -58,36 +58,7 @@ static void _event_cb(gnrc_netdev_event_t event, void *data)
         }
     }
 }
-static int _read_lcp_pkt(uint8_t type, uint8_t *payload, size_t size, cp_opt_t *opt_buf)
-{
-	uint16_t u16;
-	opt_buf->type = type;
-	/* For the moment, only MRU option supported */
-	DEBUG("lcp_opt_type: %i\n",type);
-	DEBUG("lcp_opt_size: %i\n",(int) size);
-	switch(type)
-	{
-		case LCP_OPT_MRU:
-			if(size != 4) /* TODO: Replace with label*/
-				return -1; /* TODO: Replace with label*/
-			u16 = ((*payload)<<8) + *(payload+1);
-			opt_buf->payload[0] = (*payload);
-			opt_buf->payload[1] = *(payload+1);
-			opt_buf->p_size = (size_t) sizeof(uint16_t);
-			DEBUG("->%i\n",(int)u16);
-			if(u16 > LCP_MAX_MRU){
-				opt_buf->status = CP_CREQ_NAK;
-				return 0;/*TODO: Right value*/
-			}
-			opt_buf->status = CP_CREQ_ACK;
-			break;
-		default:
-			memcpy(opt_buf->payload, payload, size-2);
-			opt_buf->p_size = size-2;
-			opt_buf->status = CP_CREQ_REJ;
-	}
-	return 0;/*TODO: Fix right value */
-}
+
 #if 0
 static void _lcp_negotiate_nak(opt_stack_t *opts)
 {
