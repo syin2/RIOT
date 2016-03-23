@@ -169,7 +169,7 @@ typedef struct ppp_cp_t{
 	uint16_t cr_sent_size;
 
 	/* For terminate request */
-	uint8_t tr_identifier;
+	uint8_t tr_sent_identifier;
 
 	/* Pointer to another struct with CP options*/
 	void *cp_options;

@@ -310,14 +310,17 @@ int lcp_handle_term(ppp_cp_t *lcp, cp_pkt_t *pkt)
 	(void) lcp;
 	(void) pkt;
 	uint8_t code = ppp_pkt_get_code(pkt);
+	uint8_t id;
 	switch(code)
 	{
 		case PPP_TERM_REQ:
 			return E_RTR;
 			break;
 		case PPP_TERM_ACK:
-			/*TODO: Compare incoming ID */
-			return E_RTA;
+			id = ppp_pkt_get_id(pkt);
+			if(id == lcp->tr_sent_identifier)
+				return E_RTA;
+			return -EBADMSG;
 	}
 
 	return -EBADMSG;
