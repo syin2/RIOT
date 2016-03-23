@@ -170,8 +170,20 @@ void lcp_handle_conf(cp_ppp_t *lcp, cp_pkt_t *pkt)
 	}
 }
 
-void lcp_handle_code(cp_ppp_t *lcp, uint8_t code)
+void lcp_handle_code(cp_ppp_t *lcp, cp_pkt_t *pkt)
 {
+	/* Generate ppp packet from payload */
+	cp_pkt_t rej_pkt;
+	ppp_pkt_init(&rej_pkt, ppp_pkt_get_payload(pkt),ppp_pkt_get_length(pkt));
+	uint8_t code = ppp_pkt_get_code(rej_pkt);
+	if (code >= PPP_CONF_REQ && code <= PPP_TERM_ACK)
+	{
+		lcp->event = E_RXJp;
+	}
+	else
+	{
+		lcp->event = E_RXJm;
+	}
 }
 
 static void lcp_tlu(ppp_cp_t *lcp)
