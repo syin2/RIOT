@@ -49,9 +49,6 @@ void lcp_sta(ppp_cp_t *lcp, cp_pkt_t *pkt);
 void lcp_scj(ppp_cp_t *lcp, cp_pkt_t *pkt);
 void lcp_ser(ppp_cp_t *lcp, cp_pkt_t *pkt);
 
-/*Event generators*/
-int lcp_handle_conf(ppp_cp_t *lcp, cp_pkt_t *pkt);
-int lcp_handle_code(cp_pkt_t *pkt);
 
 int lcp_handle_pkt(ppp_cp_t *lcp, cp_pkt_t *pkt);
 
