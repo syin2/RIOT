@@ -42,44 +42,6 @@
 
 
 
-void handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt)
-{
-	cp->metadata.pkt = pkt;
-	ppp_pkt_gen_metadata(&cp->metadata, pkt, cp->get_option_status);
-
-	/* Check options recv are subset of opts sent */
-	/* Check pkt sanity */
-
-	int type = ppp_pkt_get_code(pkt);
-	
-	switch(type){
-		case PPP_CONF_REQ:
-		case PPP_CONF_ACK:
-		case PPP_CONF_NAK:
-		case PPP_CONF_REJ:
-			cp->handle_conf(ppp_cp_t *cp);
-		case PPP_TERM_REQ:
-			break;
-		case PPP_TERM_ACK:
-			break;
-		case PPP_CODE_REJ:
-			break;
-		case PPP_PROT_REJ:
-			break;
-		case PPP_ECHO_REQ:
-			break;
-		case PPP_ECHO_REP:
-			break;
-		case PPP_DISC_REQ:
-			break;
-		case PPP_IDENT:
-			break;
-		case PPP_TIME_REM:
-			break;
-	}
-}
-
-
 /* Call functions depending on function flag*/
 static void _event_action(ppp_cp_t *cp) 
 {
