@@ -49,6 +49,9 @@ static void lcp_sta(ppp_cp_t *lcp);
 static void lcp_scj(ppp_cp_t *lcp);
 static void lcp_ser(ppp_cp_t *lcp);
 
+/*Event generators*/
+void lcp_handle_conf(cp_ppp_t *lcp, cp_pkt_t *pkt);
+void lcp_handle_code(cp_ppp_t *lcp, cp_pkt_t *pkt);
 
 #ifdef __cplusplus
 }
