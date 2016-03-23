@@ -133,6 +133,36 @@ static void test_lcp_recv_coderej(void)
 	TEST_ASSERT_EQUAL_INT(E_RXJm, event);
 }
 
+static void test_lcp_recv_term(void)
+{
+	ppp_cp_t lcp;
+	uint8_t term_req[8] = {0x05,0x00,0x00,0x08,0x09,0x04,0x00,0x01};
+	int sent_treq_id = 9;
+	uint8_t term_ack[8] = {0x06,sent_treq_id,0x00,0x08,0x09,0x04,0x00,0x01};
+	int event;
+
+	cp_pkt_t treq;
+	cp_pkt_t tack;
+
+	ppp_pkt_init(term_req, 8, &treq);
+	ppp_pkt_init(term_ack, 8, &tack);
+
+	/*Test received term req*/
+	lcp.tr_sent_identifier = sent_treq_id;
+	event = lcp_handle_pkt(&lcp, &treq);
+	TEST_ASSERT_EQUAL_INT(E_RTR, event);
+
+	/*Test received term ack with corresponding to the sent term req*/
+	event = lcp_handle_pkt(&lcp, &tack);
+	TEST_ASSERT_EQUAL_INT(E_RTA, event);
+
+	/*Test received term ack with bad id */
+	lcp.tr_sent_identifier = 0;
+	event = lcp_handle_pkt(&lcp, &tack);
+	TEST_ASSERT_EQUAL_INT(-EBADMSG, event);
+
+}
+
 Test *tests_gnrc_ppp_lcp_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
@@ -140,6 +170,7 @@ Test *tests_gnrc_ppp_lcp_tests(void)
         new_TestFixture(test_lcp_recv_ack),
         new_TestFixture(test_lcp_recv_nakrej),
         new_TestFixture(test_lcp_recv_coderej),
+        new_TestFixture(test_lcp_recv_term),
     };
 
     EMB_UNIT_TESTCALLER(gnrc_ppp_lcp_tests, NULL, NULL, fixtures);
