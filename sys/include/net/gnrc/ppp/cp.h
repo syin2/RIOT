@@ -143,15 +143,6 @@ static const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 #define CP_OPT_MAX (20)
 
 
-typedef struct cp_pkt_metadata_t
-{
-	cp_pkt_t *pkt; /* Pointer to received packet */
-	uint8_t opts_status_content; /* In case of CP options*/
-	uint8_t tagged_opts[CPOPT_MAX_OPT];
-	opt_metadata_t opts;
-} cp_pkt_metadata_t;
-
-
 /* Control Protocol struct*/
 typedef struct ppp_cp_t{
 	uint8_t event;
@@ -180,22 +171,11 @@ typedef struct ppp_cp_t{
 	/* For terminate request */
 	uint8_t tr_identifier;
 
-	cp_pkt_metadata_t metadata; 
-
-
 	/* Pointer to another struct with CP options*/
 	void *cp_options;
 	void handle_conf();
 	void handle_code();
-	/*Add sm handlers here*)
 	uint16_t enabled_options:
-	/* Function for converting cp_opts to payload  */
-	uint32_t (*_load_specific_cp_opts)(void *cp_options, uint8_t *dst);
-	/* Negotiate nak */
-	void (*negotiate_nak)(void *cp_options, cp_pkt_metadata_t *metadata);
-	int (*get_option_status)(void *opt);
-
-
 
 } ppp_cp_t;
 
