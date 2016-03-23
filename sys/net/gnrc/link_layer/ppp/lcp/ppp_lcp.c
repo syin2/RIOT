@@ -76,7 +76,7 @@ void lcp_negotiate_nak(void *lcp_opt, cp_pkt_metadata_t *metadata)
 static uint8_t _lcp_get_opt_status(void *opt)
 {
 	uint8_t opt_type = ppp_opt_get_type(opt);
-	int8_t payload = ppp_opt_get_payload(opt);
+	uint8_t * payload = (uint8_t*) ppp_opt_get_payload(opt);
 	int8_t length = ppp_opt_get_length(opt);
 
 	uint16_t u16;
@@ -84,7 +84,7 @@ static uint8_t _lcp_get_opt_status(void *opt)
 	switch(opt_type)
 	{
 		case LCP_OPT_MRU:
-			if(size != 4) /
+			if(length != 4) 
 				return -EBADMSG; 
 			u16 = ((*payload)<<8) + *(payload+1);
 			if(u16 > LCP_MAX_MRU){
@@ -98,9 +98,8 @@ static uint8_t _lcp_get_opt_status(void *opt)
 	return -EBADMSG; /* Never reaches here. Something went wrong if that's the case */
 }
 
-static uint8_t _lcp_handle_rcr(ppp_cp_t *lcp, cp_pkt_t *pkt)
+static uint8_t _lcp_handle_rcr(cp_pkt_t *pkt)
 {
-	uint8_t code = ppp_pkt_get_code(pkt);
 	void *curr_opt;
 	uint16_t curr_status;
 	opt_list_t opts;
@@ -112,12 +111,12 @@ static uint8_t _lcp_handle_rcr(ppp_cp_t *lcp, cp_pkt_t *pkt)
 		if(curr_status != CP_CREQ_ACK){
 			return E_RCRm;
 		}
-		curr_opt = ppp_opts_next(&metadata->opts);
+		curr_opt = ppp_opts_next(&opts);
 	}
 	return E_RCRp;
 }
 
-static uint8_t _lcp_handle_rca(ppp_cp_t *lcp, cp_pkt_t *pkt)
+static uint8_t _lcp_handle_rca(cp_pkt_t *pkt, ppp_cp_t *lcp)
 {
 	uint8_t pkt_id = ppp_pkt_get_id(pkt);
 	uint8_t pkt_length = ppp_pkt_get_length(pkt);
@@ -135,44 +134,31 @@ static uint8_t _lcp_handle_rca(ppp_cp_t *lcp, cp_pkt_t *pkt)
 	return E_RCA;
 }
 
-/* Fix params for request */
-static uint8_t _lcp_handle_nak(ppp_cp_t *lcp)
-{
-	return E_RCN;
-}
-
-static uint8_t _lcp_handle_rej(ppp_cp_t *lcp)
-{
-	return E_RCJ;
-}
-
-
-uint8_t lcp_handle_conf(cp_ppp_t *lcp, cp_pkt_t *pkt)
+uint8_t lcp_handle_conf(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
 	uint8_t result;
-	switch(ppp_pkt_get_type(pkt))
+	switch(ppp_pkt_get_code(pkt))
 	{
 		case PPP_CONF_REQ:
-			result = _lcp_handle_rcr(lcp, pkt);
+			result = _lcp_handle_rcr(pkt);
 			break;
 		case PPP_CONF_ACK:
-			result = _lcp_handle_rca(lcp, pkt);
+			result = _lcp_handle_rca(pkt, lcp);
 			break;
 		case PPP_CONF_NAK:
-			result = _lcp_handle_rcn(lcp, pkt);
-			break;
 		case PPP_CONF_REJ:
-			result = _lcp_handle_rej(lcp, pkt);
+			result = E_RCN;
 			break;
 	}
+	return result;
 }
 
-uint8_t lcp_handle_code(cp_ppp_t *lcp, cp_pkt_t *pkt)
+uint8_t lcp_handle_code(cp_pkt_t *pkt)
 {
 	/* Generate ppp packet from payload */
 	cp_pkt_t rej_pkt;
-	ppp_pkt_init(&rej_pkt, ppp_pkt_get_payload(pkt),ppp_pkt_get_length(pkt));
-	uint8_t code = ppp_pkt_get_code(rej_pkt);
+	ppp_pkt_init(ppp_pkt_get_payload(pkt), ppp_pkt_get_length(pkt), &rej_pkt);
+	uint8_t code = ppp_pkt_get_code(&rej_pkt);
 	if (code >= PPP_CONF_REQ && code <= PPP_TERM_ACK)
 	{
 		return E_RXJp;
@@ -183,70 +169,73 @@ uint8_t lcp_handle_code(cp_ppp_t *lcp, cp_pkt_t *pkt)
 	}
 }
 
-static void lcp_tlu(ppp_cp_t *lcp)
+void lcp_tlu(ppp_cp_t *lcp)
 {
 	lcp->l_upper_msg |= PPP_MSG_UP;
 }
 
-static void lcp_tld(ppp_cp_t *lcp)
+void lcp_tld(ppp_cp_t *lcp)
 {
 	lcp->l_upper_msg |= PPP_MSG_DOWN;
 }
 
-static void lcp_tls(ppp_cp_t *lcp)
+void lcp_tls(ppp_cp_t *lcp)
 {
 	lcp->l_lower_msg |= PPP_MSG_UP;
 }
 
-static void lcp_tlf(ppp_cp_t *lcp)
+void lcp_tlf(ppp_cp_t *lcp)
 {
 	lcp->l_lower_msg |= PPP_MSG_DOWN;
 }
 
-static void lcp_irc(ppp_cp_t *lcp)
+void lcp_irc(ppp_cp_t *lcp)
 {
 	/*Depending on the state, set the right value for restart counter*/
 	/* TODO: Activate restart timer with corresponding time out */
-	switch(cp->timer_select)
+	switch(lcp->timer_select)
 	{
 		case RC_SEL_CONF:
-			cp->counter_term = PPP_MAX_TERMINATE;
+			lcp->counter_term = PPP_MAX_TERMINATE;
 			break;
 		case RC_SEL_TERM:
-			cp->counter_conf = PPP_MAX_CONFIG;
+			lcp->counter_config = PPP_MAX_CONFIG;
 			break;
 		default:
 			/* Shouldn't be here */
 			break;
 	}
 }
-static void lcp_zrc(ppp_cp_t *lcp)
+void lcp_zrc(ppp_cp_t *lcp)
 {
-	cp->restart_counter = 0;
+	lcp->restart_counter = 0;
 	/* Set timer to appropiate value TODO*/
 }
 
-static void lcp_src(ppp_cp_t *lcp)
+void lcp_src(ppp_cp_t *lcp)
 {
 	/* Decrement configure counter */
-	cp->counter_conf -= 1;
+	lcp->counter_config -= 1;
 
 	int id=666; /* TODO */
 	cp_pkt_t pkt;
-	pkt.hdr.code = PPP_CP_REQUEST_CONFIGURE;
-	pkt.hdr.id = id;
-	cp->populate_opt_stack(cp->cp_options, &(pkt.opt_stack));
+	ppp_pkt_set_code(&pkt, PPP_CONF_REQ);
+	ppp_pkt_set_id(&pkt, id);
 	
-	send_cp(cp, &pkt);
+	//send_cp(cp, &pkt);
 	/* TODO: Set timeout for SRC */
 }
-static void lcp_sca(ppp_cp_t *lcp, cp_pkt_t *pkt)
+void lcp_sca(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
-	pkt->hdr->code = PPP_CP_REQUEST_ACK;
-	send_cp(cp, pkt);
+	ppp_pkt_set_code(pkt, PPP_CONF_ACK);
+	(void) lcp;
+	//send_cp(cp, pkt);
 }
-static void lcp_scn(ppp_cp_t *lcp, cp_pkt_t *pkt)
+void lcp_scn(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
+	(void) lcp;
+	(void) pkt;
+#if 0
 	/* Check the content of received options */
 	if(pkt->opts->content_flag & OPT_HAS_REJ)
 	{
@@ -260,9 +249,12 @@ static void lcp_scn(ppp_cp_t *lcp, cp_pkt_t *pkt)
 		pkt->hdr->code = PPP_CP_REQUEST_NAK;
 		send_cp(cp, pkt);
 	}
+#endif
 }
-static void lcp_str(ppp_cp_t *lcp)
+void lcp_str(ppp_cp_t *lcp)
 {
+	(void) lcp;
+#if 0
 	int id = 666; /*TODO*/
 	cp_pkt_t pkt;
 	pkt->hdr->code = PPP_CP_TERM_REQUEST;
@@ -270,9 +262,13 @@ static void lcp_str(ppp_cp_t *lcp)
 	pkt->hdr->length = 4;
 	pkt->opts->num_opts = 0;
 	send_cp(cp, pkt);
+#endif
 }
-static void lcp_sta(ppp_cp_t *lcp)
+void lcp_sta(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
+	(void) lcp;
+	(void) pkt;
+#if 0
 	int id = 666; /*TODO*/
 	cp_pkt_t pkt;
 	pkt->hdr->code = PPP_CP_TERM_ACK;
@@ -280,37 +276,53 @@ static void lcp_sta(ppp_cp_t *lcp)
 	pkt->hdr->length = 4;
 	pkt->opts->num_opts = 0;
 	send_cp(cp, pkt);
+#endif
 }
-static void lcp_scj(ppp_cp_t *lcp)
+void lcp_scj(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
-	send_cp(cp, PPP_CP_CODE_REJ);
+	(void) lcp;
+	(void) pkt;
+	//send_cp(lcp, PPP_CP_CODE_REJ);
 }
-static void lcp_ser(ppp_cp_t *lcp)
+void lcp_ser(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
-	send_cp(cp,PPP_CP_SER);
+	(void) lcp;
+	(void) pkt;
+	//send_cp(lcp,PPP_CP_SER);
 }
 
-static uint8_t _handle_term_req(ppp_cp_t *lcp, cp_pkt_t *pkt)
+uint8_t lcp_handle_echo(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
-	return E_RTR;
+	(void) lcp;
+	(void) pkt;
+	return 0;
 }
 
-static uint8_t _handle_term_ack(ppp_cp_t *lcp, cp_pkt_t *pkt)
+uint8_t lcp_handle_unknown_code(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
-	lcp->tr_identifier = cp_pkt->hdr->id;
-	return E_RTA;
+	(void) lcp;
+	(void) pkt;
+	return 0;
+}
+uint8_t lcp_handle_term(ppp_cp_t *lcp, cp_pkt_t *pkt)
+{
+	(void) lcp;
+	(void) pkt;
+	uint8_t code = ppp_pkt_get_code(pkt);
+	switch(code)
+	{
+		case PPP_TERM_REQ:
+			return E_RTR;
+			break;
+		case PPP_TERM_ACK:
+			/*TODO: Compare incoming ID */
+			return E_RTA;
+	}
+
+	return -EBADMSG;
 }
 
-static uint8_t _handle_code_rej(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
-{
-	return E_RXJm;
-}
-
-uint8_t handle_term(ppp_cp_t *cp)
-{
-}
-
-uint8_t handle_lcp_pkt(ppp_cp_t *lcp, cp_pkt_t *pkt)
+uint8_t lcp_handle_pkt(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
 	/* Check options recv are subset of opts sent */
 	/* Check pkt sanity */
@@ -323,18 +335,18 @@ uint8_t handle_lcp_pkt(ppp_cp_t *lcp, cp_pkt_t *pkt)
 		case PPP_CONF_ACK:
 		case PPP_CONF_NAK:
 		case PPP_CONF_REJ:
-			event = lcp_handle_conf(cp, pkt);
+			event = lcp_handle_conf(lcp, pkt);
 		case PPP_TERM_REQ:
 		case PPP_TERM_ACK:
-			event = lcp_handle_term(cp, pkt);
+			event = lcp_handle_term(lcp, pkt);
 		case PPP_CODE_REJ:
-			event = lcp_handle_code(cp, pkt);
+			event = lcp_handle_code(pkt);
 		case PPP_ECHO_REQ:
 		case PPP_ECHO_REP:
-			event = lcp_handle_echo(cp, pkt);
+			event = lcp_handle_echo(lcp, pkt);
 			break;
 		default:
-			event = lcp_handle_unknown_code(cp, pkt);
+			event = lcp_handle_unknown_code(lcp, pkt);
 			break;
 	}
 

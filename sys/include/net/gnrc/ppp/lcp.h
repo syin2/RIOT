@@ -35,23 +35,25 @@ typedef struct lcp_opt_t{
 
 
 /* Implementation of LCP fsm actions */
-static void lcp_tlu(ppp_cp_t *lcp);
-static void lcp_tld(ppp_cp_t *lcp);
-static void lcp_tls(ppp_cp_t *lcp);
-static void lcp_tlf(ppp_cp_t *lcp);
-static void lcp_irc(ppp_cp_t *lcp);
-static void lcp_zrc(ppp_cp_t *lcp);
-static void lcp_scr(ppp_cp_t *lcp);
-static void lcp_sca(ppp_cp_t *lcp);
-static void lcp_scn(ppp_cp_t *lcp);
-static void lcp_str(ppp_cp_t *lcp);
-static void lcp_sta(ppp_cp_t *lcp);
-static void lcp_scj(ppp_cp_t *lcp);
-static void lcp_ser(ppp_cp_t *lcp);
+void lcp_tlu(ppp_cp_t *lcp);
+void lcp_tld(ppp_cp_t *lcp);
+void lcp_tls(ppp_cp_t *lcp);
+void lcp_tlf(ppp_cp_t *lcp);
+void lcp_irc(ppp_cp_t *lcp);
+void lcp_zrc(ppp_cp_t *lcp);
+void lcp_scr(ppp_cp_t *lcp);
+void lcp_sca(ppp_cp_t *lcp, cp_pkt_t *pkt);
+void lcp_scn(ppp_cp_t *lcp, cp_pkt_t *pkt);
+void lcp_str(ppp_cp_t *lcp);
+void lcp_sta(ppp_cp_t *lcp, cp_pkt_t *pkt);
+void lcp_scj(ppp_cp_t *lcp, cp_pkt_t *pkt);
+void lcp_ser(ppp_cp_t *lcp, cp_pkt_t *pkt);
 
 /*Event generators*/
-void lcp_handle_conf(cp_ppp_t *lcp, cp_pkt_t *pkt);
-void lcp_handle_code(cp_ppp_t *lcp, cp_pkt_t *pkt);
+uint8_t lcp_handle_conf(ppp_cp_t *lcp, cp_pkt_t *pkt);
+uint8_t lcp_handle_code(cp_pkt_t *pkt);
+
+uint8_t lcp_handle_pkt(ppp_cp_t *lcp, cp_pkt_t *pkt);
 
 #ifdef __cplusplus
 }
