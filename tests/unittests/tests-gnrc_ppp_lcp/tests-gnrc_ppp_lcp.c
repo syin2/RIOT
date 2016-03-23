@@ -18,9 +18,8 @@
 #include "embUnit.h"
 
 #include "unittests-constants.h"
-#include "tests-gnrc_ppp.h"
+#include "tests-gnrc_ppp_lcp.h"
 #include "net/gnrc/ppp/cp.h"
-#include "net/gnrc/ppp/cp_fsm.h"
 #include "net/gnrc/ppp/lcp.h"
 #include "net/ppp/opt.h"
 
@@ -36,7 +35,7 @@ static void test_lcp_recv_cr_nak(void)
 	ppp_pkt_init(nak_pkt, 8, &cp_pkt);
 
 	uint8_t event;
-	event = handle_lcp_pkt(&lcp, &cp_pkt);
+	event = lcp_handle_pkt(&lcp, &cp_pkt);
 
 	/* In this case, we are expecting an E_RCRm*/
 	TEST_ASSERT_EQUAL_INT(E_RCRm, event);
@@ -52,7 +51,7 @@ static void test_lcp_recv_cr_rej(void)
 	ppp_pkt_init(rej_pkt, 8, &cp_pkt);
 
 	uint8_t event;
-	event = handle_lcp_pkt(&lcp, &cp_pkt);
+	event = lcp_handle_pkt(&lcp, &cp_pkt);
 
 	/* In this case, we are expecting an E_RCRm*/
 	TEST_ASSERT_EQUAL_INT(E_RCRm, event);
@@ -68,7 +67,7 @@ static void test_lcp_recv_cr_ack(void)
 	ppp_pkt_init(good_pkt, 8, &cp_pkt);
 
 	uint8_t event;
-	event = handle_lcp_pkt(&lcp, &cp_pkt);
+	event = lcp_handle_pkt(&lcp, &cp_pkt);
 
 	/* In this case, we are expecting an E_RCRp*/
 	TEST_ASSERT_EQUAL_INT(E_RCRp, event);
@@ -91,21 +90,21 @@ static void test_lcp_recv_ack(void)
 	lcp.cr_sent_size = 8;
 
 	uint8_t event;
-	event = handle_lcp_pkt(&lcp, &cp_pkt);
+	event = lcp_handle_pkt(&lcp, &cp_pkt);
 	
 	/* In this case, we are expecting an E_RCA*/
 	TEST_ASSERT_EQUAL_INT(E_RCA, event);
 
 
 	lcp.cr_sent_identifier = 8;
-	event = handle_lcp_pkt(&lcp, &cp_pkt);
+	event = lcp_handle_pkt(&lcp, &cp_pkt);
 	/* In this case, we are not expecting an E_RCA*/
 	TEST_ASSERT_EQUAL_INT(-EBADMSG, event);
 
 	/* Payload mismatch */
 	good_pkt[7] = 0;
 	lcp.cr_sent_identifier = 0;
-	event = handle_lcp_pkt(&fake_prot, &cp_pkt);
+	event = lcp_handle_pkt(&lcp, &cp_pkt);
 	/* In this case, we are not expecting an E_RCA*/
 	TEST_ASSERT_EQUAL_INT(E_RCA, event);
 }
@@ -121,12 +120,12 @@ static void test_lcp_recv_nak(void)
 	ppp_pkt_init(nak_pkt, 8, &cp_pkt);
 
 	uint8_t event;
-	event = handle_cp_pkt(&fake_prot, &cp_pkt);
+	event = lcp_handle_pkt(&lcp, &cp_pkt);
 	
 	TEST_ASSERT_EQUAL_INT(E_RCN, event);
 }
 
-Test *tests_gnrc_ppp_tests(void)
+Test *tests_gnrc_ppp_lcp_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture(test_lcp_recv_cr_ack),
@@ -136,13 +135,13 @@ Test *tests_gnrc_ppp_tests(void)
         new_TestFixture(test_lcp_recv_nak),
     };
 
-    EMB_UNIT_TESTCALLER(gnrc_ppp_tests, NULL, NULL, fixtures);
+    EMB_UNIT_TESTCALLER(gnrc_ppp_lcp_tests, NULL, NULL, fixtures);
 
-    return (Test *)&gnrc_ppp_tests;
+    return (Test *)&gnrc_ppp_lcp_tests;
 }
 
-void tests_gnrc_ppp(void)
+void tests_gnrc_ppp_lcp(void)
 {
-    TESTS_RUN(tests_gnrc_ppp_tests());
+    TESTS_RUN(tests_gnrc_ppp_lcp_tests());
 }
 /** @} */
