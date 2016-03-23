@@ -162,6 +162,19 @@ static void test_lcp_recv_term(void)
 	TEST_ASSERT_EQUAL_INT(-EBADMSG, event);
 
 }
+static void test_lcp_recv_unknown(void)
+{
+	ppp_cp_t lcp;
+	uint8_t unknown_code[8] = {0xF7,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
+	int event;
+	
+	cp_pkt_t unknown_code_pkt;
+
+	ppp_pkt_init(unknown_code, 8, &unknown_code_pkt);
+
+	event = lcp_handle_pkt(&lcp, &unknown_code_pkt);
+	TEST_ASSERT_EQUAL_INT(E_RUC, event);
+}
 
 Test *tests_gnrc_ppp_lcp_tests(void)
 {
@@ -171,6 +184,7 @@ Test *tests_gnrc_ppp_lcp_tests(void)
         new_TestFixture(test_lcp_recv_nakrej),
         new_TestFixture(test_lcp_recv_coderej),
         new_TestFixture(test_lcp_recv_term),
+        new_TestFixture(test_lcp_recv_unknown),
     };
 
     EMB_UNIT_TESTCALLER(gnrc_ppp_lcp_tests, NULL, NULL, fixtures);
