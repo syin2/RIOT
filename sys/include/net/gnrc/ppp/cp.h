@@ -53,7 +53,7 @@ typedef enum{
 	E_RUC,
 	E_RXJp,
 	E_RXJm,
-	E_RX,
+	E_RXR,
 	PPP_NUM_EVENTS
 } ppp_event_t;
 
