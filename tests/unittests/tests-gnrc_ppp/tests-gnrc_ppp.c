@@ -24,6 +24,7 @@
 #include "net/gnrc/ppp/lcp.h"
 #include "net/ppp/opt.h"
 
+
 typedef struct fakeprot_opts
 {
 	int option;
@@ -62,7 +63,7 @@ static void fakeprot_negotiate_nak(void *fp_opts, cp_pkt_metadata_t *metadata)
 
 	curr_opt = ppp_opts_get_head(opts_handler);
 	int num_opts = ppp_opts_get_num(opts_handler);
-
+	
 
 	for(int i=0;i<num_opts; i++)
 	{
@@ -141,42 +142,7 @@ static void test_gnrc_ppp_lcp_recv_cr_ack(void)
 	TEST_ASSERT_EQUAL_INT(E_RCRp, fake_prot.event);
 
 }
-static void test_ppp_pkt_metadata(void)
-{
-	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
-	uint8_t code = 0x01;
-	uint8_t id = 33;
-	uint16_t length = 8;
-	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
-	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, 8, &cp_pkt);
 
-	cp_pkt_metadata_t metadata;
-	ppp_pkt_gen_metadata(&metadata, &cp_pkt, &fakeprot_get_option_status);
-
-	/* In this case, data should have ACK flag*/
-	TEST_ASSERT_EQUAL_INT(1, metadata.opts_status_content & OPT_HAS_ACK);
-}
-
-static void test_gnrc_ppp_lcp_recv_nak(void)
-{
-	/*Make fake ctrl prot*/
-	ppp_cp_t fake_prot;
-	fake_prot.get_option_status = &fakeprot_get_option_status;
-	fake_prot.negotiate_nak = &fakeprot_negotiate_nak;
-
-	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
-	uint8_t good_pkt[8] = {0x02,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
-	cp_pkt_t cp_pkt;
-	ppp_pkt_init(good_pkt, 8, &cp_pkt);
-
-
-	fake_prot.cr_sent_identifier = 0;
-	memcpy(fake_prot.cr_sent_opts,good_pkt+4,4);
-	fake_prot.cr_sent_size = 8;
-
-	handle_cp_pkt(&fake_prot, &cp_pkt);
-}
 static void test_gnrc_ppp_lcp_recv_ack(void)
 {
 	/*Make fake ctrl prot*/
@@ -216,6 +182,55 @@ static void test_gnrc_ppp_lcp_recv_ack(void)
 	TEST_ASSERT_EQUAL_INT(1, fake_prot.event != E_RCA);
 }
 
+static void test_gnrc_ppp_lcp_recv_nak(void)
+{
+	/*Make fake ctrl prot*/
+	ppp_cp_t fake_prot;
+	fake_prot.get_option_status = &fakeprot_get_option_status;
+	fake_prot.negotiate_nak = &fakeprot_negotiate_nak;
+	/* Set the only option to 2*/
+	fakeprot_opts opts;
+	opts.option = 2;
+	fake_prot.cp_options = &opts;
+
+	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
+	uint8_t nak_pkt[8] = {0x03,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
+	cp_pkt_t cp_pkt;
+	ppp_pkt_init(nak_pkt, 8, &cp_pkt);
+
+	cp_pkt_metadata_t metadata;
+	ppp_pkt_gen_metadata(&metadata, &cp_pkt, &fakeprot_get_option_status);
+
+
+	handle_cp_pkt(&fake_prot, &cp_pkt);
+	
+	TEST_ASSERT_EQUAL_INT(1, opts.option);
+
+	/* Send a very high value of option */
+	uint8_t nak_high_pkt[8] = {0x03,0x00,0x00,0x08,0x01,0x04,0x00,0xF1};
+	ppp_pkt_init(nak_high_pkt, 8, &cp_pkt);
+
+	ppp_pkt_gen_metadata(&metadata, &cp_pkt, &fakeprot_get_option_status);
+	handle_cp_pkt(&fake_prot, &cp_pkt);
+	TEST_ASSERT_EQUAL_INT(5, opts.option);
+}
+
+static void test_ppp_pkt_metadata(void)
+{
+	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
+	uint8_t code = 0x01;
+	uint8_t id = 33;
+	uint16_t length = 8;
+	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
+	cp_pkt_t cp_pkt;
+	ppp_pkt_init(pkt, 8, &cp_pkt);
+
+	cp_pkt_metadata_t metadata;
+	ppp_pkt_gen_metadata(&metadata, &cp_pkt, &fakeprot_get_option_status);
+
+	/* In this case, data should have ACK flag*/
+	TEST_ASSERT_EQUAL_INT(1, metadata.opts_status_content & OPT_HAS_ACK);
+}
 Test *tests_gnrc_ppp_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
