@@ -176,6 +176,32 @@ static void test_lcp_recv_unknown(void)
 	TEST_ASSERT_EQUAL_INT(E_RUC, event);
 }
 
+static void test_lcp_recv_rxr(void)
+{
+	ppp_cp_t lcp;
+	uint8_t echo_request[8] = {0x09,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
+	uint8_t echo_reply[8] = {0x0A,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
+	uint8_t discard_request[8] = {0x0B,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
+	int event;
+	
+	cp_pkt_t echo_request_pkt;;
+	cp_pkt_t echo_reply_pkt;;
+	cp_pkt_t discard_request_pkt;;
+
+	ppp_pkt_init(echo_request, 8, &echo_request_pkt);
+	ppp_pkt_init(echo_reply, 8, &echo_reply_pkt);
+	ppp_pkt_init(discard_request, 8, &discard_request_pkt);
+
+	event = lcp_handle_pkt(&lcp, &echo_request_pkt);
+	TEST_ASSERT_EQUAL_INT(E_RXR, event);
+
+	event = lcp_handle_pkt(&lcp, &echo_reply_pkt);
+	TEST_ASSERT_EQUAL_INT(E_RXR, event);
+
+	event = lcp_handle_pkt(&lcp, &discard_request_pkt);
+	TEST_ASSERT_EQUAL_INT(E_RXR, event);
+}
+
 Test *tests_gnrc_ppp_lcp_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
@@ -185,6 +211,7 @@ Test *tests_gnrc_ppp_lcp_tests(void)
         new_TestFixture(test_lcp_recv_coderej),
         new_TestFixture(test_lcp_recv_term),
         new_TestFixture(test_lcp_recv_unknown),
+        new_TestFixture(test_lcp_recv_rxr),
     };
 
     EMB_UNIT_TESTCALLER(gnrc_ppp_lcp_tests, NULL, NULL, fixtures);
