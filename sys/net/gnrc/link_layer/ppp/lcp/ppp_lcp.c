@@ -284,11 +284,11 @@ int lcp_handle_code(cp_pkt_t *pkt)
 	uint8_t code = ppp_pkt_get_code(&rej_pkt);
 	if (code >= PPP_CONF_REQ && code <= PPP_TERM_ACK)
 	{
-		return E_RXJp;
+		return E_RXJm;
 	}
 	else
 	{
-		return E_RXJm;
+		return E_RXJp;
 	}
 }
 
