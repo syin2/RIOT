@@ -48,7 +48,7 @@ typedef struct __attribute__((packed))
 
 
 
-int ppp_pkt_init(uint8_t *data, size_t length, cp_pkt_t *cp_pkt);
+int ppp_pkt_init(uint8_t *data, cp_pkt_t *cp_pkt);
 
 int _ppp_cr_populate_options(uint8_t *payload, size_t p_size);
 
