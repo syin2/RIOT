@@ -73,11 +73,11 @@ void lcp_negotiate_nak(void *lcp_opt, cp_pkt_metadata_t *metadata)
 }
 #endif
 
-static uint8_t _lcp_get_opt_status(void *opt)
+static int _lcp_get_opt_status(void *opt)
 {
 	uint8_t opt_type = ppp_opt_get_type(opt);
 	uint8_t * payload = (uint8_t*) ppp_opt_get_payload(opt);
-	int8_t length = ppp_opt_get_length(opt);
+	uint8_t length = ppp_opt_get_length(opt);
 
 	uint16_t u16;
 	/* For the moment, only MRU option supported */
@@ -98,7 +98,7 @@ static uint8_t _lcp_get_opt_status(void *opt)
 	return -EBADMSG; /* Never reaches here. Something went wrong if that's the case */
 }
 
-static uint8_t _lcp_handle_rcr(cp_pkt_t *pkt)
+static int _lcp_handle_rcr(cp_pkt_t *pkt)
 {
 	void *curr_opt;
 	uint16_t curr_status;
@@ -116,7 +116,7 @@ static uint8_t _lcp_handle_rcr(cp_pkt_t *pkt)
 	return E_RCRp;
 }
 
-static uint8_t _lcp_handle_rca(cp_pkt_t *pkt, ppp_cp_t *lcp)
+static int _lcp_handle_rca(cp_pkt_t *pkt, ppp_cp_t *lcp)
 {
 	uint8_t pkt_id = ppp_pkt_get_id(pkt);
 	uint8_t pkt_length = ppp_pkt_get_length(pkt);
@@ -257,9 +257,9 @@ void lcp_ser(ppp_cp_t *lcp, cp_pkt_t *pkt)
 	//send_cp(lcp,PPP_CP_SER);
 }
 
-uint8_t lcp_handle_conf(ppp_cp_t *lcp, cp_pkt_t *pkt)
+int lcp_handle_conf(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
-	uint8_t result;
+	int result;
 	switch(ppp_pkt_get_code(pkt))
 	{
 		case PPP_CONF_REQ:
@@ -276,7 +276,7 @@ uint8_t lcp_handle_conf(ppp_cp_t *lcp, cp_pkt_t *pkt)
 	return result;
 }
 
-uint8_t lcp_handle_code(cp_pkt_t *pkt)
+int lcp_handle_code(cp_pkt_t *pkt)
 {
 	/* Generate ppp packet from payload */
 	cp_pkt_t rej_pkt;
@@ -292,20 +292,20 @@ uint8_t lcp_handle_code(cp_pkt_t *pkt)
 	}
 }
 
-uint8_t lcp_handle_echo(ppp_cp_t *lcp, cp_pkt_t *pkt)
+int lcp_handle_echo(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
 	(void) lcp;
 	(void) pkt;
 	return 0;
 }
 
-uint8_t lcp_handle_unknown_code(ppp_cp_t *lcp, cp_pkt_t *pkt)
+int lcp_handle_unknown_code(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
 	(void) lcp;
 	(void) pkt;
 	return 0;
 }
-uint8_t lcp_handle_term(ppp_cp_t *lcp, cp_pkt_t *pkt)
+int lcp_handle_term(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
 	(void) lcp;
 	(void) pkt;
@@ -323,13 +323,13 @@ uint8_t lcp_handle_term(ppp_cp_t *lcp, cp_pkt_t *pkt)
 	return -EBADMSG;
 }
 
-uint8_t lcp_handle_pkt(ppp_cp_t *lcp, cp_pkt_t *pkt)
+int lcp_handle_pkt(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
 	/* Check options recv are subset of opts sent */
 	/* Check pkt sanity */
 
 	int type = ppp_pkt_get_code(pkt);
-	uint8_t event;
+	int event;
 	
 	switch(type){
 		case PPP_CONF_REQ:
