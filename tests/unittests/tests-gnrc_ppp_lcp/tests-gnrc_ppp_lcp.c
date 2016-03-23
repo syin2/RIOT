@@ -25,7 +25,7 @@
 
 
 
-static void test_lcp_recv_cr_ack(void)
+static void test_lcp_recv_rcr(void)
 {
 	ppp_cp_t lcp;
 
