@@ -25,44 +25,13 @@
 
 
 
-static void test_lcp_recv_cr_nak(void)
-{
-	ppp_cp_t lcp;
-
-	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
-	uint8_t nak_pkt[8] = {0x01,0x00,0x00,0x08,0x01,0x04,0xFF,0xFF};
-	cp_pkt_t cp_pkt;
-	ppp_pkt_init(nak_pkt, 8, &cp_pkt);
-
-	int event;
-	event = lcp_handle_pkt(&lcp, &cp_pkt);
-
-	/* In this case, we are expecting an E_RCRm*/
-	TEST_ASSERT_EQUAL_INT(E_RCRm, event);
-}
-
-static void test_lcp_recv_cr_rej(void)
-{
-	ppp_cp_t lcp;
-
-	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
-	uint8_t rej_pkt[8] = {0x01,0x00,0x00,0x08,0x05,0x04,0x00,0xF1};
-	cp_pkt_t cp_pkt;
-	ppp_pkt_init(rej_pkt, 8, &cp_pkt);
-
-	int event;
-	event = lcp_handle_pkt(&lcp, &cp_pkt);
-
-	/* In this case, we are expecting an E_RCRm*/
-	TEST_ASSERT_EQUAL_INT(E_RCRm, event);
-}
-
 static void test_lcp_recv_cr_ack(void)
 {
 	ppp_cp_t lcp;
 
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
 	uint8_t good_pkt[8] = {0x01,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
+
 	cp_pkt_t cp_pkt;
 	ppp_pkt_init(good_pkt, 8, &cp_pkt);
 
@@ -71,6 +40,18 @@ static void test_lcp_recv_cr_ack(void)
 
 	/* In this case, we are expecting an E_RCRp*/
 	TEST_ASSERT_EQUAL_INT(E_RCRp, event);
+	
+	/* Try with a rejected pkt */
+	uint8_t rej_pkt[8] = {0x01,0x00,0x00,0x08,0x05,0x04,0x00,0xF1};
+	ppp_pkt_init(rej_pkt, 8, &cp_pkt);
+	event = lcp_handle_pkt(&lcp, &cp_pkt);
+	TEST_ASSERT_EQUAL_INT(E_RCRm, event);
+
+	/* Now, try with a NAK pkt */
+	uint8_t nak_pkt[8] = {0x01,0x00,0x00,0x08,0x01,0x04,0xFF,0xFF};
+	ppp_pkt_init(nak_pkt, 8, &cp_pkt);
+	event = lcp_handle_pkt(&lcp, &cp_pkt);
+	TEST_ASSERT_EQUAL_INT(E_RCRm, event);
 }
 
 static void test_lcp_recv_ack(void)
@@ -108,7 +89,7 @@ static void test_lcp_recv_ack(void)
 	TEST_ASSERT_EQUAL_INT(-EBADMSG, event);
 }
 
-static void test_lcp_recv_nak(void)
+static void test_lcp_recv_nakrej(void)
 {
 	/*Make fake ctrl prot*/
 	ppp_cp_t lcp;
@@ -127,11 +108,9 @@ static void test_lcp_recv_nak(void)
 Test *tests_gnrc_ppp_lcp_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
-        new_TestFixture(test_lcp_recv_cr_ack),
-        new_TestFixture(test_lcp_recv_cr_nak),
-        new_TestFixture(test_lcp_recv_cr_rej),
+        new_TestFixture(test_lcp_recv_rcr),
         new_TestFixture(test_lcp_recv_ack),
-        new_TestFixture(test_lcp_recv_nak),
+        new_TestFixture(test_lcp_recv_nakrej),
     };
 
     EMB_UNIT_TESTCALLER(gnrc_ppp_lcp_tests, NULL, NULL, fixtures);
