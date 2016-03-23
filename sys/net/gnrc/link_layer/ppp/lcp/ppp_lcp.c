@@ -299,12 +299,6 @@ int lcp_handle_echo(ppp_cp_t *lcp, cp_pkt_t *pkt)
 	return 0;
 }
 
-int lcp_handle_unknown_code(ppp_cp_t *lcp, cp_pkt_t *pkt)
-{
-	(void) lcp;
-	(void) pkt;
-	return 0;
-}
 int lcp_handle_term(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
 	(void) lcp;
@@ -353,7 +347,7 @@ int lcp_handle_pkt(ppp_cp_t *lcp, cp_pkt_t *pkt)
 			event = lcp_handle_echo(lcp, pkt);
 			break;
 		default:
-			event = lcp_handle_unknown_code(lcp, pkt);
+			event = E_RUC;
 			break;
 	}
 
