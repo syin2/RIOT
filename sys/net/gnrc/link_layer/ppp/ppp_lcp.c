@@ -96,7 +96,7 @@ static int _lcp_get_opt_status(void *opt)
 	return 0;/*TODO: Fix right value */
 }
 
-static int _lcp_handle_cp_rcr(ppp_cp_t *lcp, cp_pkt_t *pkt)
+static int _lcp_handle_rcr(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
 	uint8_t code = ppp_pkt_get_code(pkt);
 	void *curr_opt;
@@ -118,7 +118,7 @@ static int _lcp_handle_cp_rcr(ppp_cp_t *lcp, cp_pkt_t *pkt)
 	return 0; /*TODO: Fix output*/
 }
 
-static int _lcp_handle_cp_rca(ppp_cp_t *lcp, cp_pkt_t *pkt)
+static int _lcp_handle_rca(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
 	uint8_t pkt_id = ppp_pkt_get_id(pkt);
 	uint8_t pkt_length = ppp_pkt_get_length(pkt);
@@ -138,15 +138,16 @@ return 0; /*TODO: Fix output*/
 }
 
 /* Fix params for request */
-static int _lcp_handle_cp_nak(ppp_cp_t *lcp)
+static int _lcp_handle_nak(ppp_cp_t *lcp)
 {
 	lcp->event = E_RCN;
 	return 0; /*TODO: Fix output*/
 }
 
-static int _lcp_handle_cp_rej(ppp_cp_t *lcp)
+static int _lcp_handle_rej(ppp_cp_t *lcp)
 {
 	l_lcp->event = E_RCJ;
+	return 0; /*TODO: Fix output*/
 }
 
 
@@ -157,6 +158,15 @@ void lcp_handle_conf(cp_ppp_t *lcp, cp_pkt_t *pkt)
 		case PPP_CONF_REQ:
 			_lcp_handle_rcr(lcp, pkt);
 			break;
+		case PPP_CONF_ACK:
+			_lcp_handle_rca(lcp, pkt);
+			break;
+		case PPP_CONF_NAK:
+			_lcp_handle_rcn(lcp, pkt);
+			break;
+		case PPP_CONF_REJ:
+			_lcp_handle_rej(lcp, pkt);
+			break;
 	}
 }
 
@@ -166,22 +176,22 @@ void lcp_handle_code(cp_ppp_t *lcp, uint8_t code)
 
 static void lcp_tlu(ppp_cp_t *lcp)
 {
-	cp->l_upper_msg |= PPP_MSG_UP;
+	lcp->l_upper_msg |= PPP_MSG_UP;
 }
 
 static void lcp_tld(ppp_cp_t *lcp)
 {
-	cp->l_upper_msg |= PPP_MSG_DOWN;
+	lcp->l_upper_msg |= PPP_MSG_DOWN;
 }
 
 static void lcp_tls(ppp_cp_t *lcp)
 {
-	cp->l_lower_msg |= PPP_MSG_UP;
+	lcp->l_lower_msg |= PPP_MSG_UP;
 }
 
 static void lcp_tlf(ppp_cp_t *lcp)
 {
-	cp->l_lower_msg |= PPP_MSG_DOWN;
+	lcp->l_lower_msg |= PPP_MSG_DOWN;
 }
 
 static void lcp_irc(ppp_cp_t *lcp)
