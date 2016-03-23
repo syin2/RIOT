@@ -337,11 +337,14 @@ uint8_t lcp_handle_pkt(ppp_cp_t *lcp, cp_pkt_t *pkt)
 		case PPP_CONF_NAK:
 		case PPP_CONF_REJ:
 			event = lcp_handle_conf(lcp, pkt);
+			break;
 		case PPP_TERM_REQ:
 		case PPP_TERM_ACK:
 			event = lcp_handle_term(lcp, pkt);
+			break;
 		case PPP_CODE_REJ:
 			event = lcp_handle_code(pkt);
+			break;
 		case PPP_ECHO_REQ:
 		case PPP_ECHO_REP:
 			event = lcp_handle_echo(lcp, pkt);
