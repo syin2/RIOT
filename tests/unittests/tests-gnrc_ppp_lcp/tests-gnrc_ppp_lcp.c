@@ -31,26 +31,29 @@ static void test_lcp_recv_rcr(void)
 
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
 	uint8_t good_pkt[8] = {0x01,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
-
-	cp_pkt_t cp_pkt;
-	ppp_pkt_init(good_pkt, 8, &cp_pkt);
+	uint8_t rej_pkt[8] = {0x01,0x00,0x00,0x08,0x05,0x04,0x00,0xF1};
+	uint8_t nak_pkt[8] = {0x01,0x00,0x00,0x08,0x01,0x04,0xFF,0xFF};
 
 	int event;
-	event = lcp_handle_pkt(&lcp, &cp_pkt);
 
-	/* In this case, we are expecting an E_RCRp*/
+	cp_pkt_t cp_good_pkt;
+	cp_pkt_t cp_nak_pkt;
+	cp_pkt_t cp_rej_pkt;
+
+	ppp_pkt_init(good_pkt, 8, &cp_good_pkt);
+	ppp_pkt_init(rej_pkt, 8, &cp_rej_pkt);
+	ppp_pkt_init(nak_pkt, 8, &cp_nak_pkt);
+
+	/* Try with a good pkt */
+	event = lcp_handle_pkt(&lcp, &cp_good_pkt);
 	TEST_ASSERT_EQUAL_INT(E_RCRp, event);
 	
 	/* Try with a rejected pkt */
-	uint8_t rej_pkt[8] = {0x01,0x00,0x00,0x08,0x05,0x04,0x00,0xF1};
-	ppp_pkt_init(rej_pkt, 8, &cp_pkt);
-	event = lcp_handle_pkt(&lcp, &cp_pkt);
+	event = lcp_handle_pkt(&lcp, &cp_rej_pkt);
 	TEST_ASSERT_EQUAL_INT(E_RCRm, event);
 
-	/* Now, try with a NAK pkt */
-	uint8_t nak_pkt[8] = {0x01,0x00,0x00,0x08,0x01,0x04,0xFF,0xFF};
-	ppp_pkt_init(nak_pkt, 8, &cp_pkt);
-	event = lcp_handle_pkt(&lcp, &cp_pkt);
+	/* Try with a NAK pkt */
+	event = lcp_handle_pkt(&lcp, &cp_nak_pkt);
 	TEST_ASSERT_EQUAL_INT(E_RCRm, event);
 }
 
