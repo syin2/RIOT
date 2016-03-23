@@ -104,7 +104,7 @@ static void test_lcp_recv_nakrej(void)
 	cp_pkt_t cp_nak_pkt;
 	cp_pkt_t cp_rej_pkt;
 	ppp_pkt_init(nak_pkt, 8, &cp_nak_pkt);
-	ppp_pkt_init(nak_pkt, 8, &cp_rej_pkt);
+	ppp_pkt_init(rej_pkt, 8, &cp_rej_pkt);
 
 	event = lcp_handle_pkt(&lcp, &cp_nak_pkt);
 	TEST_ASSERT_EQUAL_INT(E_RCN, event);
