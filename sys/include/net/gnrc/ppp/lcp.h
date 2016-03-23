@@ -33,7 +33,21 @@ typedef struct lcp_opt_t{
 	int b_acfc;
 } lcp_opt_t;
 
-void lcp_negotiate_nak(void *lcp_opt, cp_pkt_metadata_t *metadata);
+
+/* Implementation of LCP fsm actions */
+static void lcp_tlu(ppp_cp_t *lcp);
+static void lcp_tld(ppp_cp_t *lcp);
+static void lcp_tls(ppp_cp_t *lcp);
+static void lcp_tlf(ppp_cp_t *lcp);
+static void lcp_irc(ppp_cp_t *lcp);
+static void lcp_zrc(ppp_cp_t *lcp);
+static void lcp_scr(ppp_cp_t *lcp);
+static void lcp_sca(ppp_cp_t *lcp);
+static void lcp_scn(ppp_cp_t *lcp);
+static void lcp_str(ppp_cp_t *lcp);
+static void lcp_sta(ppp_cp_t *lcp);
+static void lcp_scj(ppp_cp_t *lcp);
+static void lcp_ser(ppp_cp_t *lcp);
 
 
 #ifdef __cplusplus
