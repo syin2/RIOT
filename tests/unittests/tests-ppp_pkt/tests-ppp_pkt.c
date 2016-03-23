@@ -32,7 +32,7 @@ static void test_ppp_pkt_init(void)
 	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
 	cp_pkt_t cp_pkt;
 
-	ppp_pkt_init(pkt, 8, &cp_pkt);
+	ppp_pkt_init(pkt, &cp_pkt);
 	
 
 	TEST_ASSERT_EQUAL_INT(code, cp_pkt.hdr->code);
@@ -51,7 +51,7 @@ static void test_ppp_pkt_get_set_code(void)
 	uint16_t length = 8;
 	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, 8, &cp_pkt);
+	ppp_pkt_init(pkt, &cp_pkt);
 
 	uint8_t new_code = 47;
 
@@ -69,7 +69,7 @@ static void test_ppp_pkt_get_set_id(void)
 	uint16_t length = 8;
 	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, 8, &cp_pkt);
+	ppp_pkt_init(pkt, &cp_pkt);
 
 	uint8_t new_id=13;
 	ppp_pkt_set_id(&cp_pkt, new_id);
@@ -86,7 +86,7 @@ static void test_ppp_pkt_get_set_length(void)
 	uint16_t length = 8;
 	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, 8, &cp_pkt);
+	ppp_pkt_init(pkt, &cp_pkt);
 
 	uint16_t new_length=13;
 	ppp_pkt_set_length(&cp_pkt, new_length);
@@ -103,7 +103,7 @@ static void test_ppp_pkt_get_set_payload(void)
 	uint16_t length = 8;
 	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, 8, &cp_pkt);
+	ppp_pkt_init(pkt, &cp_pkt);
 
 	uint8_t new_payload[4]={'h','o','l','a'};
 	ppp_pkt_set_payload(&cp_pkt, new_payload, 4);
@@ -119,21 +119,21 @@ static void test_ppp_opts_init(void)
 	uint16_t length = 20;
 	uint8_t pkt[20] = {code,id,0x00,length,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x04,0x00,0x01,0x04,0x04,0xF0,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, 20, &cp_pkt);
+	ppp_pkt_init(pkt, &cp_pkt);
 
-	opt_metadata_t opt_metadata;
-	int status = ppp_opts_init(&opt_metadata, &cp_pkt);
+	opt_list_t opt_list;
+	int status = ppp_opts_init(&opt_list, &cp_pkt);
 	TEST_ASSERT_EQUAL_INT(0, status);
 
-	TEST_ASSERT_EQUAL_INT(4, opt_metadata.num);
-	TEST_ASSERT_EQUAL_INT(0, opt_metadata._co);
-	TEST_ASSERT_EQUAL_INT(1, opt_metadata.head == (pkt+4));
-	TEST_ASSERT_EQUAL_INT(1, opt_metadata.head == opt_metadata.current);
+	TEST_ASSERT_EQUAL_INT(4, opt_list.num);
+	TEST_ASSERT_EQUAL_INT(0, opt_list._co);
+	TEST_ASSERT_EQUAL_INT(1, opt_list.head == (pkt+4));
+	TEST_ASSERT_EQUAL_INT(1, opt_list.head == opt_list.current);
 
 	/* Send bad pkt                                  v           */
 	uint8_t bad_pkt[8] = {0x01,0x00,0x00,0x08,0x01,0x06,0x00,0x01};
-	ppp_pkt_init(bad_pkt, 8, &cp_pkt);
-	status = ppp_opts_init(&opt_metadata, &cp_pkt);
+	ppp_pkt_init(bad_pkt, &cp_pkt);
+	status = ppp_opts_init(&opt_list, &cp_pkt);
 
 	TEST_ASSERT_EQUAL_INT(-1, status);
 }
@@ -146,13 +146,13 @@ static void test_ppp_opts_get_head(void)
 	uint16_t length = 20;
 	uint8_t pkt[20] = {code,id,0x00,length,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x04,0x00,0x01,0x04,0x04,0xF0,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, 20, &cp_pkt);
+	ppp_pkt_init(pkt, &cp_pkt);
 
-	opt_metadata_t opt_metadata;
-	ppp_opts_init(&opt_metadata, &cp_pkt);
+	opt_list_t opt_list;
+	ppp_opts_init(&opt_list, &cp_pkt);
 
 	/* Get head */
-	TEST_ASSERT_EQUAL_INT(1, ppp_opts_get_head(&opt_metadata) == pkt+4);
+	TEST_ASSERT_EQUAL_INT(1, ppp_opts_get_head(&opt_list) == pkt+4);
 }
 
 static void test_ppp_opts_reset(void)
@@ -163,14 +163,14 @@ static void test_ppp_opts_reset(void)
 	uint16_t length = 20;
 	uint8_t pkt[20] = {code,id,0x00,length,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x04,0x00,0x01,0x04,0x04,0xF0,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, 20, &cp_pkt);
+	ppp_pkt_init(pkt, &cp_pkt);
 
-	opt_metadata_t opt_metadata;
-	ppp_opts_init(&opt_metadata, &cp_pkt);
+	opt_list_t opt_list;
+	ppp_opts_init(&opt_list, &cp_pkt);
 
-	opt_metadata.head = pkt+8;
-	ppp_opts_reset(&opt_metadata);
-	TEST_ASSERT_EQUAL_INT(1, opt_metadata.current == opt_metadata.head);
+	opt_list.head = pkt+8;
+	ppp_opts_reset(&opt_list);
+	TEST_ASSERT_EQUAL_INT(1, opt_list.current == opt_list.head);
 }
 
 static void test_ppp_opts_next(void)
@@ -181,19 +181,19 @@ static void test_ppp_opts_next(void)
 	uint16_t length = 21;
 	uint8_t pkt[21] = {code,id,0x00,length,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x05,0x00,0x00,0x01,0x04,0x04,0xF0,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, 21, &cp_pkt);
+	ppp_pkt_init(pkt, &cp_pkt);
 
-	opt_metadata_t opt_metadata;
-	ppp_opts_init(&opt_metadata, &cp_pkt);
+	opt_list_t opt_list;
+	ppp_opts_init(&opt_list, &cp_pkt);
 
 	void *p;
-	p = ppp_opts_next(&opt_metadata);
+	p = ppp_opts_next(&opt_list);
 	TEST_ASSERT_EQUAL_INT(1, p == pkt+8);
-	p = ppp_opts_next(&opt_metadata);
+	p = ppp_opts_next(&opt_list);
 	TEST_ASSERT_EQUAL_INT(1, p == pkt+12);
-	p = ppp_opts_next(&opt_metadata);
+	p = ppp_opts_next(&opt_list);
 	TEST_ASSERT_EQUAL_INT(1, p == pkt+17);
-	p = ppp_opts_next(&opt_metadata);
+	p = ppp_opts_next(&opt_list);
 	TEST_ASSERT_NULL(p);
 }
 
@@ -238,12 +238,12 @@ static void test_ppp_opts_get_num(void)
 	uint16_t length = 21;
 	uint8_t pkt[21] = {code,id,0x00,length,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x05,0x00,0x00,0x01,0x04,0x04,0xF0,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, 21, &cp_pkt);
+	ppp_pkt_init(pkt, &cp_pkt);
 
-	opt_metadata_t opt_metadata;
-	ppp_opts_init(&opt_metadata, &cp_pkt);
+	opt_list_t opt_list;
+	ppp_opts_init(&opt_list, &cp_pkt);
 
-	TEST_ASSERT_EQUAL_INT(4, ppp_opts_get_num(&opt_metadata));
+	TEST_ASSERT_EQUAL_INT(4, ppp_opts_get_num(&opt_list));
 }
 
 static void test_ppp_opts_get_opt_num(void)
@@ -254,14 +254,14 @@ static void test_ppp_opts_get_opt_num(void)
 	uint16_t length = 21;
 	uint8_t pkt[21] = {code,id,0x00,length,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x05,0x00,0x00,0x01,0x04,0x04,0xF0,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, 21, &cp_pkt);
+	ppp_pkt_init(pkt, &cp_pkt);
 
-	opt_metadata_t opt_metadata;
-	ppp_opts_init(&opt_metadata, &cp_pkt);
+	opt_list_t opt_list;
+	ppp_opts_init(&opt_list, &cp_pkt);
 
-	ppp_opts_next(&opt_metadata);
+	ppp_opts_next(&opt_list);
 
-	TEST_ASSERT_EQUAL_INT(1, ppp_opts_get_opt_num(&opt_metadata));
+	TEST_ASSERT_EQUAL_INT(1, ppp_opts_get_opt_num(&opt_list));
 }
 
 Test *tests_ppp_pkt_tests(void)
