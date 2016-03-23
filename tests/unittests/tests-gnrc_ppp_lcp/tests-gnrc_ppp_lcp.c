@@ -59,20 +59,19 @@ static void test_lcp_recv_rcr(void)
 
 static void test_lcp_recv_ack(void)
 {
-	/*Make fake ctrl prot*/
 	ppp_cp_t lcp;
 
-	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
+	/* |--ACK--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
 	uint8_t good_pkt[8] = {0x02,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
+	int event;
+
 	cp_pkt_t cp_pkt;
 	ppp_pkt_init(good_pkt, 8, &cp_pkt);
-
 
 	lcp.cr_sent_identifier = 0;
 	memcpy(lcp.cr_sent_opts,good_pkt+4,4);
 	lcp.cr_sent_size = 8;
 
-	int event;
 	event = lcp_handle_pkt(&lcp, &cp_pkt);
 	
 	/* In this case, we are expecting an E_RCA*/
@@ -99,12 +98,18 @@ static void test_lcp_recv_nakrej(void)
 
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
 	uint8_t nak_pkt[8] = {0x03,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
-	cp_pkt_t cp_pkt;
-	ppp_pkt_init(nak_pkt, 8, &cp_pkt);
+	uint8_t rej_pkt[8] = {0x04,0x00,0x00,0x08,0x01,0x04,0x00,0x01};
 
 	int event;
-	event = lcp_handle_pkt(&lcp, &cp_pkt);
-	
+	cp_pkt_t cp_nak_pkt;
+	cp_pkt_t cp_rej_pkt;
+	ppp_pkt_init(nak_pkt, 8, &cp_nak_pkt);
+	ppp_pkt_init(nak_pkt, 8, &cp_rej_pkt);
+
+	event = lcp_handle_pkt(&lcp, &cp_nak_pkt);
+	TEST_ASSERT_EQUAL_INT(E_RCN, event);
+
+	event = lcp_handle_pkt(&lcp, &cp_rej_pkt);
 	TEST_ASSERT_EQUAL_INT(E_RCN, event);
 }
 
