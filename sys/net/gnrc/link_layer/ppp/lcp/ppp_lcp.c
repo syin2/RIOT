@@ -134,40 +134,6 @@ static uint8_t _lcp_handle_rca(cp_pkt_t *pkt, ppp_cp_t *lcp)
 	return E_RCA;
 }
 
-uint8_t lcp_handle_conf(ppp_cp_t *lcp, cp_pkt_t *pkt)
-{
-	uint8_t result;
-	switch(ppp_pkt_get_code(pkt))
-	{
-		case PPP_CONF_REQ:
-			result = _lcp_handle_rcr(pkt);
-			break;
-		case PPP_CONF_ACK:
-			result = _lcp_handle_rca(pkt, lcp);
-			break;
-		case PPP_CONF_NAK:
-		case PPP_CONF_REJ:
-			result = E_RCN;
-			break;
-	}
-	return result;
-}
-
-uint8_t lcp_handle_code(cp_pkt_t *pkt)
-{
-	/* Generate ppp packet from payload */
-	cp_pkt_t rej_pkt;
-	ppp_pkt_init(ppp_pkt_get_payload(pkt), ppp_pkt_get_length(pkt), &rej_pkt);
-	uint8_t code = ppp_pkt_get_code(&rej_pkt);
-	if (code >= PPP_CONF_REQ && code <= PPP_TERM_ACK)
-	{
-		return E_RXJp;
-	}
-	else
-	{
-		return E_RXJm;
-	}
-}
 
 void lcp_tlu(ppp_cp_t *lcp)
 {
@@ -289,6 +255,41 @@ void lcp_ser(ppp_cp_t *lcp, cp_pkt_t *pkt)
 	(void) lcp;
 	(void) pkt;
 	//send_cp(lcp,PPP_CP_SER);
+}
+
+uint8_t lcp_handle_conf(ppp_cp_t *lcp, cp_pkt_t *pkt)
+{
+	uint8_t result;
+	switch(ppp_pkt_get_code(pkt))
+	{
+		case PPP_CONF_REQ:
+			result = _lcp_handle_rcr(pkt);
+			break;
+		case PPP_CONF_ACK:
+			result = _lcp_handle_rca(pkt, lcp);
+			break;
+		case PPP_CONF_NAK:
+		case PPP_CONF_REJ:
+			result = E_RCN;
+			break;
+	}
+	return result;
+}
+
+uint8_t lcp_handle_code(cp_pkt_t *pkt)
+{
+	/* Generate ppp packet from payload */
+	cp_pkt_t rej_pkt;
+	ppp_pkt_init(ppp_pkt_get_payload(pkt), ppp_pkt_get_length(pkt), &rej_pkt);
+	uint8_t code = ppp_pkt_get_code(&rej_pkt);
+	if (code >= PPP_CONF_REQ && code <= PPP_TERM_ACK)
+	{
+		return E_RXJp;
+	}
+	else
+	{
+		return E_RXJm;
+	}
 }
 
 uint8_t lcp_handle_echo(ppp_cp_t *lcp, cp_pkt_t *pkt)
