@@ -53,16 +53,10 @@ void handle_cp_pkt(ppp_cp_t *cp, cp_pkt_t *pkt)
 	
 	switch(type){
 		case PPP_CONF_REQ:
-			_handle_cp_rcr(cp);
-			break;
 		case PPP_CONF_ACK:
-			_handle_cp_rca(cp);
-			break;
 		case PPP_CONF_NAK:
-			_handle_cp_nak(cp);
-			break;
 		case PPP_CONF_REJ:
-			break;
+			cp->handle_conf(ppp_cp_t *cp);
 		case PPP_TERM_REQ:
 			break;
 		case PPP_TERM_ACK:
