@@ -300,7 +300,6 @@ static void test_ppp_opts_get_opt_num(void)
 
 static void test_ppp_opts_add_opt(void)
 {
-	
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
 	uint8_t new_pkt[17] = {0x01,2,0x0,0x0D,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	cp_pkt_t cp_pkt;
@@ -331,6 +330,23 @@ static void test_ppp_opts_add_opt(void)
 	TEST_ASSERT_EQUAL_INT(-ENOMEM, ppp_opts_add_option(&opt_list, 1, opt_payload_1, 2));
 }
 
+static void test_ppp_opts_delete(void)
+{
+	uint8_t pkt[21] = {1,2,0x00,21,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x05,0x00,0x00,0x01,0x04,0x04,0xF0,0x01};
+	uint8_t expected_pkt[21] = {1,2,0,21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	cp_pkt_t cp_pkt;
+	ppp_pkt_init(pkt, 21, &cp_pkt);
+
+	opt_list_t opt_list;
+	ppp_opts_init(&opt_list, &cp_pkt, false);
+
+	ppp_opts_delete(&opt_list);
+	TEST_ASSERT_EQUAL_INT(0, memcmp(pkt, expected_pkt, 21));
+	TEST_ASSERT_EQUAL_INT(opt_list.head, opt_list.current);
+	TEST_ASSERT_EQUAL_INT(0, opt_list._co);
+	TEST_ASSERT_EQUAL_INT(0, opt_list.num);
+}
+
 Test *tests_ppp_pkt_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
@@ -350,6 +366,7 @@ Test *tests_ppp_pkt_tests(void)
         new_TestFixture(test_ppp_opts_get_num),
         new_TestFixture(test_ppp_opts_get_opt_num),
         new_TestFixture(test_ppp_opts_add_opt),
+        new_TestFixture(test_ppp_opts_delete),
     };
 
     EMB_UNIT_TESTCALLER(ppp_pkt_tests, NULL, NULL, fixtures);
