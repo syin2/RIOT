@@ -121,16 +121,14 @@ static inline void * ppp_opt_get_payload(void *opt)
 static inline int ppp_opts_add_option(opt_list_t *opt_list, uint8_t type, uint8_t *payload, size_t p_size)
 {
 	int free_cursor;
-	if(opt_list->head == opt_list->current)
+	int last_opt_size=0;
+	if (opt_list->num > 0)
 	{
-		free_cursor = 0;
+		last_opt_size = ppp_opt_get_length(opt_list->current);
 	}
-	else
-	{
-		free_cursor = ppp_opt_get_length(opt_list->current) + (int)((uint8_t*) opt_list->head - (uint8_t*)opt_list->current);
-	}
+	free_cursor = last_opt_size + (int)((uint8_t*) opt_list->current - (uint8_t*)opt_list->head);
 
-	if (free_cursor + p_size + 2 > opt_list->pkt->_buf._size)
+	if (free_cursor + p_size + 2 > opt_list->pkt->_buf._size-sizeof(cp_hdr_t))
 	{
 		return -ENOMEM;
 	}
@@ -139,6 +137,10 @@ static inline int ppp_opts_add_option(opt_list_t *opt_list, uint8_t type, uint8_
 	*opt = type;
 	*(opt+1) = (uint8_t) p_size+2;
 	memcpy(opt+2, payload, p_size);
+
+	opt_list->num++;
+	opt_list->current = opt;
+
 	return p_size+2;
 }
 
