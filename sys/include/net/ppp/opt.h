@@ -22,6 +22,7 @@ typedef struct opt_list_t
 	void *current;
 
 	int _co;
+	cp_pkt_t *pkt;
 } opt_list_t;
 
 static inline int _get_num_opt(void *head_opt, uint16_t opts_length)
@@ -59,16 +60,44 @@ static inline int ppp_opts_init(opt_list_t *opt_list, cp_pkt_t *pkt)
 		return -1;
 	
 	opt_list->num = num;
+	opt_list->pkt = pkt;
 	return 0;
 }
+
 static inline void *ppp_opts_get_head(opt_list_t *opt_list)
 {
 	return opt_list->head;
 }
+
 static inline void ppp_opts_reset(opt_list_t *opt_list)
 {
 	opt_list->current = opt_list->head;
 }
+
+static inline int ppp_opts_add_option(opt_list_t *opt_list, uint8_t type, uint8_t *payload, size_t p_size)
+{
+	int free_cursor;
+	if(opt_list->head == opt_list->tail)
+	{
+		free_cursor = 0;
+	}
+	else
+	{
+		free_cursor = ppp_opt_get_length(opt_list->tail) + (int)(opt_list->head - opt_list->tail);
+	}
+
+	if (free_cursor + p_size + 2 > opt_list->pkt->_buf._size)
+	{
+		return -ENOMEM;
+	}
+
+	uint8_t *opt = ((uint8_t*) opt_list->head)+free_cursor;
+	*opt = type;
+	*(opt+1) = (uint8_t) p_size+2;
+	memcpy(opt+2, payload, p_size);
+	return p_size+2:	
+}
+
 static inline void *ppp_opts_next(opt_list_t *opt_list)
 {
 	void *current = opt_list->current;
@@ -96,15 +125,18 @@ static inline uint8_t ppp_opt_get_type(void *opt)
 {
 	return (uint8_t) *((uint8_t *) opt);
 }
-	
+
 static inline uint8_t ppp_opt_get_length(void *opt)
 {
 	return (uint8_t) *(((uint8_t*) opt)+1);
 }
+
+
 static inline void * ppp_opt_get_payload(void *opt)
 {
 	return (void*) (((uint8_t*) opt)+2);
 }
+
 
 #ifdef __cplusplus
 }
