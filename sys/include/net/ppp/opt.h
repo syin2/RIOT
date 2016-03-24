@@ -48,16 +48,20 @@ static inline int _get_num_opt(void *head_opt, uint16_t opts_length)
 	
 	return num;
 }
-static inline int ppp_opts_init(opt_list_t *opt_list, cp_pkt_t *pkt)
+static inline int ppp_opts_init(opt_list_t *opt_list, cp_pkt_t *pkt, int populate)
 {
 	void *pkt_payload = ppp_pkt_get_payload(pkt);
 	opt_list->head = opt_list->current = pkt_payload;
 	opt_list->_co = 0;
 	uint16_t pkt_length = ppp_pkt_get_length(pkt);
+	int num=0;
 
-	int num = _get_num_opt(pkt_payload, pkt_length-sizeof(cp_hdr_t));
-	if (num == -EBADMSG)
-		return -1;
+	if (populate)
+	{
+		num = _get_num_opt(pkt_payload, pkt_length-sizeof(cp_hdr_t));
+		if (num == -EBADMSG)
+			return num;
+	}
 	
 	opt_list->num = num;
 	opt_list->pkt = pkt;
@@ -74,29 +78,6 @@ static inline void ppp_opts_reset(opt_list_t *opt_list)
 	opt_list->current = opt_list->head;
 }
 
-static inline int ppp_opts_add_option(opt_list_t *opt_list, uint8_t type, uint8_t *payload, size_t p_size)
-{
-	int free_cursor;
-	if(opt_list->head == opt_list->tail)
-	{
-		free_cursor = 0;
-	}
-	else
-	{
-		free_cursor = ppp_opt_get_length(opt_list->tail) + (int)(opt_list->head - opt_list->tail);
-	}
-
-	if (free_cursor + p_size + 2 > opt_list->pkt->_buf._size)
-	{
-		return -ENOMEM;
-	}
-
-	uint8_t *opt = ((uint8_t*) opt_list->head)+free_cursor;
-	*opt = type;
-	*(opt+1) = (uint8_t) p_size+2;
-	memcpy(opt+2, payload, p_size);
-	return p_size+2:	
-}
 
 static inline void *ppp_opts_next(opt_list_t *opt_list)
 {
@@ -137,6 +118,29 @@ static inline void * ppp_opt_get_payload(void *opt)
 	return (void*) (((uint8_t*) opt)+2);
 }
 
+static inline int ppp_opts_add_option(opt_list_t *opt_list, uint8_t type, uint8_t *payload, size_t p_size)
+{
+	int free_cursor;
+	if(opt_list->head == opt_list->current)
+	{
+		free_cursor = 0;
+	}
+	else
+	{
+		free_cursor = ppp_opt_get_length(opt_list->current) + (int)((uint8_t*) opt_list->head - (uint8_t*)opt_list->current);
+	}
+
+	if (free_cursor + p_size + 2 > opt_list->pkt->_buf._size)
+	{
+		return -ENOMEM;
+	}
+
+	uint8_t *opt = ((uint8_t*) opt_list->head)+free_cursor;
+	*opt = type;
+	*(opt+1) = (uint8_t) p_size+2;
+	memcpy(opt+2, payload, p_size);
+	return p_size+2;
+}
 
 #ifdef __cplusplus
 }
