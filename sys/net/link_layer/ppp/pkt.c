@@ -26,76 +26,61 @@
 
 
 
-uint8_t ppp_pkt_get_code(cp_pkt_t *cp_pkt)
+uint8_t ppp_pkt_get_code(ppp_pkt_t *ppp_pkt)
 {
-	return cp_pkt->hdr->code;
+	return ppp_pkt->hdr->code;
 }
 
-void ppp_pkt_set_code(cp_pkt_t *cp_pkt, uint8_t code)
+void ppp_pkt_set_code(ppp_pkt_t *ppp_pkt, uint8_t code)
 {
-	cp_pkt->hdr->code = code;
+	ppp_pkt->hdr->code = code;
 }
 
-uint8_t ppp_pkt_get_id(cp_pkt_t *cp_pkt)
+uint8_t ppp_pkt_get_id(ppp_pkt_t *ppp_pkt)
 {
-	return cp_pkt->hdr->id;
+	return ppp_pkt->hdr->id;
 }
 
-void ppp_pkt_set_id(cp_pkt_t *cp_pkt, uint8_t id)
+void ppp_pkt_set_id(ppp_pkt_t *ppp_pkt, uint8_t id)
 {
-	cp_pkt->hdr->id = id;
+	ppp_pkt->hdr->id = id;
 }
 
-uint16_t ppp_pkt_get_length(cp_pkt_t *cp_pkt)
+uint16_t ppp_pkt_get_length(ppp_pkt_t *ppp_pkt)
 {
-	return byteorder_ntohs(cp_pkt->hdr->length);
+	return byteorder_ntohs(ppp_pkt->hdr->length);
 }
 
-void ppp_pkt_set_length(cp_pkt_t *cp_pkt, uint16_t length)
+void ppp_pkt_set_length(ppp_pkt_t *ppp_pkt, uint16_t length)
 {
-	cp_pkt->hdr->length = byteorder_htons(length);
+	ppp_pkt->hdr->length = byteorder_htons(length);
 }
 
-uint8_t * ppp_pkt_get_payload(cp_pkt_t *cp_pkt)
+uint8_t * ppp_pkt_get_payload(ppp_pkt_t *ppp_pkt)
 {
-	return cp_pkt->_buf._payload+sizeof(cp_hdr_t);
+	return ppp_pkt->_buf._payload+sizeof(cp_hdr_t);
 }
-int ppp_pkt_set_payload(cp_pkt_t *cp_pkt, uint8_t *data, size_t size)
+int ppp_pkt_set_payload(ppp_pkt_t *ppp_pkt, uint8_t *data, size_t size)
 {
-	if(size+sizeof(cp_hdr_t) > cp_pkt->_buf._size)
+	if(size+sizeof(cp_hdr_t) > ppp_pkt->_buf._size)
 		return -ENOMEM;
-	memcpy(cp_pkt->_buf._payload+sizeof(cp_hdr_t), data, (int) size);
+	memcpy(ppp_pkt->_buf._payload+sizeof(cp_hdr_t), data, (int) size);
 	return 0;
 }
 
-int ppp_pkt_set_payload_offset(cp_pkt_t *cp_pkt, uint8_t *data, size_t size, int offset)
-{
-	if(offset+size+sizeof(cp_hdr_t) > cp_pkt->_buf._size)
-		return -ENOMEM;
-	memcpy(cp_pkt->_buf._payload+sizeof(cp_hdr_t)+offset, data, (int) size);
-	return offset+size;;
-}
 
-
-
-/*TODO return error if populate went bad */
-int ppp_pkt_init(uint8_t *data, size_t size, cp_pkt_t *cp_pkt)
+int ppp_pkt_init(uint8_t *data, size_t size, ppp_pkt_t *pkt)
 {
 	if(size < sizeof(cp_hdr_t))
 	{
 		return -ENOMEM;
 	}
 	cp_hdr_t *hdr = (cp_hdr_t*) data;
-	cp_pkt->hdr = hdr;
-	cp_pkt->_buf._payload = data;
-	cp_pkt->_buf._size = size;
+	ppp_pkt->hdr = hdr;
+	ppp_pkt->_buf._payload = data;
+	ppp_pkt->_buf._size = size;
 
 	return 0;
 }
 
-int ppp_pkt_is_configure(cp_pkt_t *pkt)
-{
-	uint8_t code = ppp_pkt_get_code(pkt);
-	return (code == PPP_CONF_REQ || code == PPP_CONF_ACK || code == PPP_CONF_NAK || code == PPP_CONF_REJ);
-}
 

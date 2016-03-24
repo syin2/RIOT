@@ -32,6 +32,27 @@ extern "C" {
 #endif
 
 
+/**
+ * @brief   Header of a PPP packet
+ * @details A PPP packet is transmited as a payload of an HDLC packet. PPP packets only carry information about control protocols
+ * of a PPP stack (Link Control Protocol, IP Control Protocol, etc). IP packets encapsulated in HDLC frame are not
+ * considered PPP packet for RIOT context.
+ *
+ * The format of PPP header plus payload is:
+ *
+ *
+ *  0                   1                   2                   3
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |     Code      |  Identifier   |            Length             |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |    Payload ...
+ * +-+-+-+-+ 
+ *
+ * These fields are encoded in a convenient way in this struct. A PPP packet doesn't have its own buffer, it must be assigned with ppp_pkt_init function.
+ * MEMBERS OF PACKET STRUCTURE SHOULDN'T BE MODIFIED WITHOUT FUNCTION HELPERS! 
+ *
+ */
 /*  PPP pkt header struct */
 typedef struct __attribute__((packed)){
 	uint8_t code;
@@ -48,21 +69,7 @@ typedef struct ppp_pkt_buffer_t
 
 /**
  * @brief   Type to represent a PPP packet
- * @details A PPP packet is transmited as a payload of an HDLC packet. PPP packets only carry information about control protocols
- * of a PPP stack (Link Control Protocol, IP Control Protocol, etc). IP packets encapsulated in HDLC frame are not
- * considered PPP packet for RIOT context.
- *
- * The format of PPP packet is:
- *
- *
- *  0                   1                   2                   3
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |     Code      |  Identifier   |            Length             |
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |    Payload ...
- * +-+-+-+-+ 
- *
+ * @details PPP packets are not subdivided in gnrc pktsnips due to the number of possA PPP packet doesn't have its own buffer, so it's always pointing to a buffer with known size. 
  * These fields are encoded in a convenient way in this struct. A PPP packet doesn't have its own buffer, it must be assigned with ppp_pkt_init function.
  * MEMBERS OF PACKET STRUCTURE SHOULDN'T BE MODIFIED WITHOUT FUNCTION HELPERS! 
  *

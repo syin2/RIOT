@@ -185,8 +185,13 @@ void lcp_src(ppp_cp_t *lcp)
 
 	int id=666; /* TODO */
 	cp_pkt_t pkt;
+	ppp_pkt_init(lcp->dev->_buf, PPP_BUFFER_SIZE, &pkt);
+
 	ppp_pkt_set_code(&pkt, PPP_CONF_REQ);
 	ppp_pkt_set_id(&pkt, id);
+
+	opt_list_t opts;
+	ppp_opts_init();
 	
 	//send_cp(cp, &pkt);
 	/* TODO: Set timeout for SRC */
@@ -230,6 +235,7 @@ void lcp_str(ppp_cp_t *lcp)
 	send_cp(cp, pkt);
 #endif
 }
+
 void lcp_sta(ppp_cp_t *lcp, cp_pkt_t *pkt)
 {
 	(void) lcp;
