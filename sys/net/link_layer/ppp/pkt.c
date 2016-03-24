@@ -72,8 +72,8 @@ int ppp_pkt_set_payload_offset(cp_pkt_t *cp_pkt, uint8_t *data, size_t size, int
 {
 	if(offset+size+sizeof(cp_hdr_t) > cp_pkt->_buf._size)
 		return -ENOMEM;
-	memcpy(cp_pkt->_buf._payload+offset+sizeof(cp_hdr_t), data, (int) size);
-	return 0;
+	memcpy(cp_pkt->_buf._payload+sizeof(cp_hdr_t)+offset, data, (int) size);
+	return offset+size;;
 }
 
 

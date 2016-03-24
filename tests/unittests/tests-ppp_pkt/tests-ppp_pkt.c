@@ -138,7 +138,7 @@ static void test_ppp_pkt_set_payload_offset(void)
 
 	TEST_ASSERT_EQUAL_INT(0, memcmp(ppp_pkt_get_payload(&cp_pkt),&pkt[4],2));
 	TEST_ASSERT_EQUAL_INT(0, memcmp((uint8_t*) ppp_pkt_get_payload(&cp_pkt)+2,new_payload,2));
-	TEST_ASSERT_EQUAL_INT(0, res);
+	TEST_ASSERT_EQUAL_INT(4, res);
 
 	/* Try overflow */
 	res = ppp_pkt_set_payload_offset(&cp_pkt, new_payload, 4, 4);
