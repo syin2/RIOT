@@ -156,7 +156,7 @@ static void test_ppp_opts_init(void)
 	ppp_pkt_init(pkt, 20, &cp_pkt);
 
 	opt_list_t opt_list;
-	int status = ppp_opts_init(&opt_list, &cp_pkt);
+	int status = ppp_opts_init(&opt_list, &cp_pkt, true);
 	TEST_ASSERT_EQUAL_INT(0, status);
 
 	TEST_ASSERT_EQUAL_INT(4, opt_list.num);
@@ -167,9 +167,9 @@ static void test_ppp_opts_init(void)
 	/* Send bad pkt                                  v           */
 	uint8_t bad_pkt[8] = {0x01,0x00,0x00,0x08,0x01,0x06,0x00,0x01};
 	ppp_pkt_init(bad_pkt, 8, &cp_pkt);
-	status = ppp_opts_init(&opt_list, &cp_pkt);
+	status = ppp_opts_init(&opt_list, &cp_pkt, true);
 
-	TEST_ASSERT_EQUAL_INT(-1, status);
+	TEST_ASSERT_EQUAL_INT(-EBADMSG, status);
 }
 
 static void test_ppp_opts_get_head(void)
@@ -183,7 +183,7 @@ static void test_ppp_opts_get_head(void)
 	ppp_pkt_init(pkt, 20, &cp_pkt);
 
 	opt_list_t opt_list;
-	ppp_opts_init(&opt_list, &cp_pkt);
+	ppp_opts_init(&opt_list, &cp_pkt, true);
 
 	/* Get head */
 	TEST_ASSERT_EQUAL_INT(1, ppp_opts_get_head(&opt_list) == pkt+4);
@@ -200,7 +200,7 @@ static void test_ppp_opts_reset(void)
 	ppp_pkt_init(pkt, 20, &cp_pkt);
 
 	opt_list_t opt_list;
-	ppp_opts_init(&opt_list, &cp_pkt);
+	ppp_opts_init(&opt_list, &cp_pkt, true);
 
 	opt_list.head = pkt+8;
 	ppp_opts_reset(&opt_list);
@@ -218,7 +218,7 @@ static void test_ppp_opts_next(void)
 	ppp_pkt_init(pkt, 21, &cp_pkt);
 
 	opt_list_t opt_list;
-	ppp_opts_init(&opt_list, &cp_pkt);
+	ppp_opts_init(&opt_list, &cp_pkt, true);
 
 	void *p;
 	p = ppp_opts_next(&opt_list);
@@ -275,7 +275,7 @@ static void test_ppp_opts_get_num(void)
 	ppp_pkt_init(pkt, 21, &cp_pkt);
 
 	opt_list_t opt_list;
-	ppp_opts_init(&opt_list, &cp_pkt);
+	ppp_opts_init(&opt_list, &cp_pkt, true);
 
 	TEST_ASSERT_EQUAL_INT(4, ppp_opts_get_num(&opt_list));
 }
@@ -291,11 +291,44 @@ static void test_ppp_opts_get_opt_num(void)
 	ppp_pkt_init(pkt, 21, &cp_pkt);
 
 	opt_list_t opt_list;
-	ppp_opts_init(&opt_list, &cp_pkt);
+	ppp_opts_init(&opt_list, &cp_pkt, true);
 
 	ppp_opts_next(&opt_list);
 
 	TEST_ASSERT_EQUAL_INT(1, ppp_opts_get_opt_num(&opt_list));
+}
+
+static void test_ppp_opts_add_opt(void)
+{
+	
+	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
+	uint8_t new_pkt[17] = {0x01,2,0x0,0x0D,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	cp_pkt_t cp_pkt;
+	ppp_pkt_init(new_pkt, 17, &cp_pkt);
+
+	opt_list_t opt_list;
+
+	/*New packet*/
+	ppp_opts_init(&opt_list, &cp_pkt, false);
+	
+	uint8_t opt_payload_1[2] = {'h','o'};
+	TEST_ASSERT_EQUAL_INT(4, ppp_opts_add_option(&opt_list, 1, opt_payload_1, 2));
+
+	uint8_t expected_option_1[4] = {1,4,'h','o'};
+	TEST_ASSERT_EQUAL_INT(0, memcmp(new_pkt+4, expected_option_1,4));
+
+	uint8_t opt_payload_2[3] = {'a','s','d'};
+	TEST_ASSERT_EQUAL_INT(5,ppp_opts_add_option(&opt_list, 2, opt_payload_2, 3));
+
+	uint8_t expected_option_2[5] = {2,5,'a','s','d'};
+	TEST_ASSERT_EQUAL_INT(0, memcmp(new_pkt+8, expected_option_2,5));
+
+	/* The last one */
+	TEST_ASSERT_EQUAL_INT(4, ppp_opts_add_option(&opt_list, 1, opt_payload_1, 2));
+	TEST_ASSERT_EQUAL_INT(0, memcmp(new_pkt+13, expected_option_1,4));
+
+	/* If another optiont is added at this point, ppp_opts_add_option should fail due to running out of memory */
+	TEST_ASSERT_EQUAL_INT(-ENOMEM, ppp_opts_add_option(&opt_list, 1, opt_payload_1, 2));
 }
 
 Test *tests_ppp_pkt_tests(void)
@@ -316,6 +349,7 @@ Test *tests_ppp_pkt_tests(void)
         new_TestFixture(test_ppp_opt_get_payload),
         new_TestFixture(test_ppp_opts_get_num),
         new_TestFixture(test_ppp_opts_get_opt_num),
+        new_TestFixture(test_ppp_opts_add_opt),
     };
 
     EMB_UNIT_TESTCALLER(ppp_pkt_tests, NULL, NULL, fixtures);
