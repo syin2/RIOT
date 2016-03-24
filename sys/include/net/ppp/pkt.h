@@ -1,3 +1,22 @@
+/*
+ * Copyright (C) 2016 José Ignacio Alamos <jialamos@uc.cl>
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
+/**
+ * @defgroup    net_ppp Packet
+ * @ingroup     net_ppp
+ * @brief       PPP packet abstraction type and helper functions
+ * @{
+ *
+ * @file
+ * @brief   General definitions for PPP packets and their helper functions
+ *
+ * @author  José Ignacio Alamos
+ */
 
 #ifndef PPP_PKT_H_
 #define PPP_PKT_H_
@@ -11,24 +30,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define PPP_PAYLOAD_SIZE (200)
-#define CPOPT_MAX_OPT (25)
 
-#define OPT_HAS_ACK (1)
-#define OPT_HAS_NAK (2)
-#define OPT_HAS_REJ (4)
-
-#define CP_CREQ_ACK (0)
-#define CP_CREQ_NAK (1)
-#define CP_CREQ_REJ (2)
-
-#define PPP_CONF_REQ (1)
-#define PPP_CONF_ACK (2)
-#define PPP_CONF_NAK (3)
-#define PPP_CONF_REJ (4)
-#define PPP_CP_TERM_REQUEST (5)
-#define PPP_CP_TERM_ACK (6)
-#define PPP_CP_SER (7)
 
 /*  PPP pkt header struct */
 typedef struct __attribute__((packed)){
@@ -38,37 +40,136 @@ typedef struct __attribute__((packed)){
 } cp_hdr_t;
 
 
-typedef struct cp_pkt_buffer_t
+typedef struct ppp_pkt_buffer_t
 {
 	uint8_t *_payload;
 	size_t _size;
-} cp_pkt_buffer_t;
+} ppp_pkt_buffer_t;
 
+/**
+ * @brief   Type to represent a PPP packet
+ * @details A PPP packet is transmited as a payload of an HDLC packet. PPP packets only carry information about control protocols
+ * of a PPP stack (Link Control Protocol, IP Control Protocol, etc). IP packets encapsulated in HDLC frame are not
+ * considered PPP packet for RIOT context.
+ *
+ * The format of PPP packet is:
+ *
+ *
+ *  0                   1                   2                   3
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |     Code      |  Identifier   |            Length             |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |    Payload ...
+ * +-+-+-+-+ 
+ *
+ * These fields are encoded in a convenient way in this struct. A PPP packet doesn't have its own buffer, it must be assigned with ppp_pkt_init function.
+ * MEMBERS OF PACKET STRUCTURE SHOULDN'T BE MODIFIED WITHOUT FUNCTION HELPERS! 
+ *
+ */
 /* A PPP packet*/
-typedef struct cp_pkt_t
+typedef struct ppp_pkt_t
 {
 	cp_hdr_t *hdr;
-	cp_pkt_buffer_t _buf;
-} cp_pkt_t;
+	ppp_pkt_buffer_t _buf;
+} ppp_pkt_t;
 
 
+/**
+ * @brief Init a PPP packet
+ *
+ * @param[in] buffer   Buffer where pkt data is stored
+ * @param[in] size   Size available in buffer
+ * @param[in] pkt   Pointer to PPP packet
+ *
+ * @return 0, if packet was successfully initialized
+ * @return -ENOMEM, if buffer size was not enough for allocating a pkt
+ */
+
+int ppp_pkt_init(uint8_t *buffer, size_t size, ppp_pkt_t *pkt);
+
+/**
+ * @brief	Get code field of PPP packet
+ * 
+ * @param[in] pkt	PPP packet
+ *
+ * @return	code of PPP packet
+ */
+uint8_t ppp_pkt_get_code(ppp_pkt_t *pkt);
 
 
+/**
+ * @brief	Set code field of PPP packet
+ * 
+ * @param[in] pkt	PPP packet
+ * @param[in] code	code to be set
+ *
+ */
+void ppp_pkt_set_code(ppp_pkt_t *pkt, uint8_t code);
 
-int ppp_pkt_init(uint8_t *data, size_t size, cp_pkt_t *cp_pkt);
 
-int _ppp_cr_populate_options(uint8_t *payload, size_t p_size);
+/**
+ * @brief	Get id field of PPP packet
+ * 
+ * @param[in] pkt	PPP packet
+ *
+ * @return	id of PPP packet
+ */
+uint8_t ppp_pkt_get_id(ppp_pkt_t *pkt);
 
-uint8_t ppp_pkt_get_code(cp_pkt_t *cp_pkt);
-void ppp_pkt_set_code(cp_pkt_t *cp_pkt, uint8_t code);
-uint8_t ppp_pkt_get_id(cp_pkt_t *cp_pkt);
-void ppp_pkt_set_id(cp_pkt_t *cp_pkt, uint8_t id);
-uint16_t ppp_pkt_get_length(cp_pkt_t *cp_pkt);
-void ppp_pkt_set_length(cp_pkt_t *cp_pkt, uint16_t length);
-int ppp_pkt_is_configure(cp_pkt_t *pkt);
-uint8_t * ppp_pkt_get_payload(cp_pkt_t *cp_pkt);
-int ppp_pkt_set_payload(cp_pkt_t *cp_pkt, uint8_t *data, size_t size);
-int ppp_pkt_set_payload_offset(cp_pkt_t *cp_pkt, uint8_t *data, size_t size, int offset);
+
+/**
+ * @brief	Set id field of PPP packet
+ * 
+ * @param[in] pkt	PPP packet
+ * @param[in] id	id to be set
+ *
+ */
+void ppp_pkt_set_id(ppp_pkt_t *pkt, uint8_t id);
+
+
+/**
+ * @brief	Get length field of PPP packet
+ * 
+ * @param[in] pkt	PPP packet
+ *
+ * @return	length of PPP packet
+ */
+uint16_t ppp_pkt_get_length(ppp_pkt_t *pkt);
+
+
+/**
+ * @brief	Set length field of PPP packet
+ * 
+ * @param[in] pkt	PPP packet
+ * @param[in] length	length to be set
+ *
+ */
+void ppp_pkt_set_length(ppp_pkt_t *pkt, uint16_t length);
+
+
+/**
+ * @brief	Get payload pointer of PPP packet
+ * 
+ * @param[in] pkt	PPP packet
+ *
+ * @return	Pointer to payload of PPP packet
+ */
+uint8_t * ppp_pkt_get_payload(ppp_pkt_t *pkt);
+
+
+/**
+ * @brief	Set payload of a PPP packet. As the PPP packet knows the buffer size, it will fail if there's no more space available.
+ * 
+ * @param[in] pkt	PPP packet
+ * @param[in] payload	payload to be set
+ * @param[in] size	size of the payload to be set
+ *
+ * @return	0, if payload was set
+ * @return -ENOMEM, if error
+ */
+int ppp_pkt_set_payload(ppp_pkt_t *pkt, uint8_t *data, size_t size);
+
 
 
 
