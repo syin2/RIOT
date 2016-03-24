@@ -122,6 +122,29 @@ static void test_ppp_pkt_get_set_payload(void)
 	TEST_ASSERT_EQUAL_INT(-ENOMEM, res);
 }
 
+static void test_ppp_pkt_set_payload_offset(void)
+{
+	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
+	uint8_t code = 0x01;
+	uint8_t id = 33;
+	uint16_t length = 8;
+	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
+	cp_pkt_t cp_pkt;
+	ppp_pkt_init(pkt, 8, &cp_pkt);
+
+	uint8_t new_payload[4]={'h','o','l','a'};
+	int res;
+	res = ppp_pkt_set_payload_offset(&cp_pkt, new_payload, 2, 2);
+
+	TEST_ASSERT_EQUAL_INT(0, memcmp(ppp_pkt_get_payload(&cp_pkt),&pkt[4],2));
+	TEST_ASSERT_EQUAL_INT(0, memcmp((uint8_t*) ppp_pkt_get_payload(&cp_pkt)+2,new_payload,2));
+	TEST_ASSERT_EQUAL_INT(0, res);
+
+	/* Try overflow */
+	res = ppp_pkt_set_payload_offset(&cp_pkt, new_payload, 4, 4);
+	TEST_ASSERT_EQUAL_INT(-ENOMEM, res);
+}
+
 static void test_ppp_opts_init(void)
 {
 	/* |--ConfigureReq--|--Identifier--|--Length(MSB)--|--Length(LSB)--|--Type--|--Length--|--MRU(MSB)--|--MRU(LSB)--| */
@@ -283,6 +306,7 @@ Test *tests_ppp_pkt_tests(void)
         new_TestFixture(test_ppp_pkt_get_set_id),
         new_TestFixture(test_ppp_pkt_get_set_length),
         new_TestFixture(test_ppp_pkt_get_set_payload),
+        new_TestFixture(test_ppp_pkt_set_payload_offset),
         new_TestFixture(test_ppp_opts_init),
         new_TestFixture(test_ppp_opts_get_head),
         new_TestFixture(test_ppp_opts_reset),
