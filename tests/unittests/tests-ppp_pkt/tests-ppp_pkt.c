@@ -32,7 +32,7 @@ static void test_ppp_pkt_init(void)
 	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
 	cp_pkt_t cp_pkt;
 
-	ppp_pkt_init(pkt, &cp_pkt);
+	ppp_pkt_init(pkt, 8, &cp_pkt);
 	
 
 	TEST_ASSERT_EQUAL_INT(code, cp_pkt.hdr->code);
@@ -40,7 +40,12 @@ static void test_ppp_pkt_init(void)
 	TEST_ASSERT_EQUAL_INT(length, byteorder_ntohs(cp_pkt.hdr->length));
 	TEST_ASSERT_EQUAL_INT(length, ppp_pkt_get_length(&cp_pkt));
 	
-	TEST_ASSERT_EQUAL_INT(0,memcmp(pkt+4,cp_pkt.payload,4));
+	TEST_ASSERT_EQUAL_INT(0,memcmp(pkt+4,cp_pkt._buf._payload+4,4));
+
+	/* Try to init a pkt with less than 4 bytes */
+	int res;
+	res = ppp_pkt_init(pkt, 2, &cp_pkt);
+	TEST_ASSERT_EQUAL_INT(-ENOMEM, res);
 }
 
 static void test_ppp_pkt_get_set_code(void)
@@ -51,7 +56,7 @@ static void test_ppp_pkt_get_set_code(void)
 	uint16_t length = 8;
 	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, &cp_pkt);
+	ppp_pkt_init(pkt, 8, &cp_pkt);
 
 	uint8_t new_code = 47;
 
@@ -69,7 +74,7 @@ static void test_ppp_pkt_get_set_id(void)
 	uint16_t length = 8;
 	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, &cp_pkt);
+	ppp_pkt_init(pkt, 8, &cp_pkt);
 
 	uint8_t new_id=13;
 	ppp_pkt_set_id(&cp_pkt, new_id);
@@ -86,7 +91,7 @@ static void test_ppp_pkt_get_set_length(void)
 	uint16_t length = 8;
 	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, &cp_pkt);
+	ppp_pkt_init(pkt, 8, &cp_pkt);
 
 	uint16_t new_length=13;
 	ppp_pkt_set_length(&cp_pkt, new_length);
@@ -103,12 +108,18 @@ static void test_ppp_pkt_get_set_payload(void)
 	uint16_t length = 8;
 	uint8_t pkt[8] = {code,id,0x00,length,0x01,0x04,0x00,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, &cp_pkt);
+	ppp_pkt_init(pkt, 8, &cp_pkt);
 
 	uint8_t new_payload[4]={'h','o','l','a'};
-	ppp_pkt_set_payload(&cp_pkt, new_payload, 4);
+	int res;
+	res = ppp_pkt_set_payload(&cp_pkt, new_payload, 4);
 
 	TEST_ASSERT_EQUAL_INT(0, memcmp(ppp_pkt_get_payload(&cp_pkt),new_payload,4));
+	TEST_ASSERT_EQUAL_INT(0, res);
+
+	/* Try overflow */
+	res = ppp_pkt_set_payload(&cp_pkt, new_payload, 90);
+	TEST_ASSERT_EQUAL_INT(-ENOMEM, res);
 }
 
 static void test_ppp_opts_init(void)
@@ -119,7 +130,7 @@ static void test_ppp_opts_init(void)
 	uint16_t length = 20;
 	uint8_t pkt[20] = {code,id,0x00,length,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x04,0x00,0x01,0x04,0x04,0xF0,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, &cp_pkt);
+	ppp_pkt_init(pkt, 20, &cp_pkt);
 
 	opt_list_t opt_list;
 	int status = ppp_opts_init(&opt_list, &cp_pkt);
@@ -132,7 +143,7 @@ static void test_ppp_opts_init(void)
 
 	/* Send bad pkt                                  v           */
 	uint8_t bad_pkt[8] = {0x01,0x00,0x00,0x08,0x01,0x06,0x00,0x01};
-	ppp_pkt_init(bad_pkt, &cp_pkt);
+	ppp_pkt_init(bad_pkt, 8, &cp_pkt);
 	status = ppp_opts_init(&opt_list, &cp_pkt);
 
 	TEST_ASSERT_EQUAL_INT(-1, status);
@@ -146,7 +157,7 @@ static void test_ppp_opts_get_head(void)
 	uint16_t length = 20;
 	uint8_t pkt[20] = {code,id,0x00,length,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x04,0x00,0x01,0x04,0x04,0xF0,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, &cp_pkt);
+	ppp_pkt_init(pkt, 20, &cp_pkt);
 
 	opt_list_t opt_list;
 	ppp_opts_init(&opt_list, &cp_pkt);
@@ -163,7 +174,7 @@ static void test_ppp_opts_reset(void)
 	uint16_t length = 20;
 	uint8_t pkt[20] = {code,id,0x00,length,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x04,0x00,0x01,0x04,0x04,0xF0,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, &cp_pkt);
+	ppp_pkt_init(pkt, 20, &cp_pkt);
 
 	opt_list_t opt_list;
 	ppp_opts_init(&opt_list, &cp_pkt);
@@ -181,7 +192,7 @@ static void test_ppp_opts_next(void)
 	uint16_t length = 21;
 	uint8_t pkt[21] = {code,id,0x00,length,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x05,0x00,0x00,0x01,0x04,0x04,0xF0,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, &cp_pkt);
+	ppp_pkt_init(pkt, 21, &cp_pkt);
 
 	opt_list_t opt_list;
 	ppp_opts_init(&opt_list, &cp_pkt);
@@ -238,7 +249,7 @@ static void test_ppp_opts_get_num(void)
 	uint16_t length = 21;
 	uint8_t pkt[21] = {code,id,0x00,length,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x05,0x00,0x00,0x01,0x04,0x04,0xF0,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, &cp_pkt);
+	ppp_pkt_init(pkt, 21, &cp_pkt);
 
 	opt_list_t opt_list;
 	ppp_opts_init(&opt_list, &cp_pkt);
@@ -254,7 +265,7 @@ static void test_ppp_opts_get_opt_num(void)
 	uint16_t length = 21;
 	uint8_t pkt[21] = {code,id,0x00,length,0x01,0x04,0x00,0x01,0x02,0x04,0x02,0x01,0x03,0x05,0x00,0x00,0x01,0x04,0x04,0xF0,0x01};
 	cp_pkt_t cp_pkt;
-	ppp_pkt_init(pkt, &cp_pkt);
+	ppp_pkt_init(pkt, 21, &cp_pkt);
 
 	opt_list_t opt_list;
 	ppp_opts_init(&opt_list, &cp_pkt);
