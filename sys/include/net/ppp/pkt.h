@@ -39,11 +39,17 @@ typedef struct __attribute__((packed)){
 
 
 /* A PPP packet*/
-typedef struct __attribute__((packed))
+typedef struct cp_pkt_t
 {
 	cp_hdr_t *hdr;
-	uint8_t *payload;
+	cp_pkt_buffer;
 } cp_pkt_t;
+
+typedef struct cp_pkt_buffer_t
+{
+	uint8_t *_payload;
+	size_t _size;
+} cp_pkt_buffer_t;
 
 
 
