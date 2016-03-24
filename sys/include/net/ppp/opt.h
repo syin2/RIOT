@@ -2,6 +2,7 @@
 #define PPP_OPT_H
 
 #include <errno.h>
+#include <string.h>
 #include "net/ppp/pkt.h"
 
 #ifdef __cplusplus
@@ -120,8 +121,9 @@ static inline void * ppp_opt_get_payload(void *opt)
 
 static inline void ppp_opts_delete(opt_list_t *opt_list)
 {
-	memset(ppp_pkt_get_payload(opt_list->pkt,0,opt_list->pkt->_buf._size-sizeof(cp_hdr_t)));
+	memset(ppp_pkt_get_payload(opt_list->pkt),0,opt_list->pkt->_buf._size-sizeof(cp_hdr_t));
 	opt_list->_co = opt_list->num = 0;
+	opt_list->current = opt_list->head;
 }
 
 static inline int ppp_opts_add_option(opt_list_t *opt_list, uint8_t type, uint8_t *payload, size_t p_size)
