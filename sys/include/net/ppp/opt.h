@@ -49,11 +49,12 @@ static inline int _get_num_opt(void *head_opt, uint16_t opts_length)
 }
 static inline int ppp_opts_init(opt_list_t *opt_list, cp_pkt_t *pkt)
 {
-	opt_list->head = opt_list->current = pkt->payload;
+	void *pkt_payload = ppp_pkt_get_payload(pkt);
+	opt_list->head = opt_list->current = pkt_payload;
 	opt_list->_co = 0;
 	uint16_t pkt_length = ppp_pkt_get_length(pkt);
 
-	int num = _get_num_opt(pkt->payload, pkt_length-sizeof(cp_hdr_t));
+	int num = _get_num_opt(pkt_payload, pkt_length-sizeof(cp_hdr_t));
 	if (num == -EBADMSG)
 		return -1;
 	

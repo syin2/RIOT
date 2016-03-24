@@ -38,23 +38,24 @@ typedef struct __attribute__((packed)){
 } cp_hdr_t;
 
 
-/* A PPP packet*/
-typedef struct cp_pkt_t
-{
-	cp_hdr_t *hdr;
-	cp_pkt_buffer;
-} cp_pkt_t;
-
 typedef struct cp_pkt_buffer_t
 {
 	uint8_t *_payload;
 	size_t _size;
 } cp_pkt_buffer_t;
 
+/* A PPP packet*/
+typedef struct cp_pkt_t
+{
+	cp_hdr_t *hdr;
+	cp_pkt_buffer_t _buf;
+} cp_pkt_t;
 
 
 
-int ppp_pkt_init(uint8_t *data, cp_pkt_t *cp_pkt);
+
+
+int ppp_pkt_init(uint8_t *data, size_t size, cp_pkt_t *cp_pkt);
 
 int _ppp_cr_populate_options(uint8_t *payload, size_t p_size);
 
@@ -66,7 +67,8 @@ uint16_t ppp_pkt_get_length(cp_pkt_t *cp_pkt);
 void ppp_pkt_set_length(cp_pkt_t *cp_pkt, uint16_t length);
 int ppp_pkt_is_configure(cp_pkt_t *pkt);
 uint8_t * ppp_pkt_get_payload(cp_pkt_t *cp_pkt);
-void ppp_pkt_set_payload(cp_pkt_t *cp_pkt, uint8_t *data, size_t size);
+int ppp_pkt_set_payload(cp_pkt_t *cp_pkt, uint8_t *data, size_t size);
+int ppp_pkt_set_payload_offset(cp_pkt_t *cp_pkt, uint8_t *data, size_t size, int offset);
 
 
 
