@@ -38,12 +38,11 @@ typedef enum {
 } dev_state_t;
 
 typedef enum {
-	GPRS_IDLE,
-	GPRS_SIMREADY,
-	GPRS_NETATTACH,
-	GPRS_PDPACT,
-	GPRS_DATAMODE
-} gprs_state_t;
+	PDP_IDLE,
+	PDP_SIMREADY,
+	PDP_NETATTACH,
+	PDP_ACT,
+} pdp_state_t;
 
 typedef struct {
 	uint8_t status;			/**< status of AT command */
@@ -71,7 +70,9 @@ typedef struct {
 	uint8_t b_CR; //flag for receiving a CR.
 	mutex_t resp_lock;
 	uint8_t prev_state;
+	uint8_t pin[4];
 	kernel_pid_t mac_pid;
+	pdp_state_t pdp_state;
 
 } sim900_t;
 

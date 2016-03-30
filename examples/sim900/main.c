@@ -171,6 +171,13 @@ static int AT_CIPMUX(sim900_t *dev, resp_t *resp)
 	_at_cmd(dev, "AT+CIPMUX=0",3,&raw);
 	return 0;
 }
+static void unlock_sim(sim900_t *dev)
+{
+	raw_t raw;
+	char cmd[] = "AT+CPIN=0000";
+	memcpy(cmd+sizeof(cmd)-4, dev->pin, 4);
+	_at_cmd(dev, cmd. &raw);
+}
 static int AT_CSTT(sim900_t *dev, resp_t *resp)
 {
 	raw_t raw;
@@ -225,6 +232,7 @@ static int sim900_init(sim900_t *dev, uart_t uart, uint32_t baud)
 	dev->_num_esc = 0; //Count of escape strings;
 	dev->b_CR = FALSE; //flag for receiving a CR.
 	dev->urc_counter = 0;
+	dev->pdp_state = PDP_IDLE;
 
 	//mutex_init(&(dev->resp_lock));
 	//mutex_lock(&(dev->resp_lock));
@@ -257,6 +265,18 @@ static int get_PDP(sim900_t *dev, resp_t *resp)
 	    AT_CIICR(dev, resp);
 	    return 0;
 }
+
+static pdp_state_t pdp_idle(sim900_t *dev, int event)
+{
+	/* Check SIM state */
+	if(event == E_SIMREADY)
+	{
+		/* Set timeout for network attach */
+		return PDP_SIMREADY;
+	}
+
+
+}
 static int TCP_open(sim900_t *dev, const uint8_t *address, uint8_t port) {
     resp_t resp;
     do{
@@ -275,16 +295,12 @@ int main(void)
 {
     //Setup a new sim900 devide
     sim900_t dev;
-    //printf("Hello");
-    //puts("Size of struct pointer: %i",sizeof(sim900_t*));
 
     //Setup uart
         //LED_RED_ON;
     sim900_init(&dev,1,96000);
 
     //Test get_AT
-    TCP_open(&dev,(uint8_t*) "www.github.com",80);
-	xtimer_usleep(1000000);
 	resp_t resp;
 	AT_CIPSEND(&dev,&resp);
 	
@@ -293,7 +309,7 @@ int main(void)
     {
     	msg_receive(&msg);
     	//Check if a URC was sent.
-    	switch(dev.state) {
+#if 0 switch(dev.state) {
     		case AT_STATE_RX:
     			DEBUG("%c",(char)msg.content.value);
     			if(msg.content.value == '\r') {
@@ -319,8 +335,8 @@ int main(void)
     		default:
     			break;
     	}
-    	
-    	
+#endif
+			
     }
     return 0;
 }
