@@ -37,6 +37,14 @@ typedef enum {
 	AT_STATE_URC
 } dev_state_t;
 
+typedef enum {
+	GPRS_IDLE,
+	GPRS_SIMREADY,
+	GPRS_NETATTACH,
+	GPRS_PDPACT,
+	GPRS_DATAMODE
+} gprs_state_t;
+
 typedef struct {
 	uint8_t status;			/**< status of AT command */
     uint8_t data[100];        /**< returned data from the AT command */
