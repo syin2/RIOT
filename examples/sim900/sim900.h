@@ -15,7 +15,11 @@ extern "C" {
 #define AT_OK "\r\nOK"
 #define AT_ST "\r\nSTATUS:"
 
+#define AT_STATUS_OK (1)
+#define AT_STATUS_ERROR (2)
 
+#define STREAM_CR (0xD09)
+#define STREAM_OK (0xD094F4B)
 
 #ifndef TRUE
 #define TRUE 1
@@ -34,15 +38,15 @@ typedef enum {
 	AT_STATE_IDLE,
 	AT_STATE_CMD,
 	AT_STATE_RX,
-	AT_STATE_URC
 } dev_state_t;
 
 typedef enum {
+	PDP_NOTSIM,
 	PDP_IDLE,
-	PDP_SIMREADY,
 	PDP_NETATTACH,
 	PDP_ACT,
 } pdp_state_t;
+
 
 typedef struct {
 	uint8_t status;			/**< status of AT command */
@@ -65,14 +69,19 @@ typedef struct {
 	uint8_t urc_counter;
 	dev_state_t state;
 	uint8_t resp_count;
-	uint8_t _lim_esc; //Number of escape strings of current AT command
-	uint8_t _num_esc; //Count of escape strings;
 	uint8_t b_CR; //flag for receiving a CR.
 	mutex_t resp_lock;
 	uint8_t prev_state;
 	uint8_t pin[4];
 	kernel_pid_t mac_pid;
 	pdp_state_t pdp_state;
+
+	char _c; //Received character;
+	uint8_t _num_esc; //Count of escape strings;
+
+	uint32_t _stream;
+	uint8_t at_status;
+	uint
 
 } sim900_t;
 
