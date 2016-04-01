@@ -26,6 +26,7 @@ extern "C" {
 
 #define SIM900_MSG_QUEUE 64 
 #define MSG_AT_FINISHED (0)
+#define MSG_AT_TIMEOUT (1)
 
 #ifndef TRUE
 #define TRUE 1
@@ -90,13 +91,16 @@ typedef struct sim900_t {
 
 	 xtimer_t xtimer;
 	uint8_t pdp_set;
-	void (*cb)(sim900_t *dev);
+	void (*_cb)(struct sim900_t *dev);
+	void (*_timer_cb)(struct sim900_t *dev);
+	msg_t msg;
 
 } sim900_t;
 
 //static int get_AT(sim900_t*, resp_t*);
 static int sim900_init(sim900_t*, uart_t, uint32_t);
-
+void pdp_netattach_timeout(sim900_t *dev);
+void pdp_netattach(sim900_t *dev);
 #ifdef __cplusplus
 }
 #endif
