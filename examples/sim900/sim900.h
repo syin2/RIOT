@@ -1,8 +1,10 @@
 #ifndef SIM900_H
 #define SIM900_H
 
-#include "kernel.h"
 #include "mutex.h"
+#include "thread.h"
+#include "xtimer.h"
+#include "net/gnrc/netdev2.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,8 +20,12 @@ extern "C" {
 #define AT_STATUS_OK (1)
 #define AT_STATUS_ERROR (2)
 
-#define STREAM_CR (0xD09)
-#define STREAM_OK (0xD094F4B)
+#define STREAM_CR (0x0D0A)
+#define STREAM_OK (0x0D0A4F4B)
+#define STREAM_ERROR (0x4552524F)
+
+#define SIM900_MSG_QUEUE 64 
+#define MSG_AT_FINISHED (0)
 
 #ifndef TRUE
 #define TRUE 1
@@ -48,7 +54,7 @@ typedef enum {
 } pdp_state_t;
 
 
-typedef struct {
+typedef struct resp_t{
 	uint8_t status;			/**< status of AT command */
     uint8_t data[100];        /**< returned data from the AT command */
     uint8_t data_len;       /**< number ob bytes written to @p data */
@@ -56,12 +62,12 @@ typedef struct {
     //uint8_t raw[256];
 } resp_t;
 
-typedef struct {
+typedef struct raw_t{
 	uint8_t data[256];
 	uint8_t data_len;
 } raw_t;
 
-typedef struct {
+typedef struct sim900_t {
 	uart_t uart;
 	uint8_t resp_buf[SIM900_MAX_RESP_SIZE];
 	uint8_t tx_buf[SIM900_MAX_CMD_SIZE];
@@ -81,7 +87,10 @@ typedef struct {
 
 	uint32_t _stream;
 	uint8_t at_status;
-	uint
+
+	 xtimer_t xtimer;
+	uint8_t pdp_set;
+	void (*cb)(sim900_t *dev);
 
 } sim900_t;
 

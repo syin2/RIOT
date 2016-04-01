@@ -2,6 +2,7 @@
 APPLICATION = sim900
 
 FEATURES_REQUIRED = periph_uart
+FEATURES_REQUIRED += periph_timer
 
 # If no BOARD is found in the environment, use this default:
 BOARD ?= samr21-xpro
@@ -20,5 +21,6 @@ QUIET ?= 1
 
 #USEMODULE += shell
 USEMODULE += xtimer
+
 
 include $(RIOTBASE)/Makefile.include
