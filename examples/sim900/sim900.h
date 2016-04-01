@@ -14,8 +14,6 @@ extern "C" {
 #define SIM900_MAX_CMD_SIZE (100U)
 #define SIM900_URC_SIZE (16U)
 
-#define AT_OK "\r\nOK"
-#define AT_ST "\r\nSTATUS:"
 
 #define AT_STATUS_OK (1)
 #define AT_STATUS_ERROR (2)
@@ -23,10 +21,17 @@ extern "C" {
 #define STREAM_CR (0x0D0A)
 #define STREAM_OK (0x0D0A4F4B)
 #define STREAM_ERROR (0x4552524F)
+#define STREAM_CONN (0x434F4E4E)
+
+#define HAS_OK (1)
+#define HAS_ERROR (2)
+#define HAS_CONN (4)
 
 #define SIM900_MSG_QUEUE 64 
+
 #define MSG_AT_FINISHED (0)
 #define MSG_AT_TIMEOUT (1)
+#define PDP_UP (2)
 
 #ifndef TRUE
 #define TRUE 1

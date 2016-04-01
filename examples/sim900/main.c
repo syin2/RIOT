@@ -49,24 +49,21 @@ static void rx_cb(void *arg, uint8_t data)
 	msg.content.value = MSG_AT_FINISHED;
 
 	dev->_stream += data;
+	dev->at_status |= (dev->_stream == STREAM_OK)*HAS_OK;
+	dev->at_status |= (dev->_stream == STREAM_ERROR)*HAS_ERROR;
+	dev->at_status |= (dev->_stream == STREAM_CONN)*HAS_CONN;
 
 	switch(dev->state)
 	{
 		case AT_STATE_CMD:
 			dev->_num_esc -= (dev->_stream & 0xFFFF) == STREAM_CR;
-			if(dev->_stream == STREAM_OK)
-			{
-				dev->at_status = AT_STATUS_OK;
-			}
-			else if (dev->_stream == STREAM_ERROR)
-			{
-				dev->at_status = AT_STATUS_ERROR;
-			}
 			if(!dev->_num_esc)
 			{
 				dev->state = AT_STATE_IDLE;
 				msg_send_int(&msg, dev->mac_pid);
 			}
+			break;
+		case AT_STATE_RX:
 			break;
 		default:
 			break;
@@ -113,6 +110,7 @@ int send_at_command(sim900_t *dev, char *cmd, size_t size, uint8_t ne, void (*cb
 	}
 	dev->state = AT_STATE_CMD;
 	dev->_num_esc = ne;
+	dev->at_status = 0;
 	uart_write(dev->uart, (uint8_t*) cmd, size); 
 	dev->_cb = cb;
 	return 0;
@@ -124,8 +122,6 @@ void attach_pdp(sim900_t *dev)
 
 void events(sim900_t *dev)
 {
-	puts("H");
-	DEBUG("Msg content value: %i\n", (int)dev->msg.content.value); 
 	switch(dev->msg.content.value)
 	{
 		case MSG_AT_FINISHED:
@@ -133,6 +129,10 @@ void events(sim900_t *dev)
 			break;
 		case MSG_AT_TIMEOUT:
 			dev->_timer_cb(dev);
+			break;
+		case PDP_UP:
+			printf("Welcome to PPP :)\n");
+			break;
 	}
 }
 
@@ -152,7 +152,18 @@ void pdp_netattach_timeout(sim900_t *dev)
 
 void check_data_mode(sim900_t *dev)
 {
-	puts("Should be in data mode");
+	if(dev->at_status & HAS_CONN)
+	{
+		puts("Successfully entered data mode");
+		dev->state = AT_STATE_RX;
+		dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
+		dev->msg.content.value = PDP_UP;
+		msg_send(&dev->msg, dev->mac_pid);
+	}
+	else
+	{
+		puts("Failed to enter data mode");
+	}
 }
 
 void pdp_enter_data_mode(sim900_t *dev)
@@ -168,15 +179,14 @@ void pdp_activate(sim900_t *dev)
 
 void pdp_netattach(sim900_t *dev)
 {
-	if(dev->at_status == AT_STATUS_ERROR)
+	if(dev->at_status &  HAS_ERROR)
 	{
 		//Set timeout
-		puts("HELLO");
 		at_timeout(dev, 10000000U, &pdp_netattach_timeout);
 	}
 	else
 	{
-		puts("Got connection.");
+		puts("Network attach!.");
 		send_at_command(dev, "AT+CGDCONT=1,\"IP\",\"mmsbouygtel.com\"\r\n", 37, 3, &pdp_activate);
 	}
 }
@@ -189,7 +199,7 @@ void pdp_set_pdp(sim900_t *dev)
 
 void pdp_context_attach(sim900_t *dev)
 {
-	if(dev->at_status == AT_STATUS_OK)
+	if(dev->at_status & HAS_OK)
 	{
 		puts("PDP attached!");
 	}
@@ -197,7 +207,7 @@ void pdp_context_attach(sim900_t *dev)
 
 void pdp_nosim(sim900_t *dev)
 {
-	if(dev->at_status == (int) AT_STATUS_OK)
+	if(dev->at_status & HAS_OK)
 	{
 		//Switch to next state
 		//dev->pdp_state = PDP_NETATTACH;
@@ -209,56 +219,6 @@ void pdp_nosim(sim900_t *dev)
 		puts("Error unlocking SIM");
 	}
 }
-/*
-void connection(sim900_t *dev, msg_t *msg)
-{
-	uint8_t event = msg->content.value;
-	switch(dev->pdp_state)
-	{
-		case PDP_NOTSIM:
-			if(dev->at_status == (int) AT_STATUS_OK)
-			{
-				//Switch to next state
-				dev->pdp_state = PDP_NETATTACH;
-				send_attach(dev);
-			}
-			else
-			{
-				puts("Error unlocking SIM");
-			}
-			break;
-		case PDP_NETATTACH:
-			if(event == 0)
-			{
-				if(dev->at_status == AT_STATUS_ERROR)
-				{
-					//Set timeout
-					msg->type = NETDEV2_MSG_TYPE_EVENT;
-					msg->content.value = 1;
-					xtimer_set_msg(&dev->xtimer, 10000000U, msg, dev->mac_pid);
-
-				}
-				else
-				{
-					puts("Got connection.");
-					dev->pdp_state = PDP_ACT;
-					dev->pdp_set = false;
-					send_pdp(dev);
-				}
-			}
-			else
-			{
-				puts("Still don't get network attach... let's try again");
-				send_attach(dev);
-			}
-
-			break;
-		case PDP_ACT:
-		default:
-			break;
-	}
-}
-*/
 
 void *sim900_thread(void *args)
 {
@@ -277,7 +237,6 @@ void *sim900_thread(void *args)
     	msg_receive(&dev->msg);
 		switch(dev->msg.type){
 			case NETDEV2_MSG_TYPE_EVENT:
-				puts("Event\n");
 				events(dev);
 				break;
     	}
