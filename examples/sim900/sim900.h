@@ -27,11 +27,16 @@ extern "C" {
 #define HAS_ERROR (2)
 #define HAS_CONN (4)
 
+
+#define RX_CTRL (1)
+#define RX_FLAG (2)
+
 #define SIM900_MSG_QUEUE 64 
 
 #define MSG_AT_FINISHED (0)
 #define MSG_AT_TIMEOUT (1)
 #define PDP_UP (2)
+#define RX_FINISHED (3)
 
 #ifndef TRUE
 #define TRUE 1
@@ -51,6 +56,11 @@ typedef enum {
 	AT_STATE_CMD,
 	AT_STATE_RX,
 } dev_state_t;
+
+typedef enum{
+	PPP_RX_STARTED,
+	PPP_RX_IDLE
+} ppp_rx_state_t;
 
 typedef enum {
 	PDP_NOTSIM,
@@ -77,6 +87,8 @@ typedef struct sim900_t {
 	uart_t uart;
 	uint8_t resp_buf[SIM900_MAX_RESP_SIZE];
 	uint8_t tx_buf[SIM900_MAX_CMD_SIZE];
+	uint8_t rx_buf[SIM900_MAX_CMD_SIZE];
+	uint16_t rx_count;
 	uint8_t urc_buf[SIM900_URC_SIZE];
 	uint8_t urc_counter;
 	dev_state_t state;
@@ -99,6 +111,11 @@ typedef struct sim900_t {
 	void (*_cb)(struct sim900_t *dev);
 	void (*_timer_cb)(struct sim900_t *dev);
 	msg_t msg;
+
+	//PPP
+	uint8_t rx_flags;
+	ppp_rx_state_t ppp_rx_state;
+	uint8_t escape;
 
 } sim900_t;
 

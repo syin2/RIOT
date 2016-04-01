@@ -53,6 +53,8 @@ static void rx_cb(void *arg, uint8_t data)
 	dev->at_status |= (dev->_stream == STREAM_ERROR)*HAS_ERROR;
 	dev->at_status |= (dev->_stream == STREAM_CONN)*HAS_CONN;
 
+	uint8_t c;
+
 	switch(dev->state)
 	{
 		case AT_STATE_CMD:
@@ -64,6 +66,41 @@ static void rx_cb(void *arg, uint8_t data)
 			}
 			break;
 		case AT_STATE_RX:
+			//If received a flag secuence
+			if(data == 0x7e)
+			{
+				if (!dev->ppp_rx_state == PPP_RX_IDLE)
+				{
+					//Finished data
+					msg.content.value = RX_FINISHED;
+					dev->ppp_rx_state = PPP_RX_IDLE;
+					msg_send_int(&msg, dev->mac_pid);
+				}
+				dev->escape = false;
+			}
+			else if (data == 0x7d && !dev->escape) //Escape character
+			{
+				dev->ppp_rx_state = PPP_RX_STARTED;
+				//Escape next character
+				dev->escape = true;
+			}
+			else
+			{
+				dev->ppp_rx_state = PPP_RX_STARTED;
+				if(dev->escape)
+				{
+					//Add XOR'd character
+					c = data ^ 0x20;
+				}
+				else
+				{
+					c = data;
+				}
+				//Checksum
+				fcs16_bit(dev->fcs, c);
+				dev->rx_buffer[dev->rx_count++] = c;
+				dev->escape = false;
+			}
 			break;
 		default:
 			break;
