@@ -27,10 +27,13 @@
 #include "sim900.h"
 #include "net/hdlc/fcs.h"
 
+#define PPPINITFCS16    0xffff
+#define PPPGOODFCS16    0xf0b8
+
 #define ENABLE_DEBUG    (1)
 #include "debug.h"
 
-#define TEST_PPP (0)
+#define TEST_PPP (1)
 
 
 char thread_stack[THREAD_STACKSIZE_MAIN];	
@@ -72,39 +75,36 @@ static void rx_cb(void *arg, uint8_t data)
 			//If received a flag secuence
 			if(data == 0x7e)
 			{
-				if (!dev->ppp_rx_state == PPP_RX_IDLE)
+				if(!dev->ppp_rx_state == PPP_RX_IDLE)
 				{
 					//Finished data
 					msg.content.value = RX_FINISHED;
 					dev->ppp_rx_state = PPP_RX_IDLE;
 					dev->rx_count = dev->int_count;
+					dev->fcs = dev->int_fcs;
 					dev->int_count = 0;
+					dev->int_fcs = PPPINITFCS16;
+					dev->escape = 0;
 					msg_send_int(&msg, dev->mac_pid);
 				}
-				dev->escape = false;
 			}
-			else if (data == 0x7d && !dev->escape) //Escape character
+			else if (data == 0x7d) //Escape character
 			{
 				dev->ppp_rx_state = PPP_RX_STARTED;
+				puts("Escaping");
 				//Escape next character
-				dev->escape = true;
+				dev->escape = 0x20;
 			}
 			else
 			{
 				dev->ppp_rx_state = PPP_RX_STARTED;
-				if(dev->escape)
-				{
-					//Add XOR'd character
-					c = data ^ 0x20;
-				}
-				else
-				{
-					c = data;
-				}
+				//Add XOR'd character
+				c = data ^ dev->escape;
+				//
 				//Checksum
-				dev->fcs = fcs16_bit(dev->fcs, c);
+				dev->int_fcs = fcs16_bit(dev->int_fcs, c);
 				dev->rx_buf[dev->int_count++] = c;
-				dev->escape = false;
+				dev->escape = 0;
 			}
 			break;
 		default:
@@ -119,6 +119,7 @@ static int sim900_init(sim900_t *dev, uart_t uart, uint32_t baud)
 	dev->uart = (uart_t) uart;
 	dev->rx_count = 0;
 	dev->int_count = 0;
+	dev->int_fcs = PPPINITFCS16;
 	memset(dev->resp_buf,'\0',SIM900_MAX_RESP_SIZE);
     memset(dev->tx_buf,'\0',SIM900_MAX_CMD_SIZE);
 	dev->resp_count = 0;
@@ -181,7 +182,18 @@ void events(sim900_t *dev)
 			if(dev->rx_count < 4)
 			{
 				DEBUG("Frame too short!");
-				puts("C");
+			}
+			else
+			{
+				puts(":)");
+				if(dev->fcs == PPPGOODFCS16 && dev->escape == 0)
+				{
+					DEBUG(("Good message! :)");
+				}
+				else
+				{
+					DEBUG("Bad message! :(");
+				}
 			}
 			break;
 	}
@@ -276,7 +288,7 @@ void *sim900_thread(void *args)
     //Setup a new sim900 devide
 
 	sim900_t *dev = (sim900_t*) args;
-    sim900_init(dev,1,115200);
+    sim900_init(dev,1,96000);
 
 	msg_t msg_queue[SIM900_MSG_QUEUE];;
 	msg_init_queue(msg_queue, SIM900_MSG_QUEUE);

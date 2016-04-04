@@ -90,7 +90,6 @@ typedef struct sim900_t {
 	uint8_t rx_buf[SIM900_MAX_CMD_SIZE];
 	uint16_t rx_count;
 	uint16_t int_count;
-	uint8_t urc_buf[SIM900_URC_SIZE];
 	uint8_t urc_counter;
 	dev_state_t state;
 	uint8_t resp_count;
@@ -118,6 +117,7 @@ typedef struct sim900_t {
 	ppp_rx_state_t ppp_rx_state;
 	uint8_t escape;
 	uint16_t fcs;
+	uint16_t int_fcs;
 
 } sim900_t;
 
