@@ -30,6 +30,8 @@
 #define ENABLE_DEBUG    (1)
 #include "debug.h"
 
+#define TEST_PPP (0)
+
 
 char thread_stack[THREAD_STACKSIZE_MAIN];	
 //Received bytes. Handle states
@@ -75,6 +77,8 @@ static void rx_cb(void *arg, uint8_t data)
 					//Finished data
 					msg.content.value = RX_FINISHED;
 					dev->ppp_rx_state = PPP_RX_IDLE;
+					dev->rx_count = dev->int_count;
+					dev->int_count = 0;
 					msg_send_int(&msg, dev->mac_pid);
 				}
 				dev->escape = false;
@@ -99,7 +103,7 @@ static void rx_cb(void *arg, uint8_t data)
 				}
 				//Checksum
 				dev->fcs = fcs16_bit(dev->fcs, c);
-				dev->rx_buf[dev->rx_count++] = c;
+				dev->rx_buf[dev->int_count++] = c;
 				dev->escape = false;
 			}
 			break;
@@ -113,6 +117,8 @@ static void rx_cb(void *arg, uint8_t data)
 static int sim900_init(sim900_t *dev, uart_t uart, uint32_t baud)
 {
 	dev->uart = (uart_t) uart;
+	dev->rx_count = 0;
+	dev->int_count = 0;
 	memset(dev->resp_buf,'\0',SIM900_MAX_RESP_SIZE);
     memset(dev->tx_buf,'\0',SIM900_MAX_CMD_SIZE);
 	dev->resp_count = 0;
@@ -169,7 +175,14 @@ void events(sim900_t *dev)
 			dev->_timer_cb(dev);
 			break;
 		case PDP_UP:
-			printf("Welcome to PPP :)\n");
+			DEBUG("Welcome to PPP :)\n");
+			break;
+		case RX_FINISHED:
+			if(dev->rx_count < 4)
+			{
+				DEBUG("Frame too short!");
+				puts("C");
+			}
 			break;
 	}
 }
@@ -267,8 +280,13 @@ void *sim900_thread(void *args)
 
 	msg_t msg_queue[SIM900_MSG_QUEUE];;
 	msg_init_queue(msg_queue, SIM900_MSG_QUEUE);
+#if TEST_PPP
+	dev->state = AT_STATE_RX;
+	dev->ppp_rx_state = PPP_RX_IDLE;
+#else
 	dev->pdp_state = PDP_NOTSIM;
 	send_at_command(dev, "AT+CPIN=0000\r\n",14, 3, &pdp_nosim);
+#endif
 
     while(1)
     {
