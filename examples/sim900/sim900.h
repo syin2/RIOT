@@ -116,6 +116,7 @@ typedef struct sim900_t {
 	uint8_t rx_flags;
 	ppp_rx_state_t ppp_rx_state;
 	uint8_t escape;
+	uint16_t fcs;
 
 } sim900_t;
 

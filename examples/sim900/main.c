@@ -25,6 +25,7 @@
 #include "periph/uart.h"
 #include "board.h"
 #include "sim900.h"
+#include "net/hdlc/fcs.h"
 
 #define ENABLE_DEBUG    (1)
 #include "debug.h"
@@ -97,8 +98,8 @@ static void rx_cb(void *arg, uint8_t data)
 					c = data;
 				}
 				//Checksum
-				fcs16_bit(dev->fcs, c);
-				dev->rx_buffer[dev->rx_count++] = c;
+				dev->fcs = fcs16_bit(dev->fcs, c);
+				dev->rx_buf[dev->rx_count++] = c;
 				dev->escape = false;
 			}
 			break;
