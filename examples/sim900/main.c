@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/uio.h>
 
 #include "periph/uart.h"
 #include "board.h"
@@ -85,7 +86,10 @@ static void rx_cb(void *arg, uint8_t data)
 					dev->int_count = 0;
 					dev->int_fcs = PPPINITFCS16;
 					dev->escape = 0;
-					msg_send_int(&msg, dev->mac_pid);
+					if(dev->fcs == PPPGOODFCS16 && dev->escape == 0)
+					{	
+						msg_send_int(&msg, dev->mac_pid);
+					}
 				}
 			}
 			else if (data == 0x7d) //Escape character
@@ -165,6 +169,40 @@ void attach_pdp(sim900_t *dev)
 {
 }
 
+void sim900_putchar(uart_t uart, uint8_t c)
+{
+	uint8_t *p = &c;
+	uart_write(uart, p, 1);
+}
+void sim900_send(sim900_t *dev, struct iovec *vector, int count)
+{
+	uint16_t fcs = PPPGOODFCS16;
+	/* Send flag */
+	sim900_putchar(dev->uart, (uint8_t) 0x7e);
+	uint8_t c;
+	for(int i=0;i<count;i++)
+	{
+		for(int j=0;j<vector->iov_len;j++)
+		{
+			c = *(((uint8_t*)vector[i].iov_base)+j);
+			if(c == 0x7e || c == 0x7d || c == 0x03)
+			{
+				sim900_putchar(dev->uart, (uint8_t) 0x7d);
+				sim900_putchar(dev->uart, (uint8_t) c ^ 0x20);
+			}
+			else
+			{
+				sim900_putchar(dev->uart, c);
+			}
+			fcs = fcs16_bit(fcs, c);
+		}
+	}
+	/*Write checksum and flag*/
+	fcs ^= 0xffff;
+	sim900_putchar(dev->uart, (uint8_t) fcs & 0x00ff);
+	sim900_putchar(dev->uart, (uint8_t) (fcs >> 8) & 0x00ff);
+	sim900_putchar(dev->uart, (uint8_t) 0x7e);
+}
 void events(sim900_t *dev)
 {
 	switch(dev->msg.content.value)
@@ -188,7 +226,9 @@ void events(sim900_t *dev)
 				puts(":)");
 				if(dev->fcs == PPPGOODFCS16 && dev->escape == 0)
 				{
-					DEBUG(("Good message! :)");
+					DEBUG("Good message! :)");
+					/* Create pkt */
+					
 				}
 				else
 				{
