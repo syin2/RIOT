@@ -34,7 +34,8 @@
 #define ENABLE_DEBUG    (1)
 #include "debug.h"
 
-#define TEST_PPP (1)
+#define TEST_PPP (0)
+#define TEST_WRITE (0)
 
 
 char thread_stack[THREAD_STACKSIZE_MAIN];	
@@ -61,7 +62,6 @@ static void rx_cb(void *arg, uint8_t data)
 	dev->at_status |= (dev->_stream == STREAM_CONN)*HAS_CONN;
 
 	uint8_t c;
-
 	switch(dev->state)
 	{
 		case AT_STATE_CMD:
@@ -73,6 +73,7 @@ static void rx_cb(void *arg, uint8_t data)
 			}
 			break;
 		case AT_STATE_RX:
+			puts("c");
 			//If received a flag secuence
 			if(data == 0x7e)
 			{
@@ -89,6 +90,10 @@ static void rx_cb(void *arg, uint8_t data)
 					if(dev->fcs == PPPGOODFCS16 && dev->escape == 0)
 					{	
 						msg_send_int(&msg, dev->mac_pid);
+					}
+					else
+					{
+						puts("Bad");
 					}
 				}
 			}
@@ -165,24 +170,25 @@ int send_at_command(sim900_t *dev, char *cmd, size_t size, uint8_t ne, void (*cb
 	return 0;
 }
 
-void attach_pdp(sim900_t *dev)
-{
-}
-
 void sim900_putchar(uart_t uart, uint8_t c)
 {
 	uint8_t *p = &c;
+	//puts("Called");
+	//DEBUG("Printing %i\n",c);
 	uart_write(uart, p, 1);
+	DEBUG("%i\n", c);
+	puts("W");
 }
+
 void sim900_send(sim900_t *dev, struct iovec *vector, int count)
 {
-	uint16_t fcs = PPPGOODFCS16;
+	uint16_t fcs = PPPINITFCS16;
 	/* Send flag */
 	sim900_putchar(dev->uart, (uint8_t) 0x7e);
 	uint8_t c;
 	for(int i=0;i<count;i++)
 	{
-		for(int j=0;j<vector->iov_len;j++)
+		for(int j=0;j<vector[i].iov_len;j++)
 		{
 			c = *(((uint8_t*)vector[i].iov_base)+j);
 			if(c == 0x7e || c == 0x7d || c == 0x03)
@@ -203,6 +209,15 @@ void sim900_send(sim900_t *dev, struct iovec *vector, int count)
 	sim900_putchar(dev->uart, (uint8_t) (fcs >> 8) & 0x00ff);
 	sim900_putchar(dev->uart, (uint8_t) 0x7e);
 }
+
+void test_sending(sim900_t *dev)
+{
+	uint8_t pkt[] = {0xff, 0x03, 0xc0, 0x21, 0x01,0x01,0x00,0x04};
+	struct iovec vector;
+	vector.iov_base = &pkt;
+	vector.iov_len = 8;
+	sim900_send(dev, &vector, 1);
+}
 void events(sim900_t *dev)
 {
 	switch(dev->msg.content.value)
@@ -215,6 +230,7 @@ void events(sim900_t *dev)
 			break;
 		case PDP_UP:
 			DEBUG("Welcome to PPP :)\n");
+			test_sending(dev);
 			break;
 		case RX_FINISHED:
 			if(dev->rx_count < 4)
@@ -259,6 +275,7 @@ void check_data_mode(sim900_t *dev)
 	{
 		puts("Successfully entered data mode");
 		dev->state = AT_STATE_RX;
+		dev->ppp_rx_state = PPP_RX_IDLE;
 		dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
 		dev->msg.content.value = PDP_UP;
 		msg_send(&dev->msg, dev->mac_pid);
@@ -295,10 +312,6 @@ void pdp_netattach(sim900_t *dev)
 }
 
 
-void pdp_set_pdp(sim900_t *dev)
-{
-	attach_pdp(dev);
-}
 
 void pdp_context_attach(sim900_t *dev)
 {
@@ -337,7 +350,11 @@ void *sim900_thread(void *args)
 	dev->ppp_rx_state = PPP_RX_IDLE;
 #else
 	dev->pdp_state = PDP_NOTSIM;
-	send_at_command(dev, "AT+CPIN=0000\r\n",14, 3, &pdp_nosim);
+	/*Start sending an AT command */
+	send_at_command(dev, "AT+CPIN=0000; +CFUN=1\r\n",14, 3, &pdp_nosim);
+#endif
+#if TEST_WRITE
+	test_sending(dev);
 #endif
 
     while(1)
