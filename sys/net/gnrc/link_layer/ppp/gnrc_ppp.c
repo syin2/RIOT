@@ -61,7 +61,7 @@ static void _event_cb(gnrc_netdev_event_t event, void *data)
 #endif
 
 /*Wake up events for packet reception goes here*/
-int ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
+int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 {
 	/* Mark hdlc header */
 	gnrc_pktsnip_t *result = gnrc_pktbuf_mark(pkt, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
@@ -98,8 +98,8 @@ int ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 		gnrc_pktbuf_release(pkt);
 		return 0; /*TODO:Fix right value */
 
-	dont_discard:
-		return 0;/*TODO: Fix right value */
+	//dont_discard:
+	//	return 0;/*TODO: Fix right value */
 }
 
 /**
@@ -111,31 +111,31 @@ int ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
  */
 
 /* Generate PPP pkt */
-gnrc_pktsnip_t * _pkt_build(gnrc_nettype_t pkt_type, uint8_t type, uint8_t id, gnrc_pktsnip_t *payload)
+gnrc_pktsnip_t * _pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnrc_pktsnip_t *payload)
 {
 	ppp_hdr_t ppp_hdr;
-	ppp_hdr_set_type(&ppp_hdr, type);
-	int payload_length = gnrc_pkt_len(pkt);
+	ppp_hdr_set_code(&ppp_hdr, code);
+	int payload_length = gnrc_pkt_len(payload);
 	ppp_hdr_set_length(&ppp_hdr, payload_length + sizeof(ppp_hdr_t));
 
-	gnrc_pktsnip_t *ppp_pkt = gnrc_pktbuf_add(pkt, (void*) &ppp_hdr, sizeof(ppp_hdr_t), pkt_type);
+	gnrc_pktsnip_t *ppp_pkt = gnrc_pktbuf_add(payload, (void*) &ppp_hdr, sizeof(ppp_hdr_t), pkt_type);
 	return ppp_pkt;
 }
 
-gnrc_ptksnip_t *lcp_pkt_build(uint8_t type, uint8_t id, gnrc_pktsnip_t *payload)
+gnrc_pktsnip_t *lcp_pkt_build(uint8_t type, uint8_t id, gnrc_pktsnip_t *payload)
 {
 	return _pkt_build(GNRC_NETTYPE_LCP, type, id, payload);
 }
 
-int gnrc_ppp_send(gnrc_netdev2_t *dev, gnrc_pktsnip_t *pkt)
+int gnrc_ppp_send(netdev2_t *dev, gnrc_pktsnip_t *pkt)
 {
-	hdlc_hdr_t *hdlc_hdr;
+	hdlc_hdr_t hdlc_hdr;
 
-	hdlc_set_address(hdlc_hdr, PPP_HDLC_ADDRESS);
-	hdlc_set_control(hdlc_hdr, PPP_HDLC_CONTROL);
-	hdlc_set_protocol(hdlc_hdr, gnrc_nettype_to_ppp_protnum(pkt->type));
+	hdlc_hdr_set_address(&hdlc_hdr, PPP_HDLC_ADDRESS);
+	hdlc_hdr_set_control(&hdlc_hdr, PPP_HDLC_CONTROL);
+	hdlc_hdr_set_protocol(&hdlc_hdr, gnrc_nettype_to_ppp_protnum(pkt->type));
 
-	gnrc_pktsnip_t *hdr = gnrc_pktbuf_add(pkt, (void*) &hdlc_hdr_t, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
+	gnrc_pktsnip_t *hdr = gnrc_pktbuf_add(pkt, (void*) &hdlc_hdr, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
 	/* Get iovec representation */
 	size_t n;
 	int res = -ENOBUFS;

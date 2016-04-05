@@ -26,7 +26,6 @@
 #include "periph/uart.h"
 #include "board.h"
 #include "sim900.h"
-#include "net/hdlc/fcs.h"
 
 #define PPPINITFCS16    0xffff
 #define PPPGOODFCS16    0xf0b8
@@ -176,12 +175,11 @@ void sim900_putchar(uart_t uart, uint8_t c)
 	//puts("Called");
 	//DEBUG("Printing %i\n",c);
 	uart_write(uart, p, 1);
-	DEBUG("%i\n", c);
-	puts("W");
 }
 
-void sim900_send(sim900_t *dev, struct iovec *vector, int count)
+int sim900_send(netdev2_t *ppp_dev, const struct iovec *vector, int count)
 {
+	sim900_t *dev = (sim900_t*) ppp_dev;
 	uint16_t fcs = PPPINITFCS16;
 	/* Send flag */
 	sim900_putchar(dev->uart, (uint8_t) 0x7e);
@@ -208,6 +206,7 @@ void sim900_send(sim900_t *dev, struct iovec *vector, int count)
 	sim900_putchar(dev->uart, (uint8_t) fcs & 0x00ff);
 	sim900_putchar(dev->uart, (uint8_t) (fcs >> 8) & 0x00ff);
 	sim900_putchar(dev->uart, (uint8_t) 0x7e);
+	return 0;
 }
 
 void test_sending(sim900_t *dev)
@@ -216,7 +215,7 @@ void test_sending(sim900_t *dev)
 	struct iovec vector;
 	vector.iov_base = &pkt;
 	vector.iov_len = 8;
-	sim900_send(dev, &vector, 1);
+	sim900_send((netdev2_t*) dev, &vector, 1);
 }
 void events(sim900_t *dev)
 {
@@ -351,7 +350,7 @@ void *sim900_thread(void *args)
 #else
 	dev->pdp_state = PDP_NOTSIM;
 	/*Start sending an AT command */
-	send_at_command(dev, "AT+CPIN=0000; +CFUN=1\r\n",14, 3, &pdp_nosim);
+	send_at_command(dev, "AT+CPIN=0000\r\n",14, 3, &pdp_nosim);
 #endif
 #if TEST_WRITE
 	test_sending(dev);
@@ -371,7 +370,12 @@ void *sim900_thread(void *args)
 
 int main(void)
 {
+	netdev2_driver_t driver;
+	driver.send = &sim900_send;
+
     sim900_t dev;
+	dev.netdev.driver = &driver;
+
 	xtimer_init();
 	kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, sim900_thread, &dev, "sim900");
 	(void) pid;

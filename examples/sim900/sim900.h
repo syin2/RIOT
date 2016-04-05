@@ -4,7 +4,10 @@
 #include "mutex.h"
 #include "thread.h"
 #include "xtimer.h"
-#include "net/gnrc/netdev2.h"
+#include "net/netdev2.h"
+#include "net/gnrc.h"
+#include "net/gnrc/ppp/ppp.h"
+#include "net/hdlc/fcs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -84,6 +87,7 @@ typedef struct raw_t{
 } raw_t;
 
 typedef struct sim900_t {
+	netdev2_t netdev;
 	uart_t uart;
 	uint8_t resp_buf[SIM900_MAX_RESP_SIZE];
 	uint8_t tx_buf[SIM900_MAX_CMD_SIZE];
@@ -118,6 +122,7 @@ typedef struct sim900_t {
 	uint8_t escape;
 	uint16_t fcs;
 	uint16_t int_fcs;
+	ppp_dev_t ppp_dev;
 
 } sim900_t;
 

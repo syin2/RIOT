@@ -27,7 +27,7 @@
 
 #include "net/gnrc.h"
 #include "net/gnrc/netdev2.h"
-#include "net/gnrc/ppp/cp.h"
+#include "net/ppp/hdr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,19 +37,18 @@ extern "C" {
 #define PPP_HDLC_ADDRESS (0xFF)
 #define PPP_HDLC_CONTROL (0x03)
 
-struct ppp_dev_t;
-
 /* PPP device */
 typedef struct ppp_dev_t{
 	struct ppp_cp_t *l_lcp;
 	struct ppp_cp_t *l_ncp;
-	gnrc_netdev2_t *dev;
+	netdev2_t *dev;
 } ppp_dev_t;
 
 
 
-gnrc_ptksnip_t *lcp_pkt_build(uint8_t type, uint8_t id, gnrc_pktsnip_t *payload);
+gnrc_pktsnip_t *lcp_pkt_build(uint8_t code, uint8_t id, gnrc_pktsnip_t *payload);
 int gnrc_ppp_send(netdev2_t *dev, gnrc_pktsnip_t *pkt);
+int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt);
 
 #ifdef __cplusplus
 }

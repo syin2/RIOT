@@ -250,16 +250,23 @@ static inline uint8_t gnrc_nettype_to_protnum(gnrc_nettype_t type)
 
 static inline uint16_t gnrc_nettype_to_ppp_protnum(gnrc_nettype_t type)
 {
-	case GNRC_NETTYPE_LCP:
-		return PPPTYPE_LCP;
-	case GNRC_NETTYPE_IPCP:
-		return PPPTYPE_NCP_IPV4;
-	case GNRC_NETTYPE_IPV6:
-		return PPPTYPE_IPV6
-	case GNRC_NETTYPE_IPV4:
-		return PPPTYPE_IPV4;
-	default:
-		return PPPTYPE_UNKNOWN;
+	switch(type)
+	{
+		case GNRC_NETTYPE_LCP:
+			return PPPTYPE_LCP;
+		case GNRC_NETTYPE_IPCP:
+			return PPPTYPE_NCP_IPV4;
+#ifdef MODULE_GNRC_IPV6
+		case GNRC_NETTYPE_IPV6:
+			return PPPTYPE_IPV6
+#endif
+#ifdef MODULE_GNRC_IPV4
+		case GNRC_NETTYPE_IPV4:
+			return PPPTYPE_IPV4;
+#endif
+		default:
+			return PPPTYPE_UNKNOWN;
+	}
 }
 
 #ifdef __cplusplus

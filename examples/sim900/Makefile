@@ -21,6 +21,7 @@ QUIET ?= 1
 
 #USEMODULE += shell
 USEMODULE += xtimer
+USEMODULE += gnrc_ppp
 
 
 include $(RIOTBASE)/Makefile.include
