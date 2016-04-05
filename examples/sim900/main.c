@@ -33,7 +33,7 @@
 #define ENABLE_DEBUG    (1)
 #include "debug.h"
 
-#define TEST_PPP (0)
+#define TEST_PPP (1)
 #define TEST_WRITE (0)
 
 
@@ -72,7 +72,6 @@ static void rx_cb(void *arg, uint8_t data)
 			}
 			break;
 		case AT_STATE_RX:
-			puts("c");
 			//If received a flag secuence
 			if(data == 0x7e)
 			{
@@ -219,7 +218,8 @@ void test_sending(sim900_t *dev)
 }
 void dispatch_ppp_pkt(sim900_t *dev)
 {
-	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL,dev->rx_buf,dev->rx_count, GNRC_NETTYPE_UNDEF);
+	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL,dev->rx_buf,dev->rx_count-2, GNRC_NETTYPE_UNDEF);
+	DEBUG("Sending a pkt with size: %i\n", dev->rx_count-2);
 	gnrc_ppp_recv(&dev->ppp_dev, pkt);
 }
 void events(sim900_t *dev)
@@ -376,6 +376,7 @@ void *sim900_thread(void *args)
 
 int main(void)
 {
+	gnrc_pktbuf_init();
 	netdev2_driver_t driver;
 	driver.send = &sim900_send;
 
