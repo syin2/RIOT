@@ -98,7 +98,6 @@ static void rx_cb(void *arg, uint8_t data)
 			else if (data == 0x7d) //Escape character
 			{
 				dev->ppp_rx_state = PPP_RX_STARTED;
-				puts("Escaping");
 				//Escape next character
 				dev->escape = 0x20;
 			}
@@ -219,7 +218,6 @@ void test_sending(sim900_t *dev)
 void dispatch_ppp_pkt(sim900_t *dev)
 {
 	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL,dev->rx_buf,dev->rx_count-2, GNRC_NETTYPE_UNDEF);
-	DEBUG("Sending a pkt with size: %i\n", dev->rx_count-2);
 	gnrc_ppp_recv(&dev->ppp_dev, pkt);
 }
 void events(sim900_t *dev)
@@ -243,17 +241,16 @@ void events(sim900_t *dev)
 			}
 			else
 			{
-				puts(":)");
 				if(dev->fcs == PPPGOODFCS16 && dev->escape == 0)
 				{
-					DEBUG("Good message! :)");
+					DEBUG("Good message! :)\n");
 					dispatch_ppp_pkt(dev);
 					/* Create pkt */
 					
 				}
 				else
 				{
-					DEBUG("Bad message! :(");
+					DEBUG("Bad message! :(\n");
 				}
 			}
 			break;
@@ -379,8 +376,12 @@ int main(void)
 	gnrc_pktbuf_init();
 	netdev2_driver_t driver;
 	driver.send = &sim900_send;
-
     sim900_t dev;
+
+	/* TODO: Of course the following snip doesn't belong here... */
+	ppp_cp_t l_lcp;
+	dev.ppp_dev.l_lcp = &l_lcp;
+
 	dev.netdev.driver = &driver;
 
 	xtimer_init();

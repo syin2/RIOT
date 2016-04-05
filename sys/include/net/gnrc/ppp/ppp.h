@@ -28,6 +28,7 @@
 #include "net/gnrc.h"
 #include "net/gnrc/netdev2.h"
 #include "net/ppp/hdr.h"
+#include "net/gnrc/ppp/cp.h"
 
 #ifdef __cplusplus
 extern "C" {

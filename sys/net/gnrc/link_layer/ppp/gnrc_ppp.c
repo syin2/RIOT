@@ -86,7 +86,8 @@ int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 			break;
 		case PPPTYPE_LCP:
 			/* Populate received pkt */
-			//lcp_handle_pkt(dev->l_lcp, &cp_pkt);
+			lcp_handle_pkt(dev->l_lcp, pkt);
+			DEBUG("Received an LCP pkt. It was CRC checked and routed right. Congratz!\n");
 			break;
 		case PPPTYPE_NCP_IPV4:
 		//	_handle_cp_pkt(dev->l_ncp, &cp_pkt);

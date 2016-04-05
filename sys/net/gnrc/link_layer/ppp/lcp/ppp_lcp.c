@@ -26,7 +26,7 @@
 #include "net/gnrc/nettype.h"
 #include <errno.h>
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG    (1)
 #include "debug.h"
 
 #if ENABLE_DEBUG
@@ -116,7 +116,6 @@ static int _lcp_get_opt_status(ppp_option_t *opt)
 
 static int _lcp_handle_rcr(gnrc_pktsnip_t *pkt)
 {
-	
 	ppp_hdr_t *ppp_hdr;
 	int has_options = _pkt_get_ppp_header(pkt, &ppp_hdr);
 
@@ -414,6 +413,7 @@ int lcp_handle_pkt(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 			break;
 	}
 
+	DEBUG("Event was %i\n", event);
 	return event;
 }
 
