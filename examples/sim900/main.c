@@ -217,6 +217,11 @@ void test_sending(sim900_t *dev)
 	vector.iov_len = 8;
 	sim900_send((netdev2_t*) dev, &vector, 1);
 }
+void dispatch_ppp_pkt(sim900_t *dev)
+{
+	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL,dev->rx_buf,dev->rx_count, GNRC_NETTYPE_UNDEF);
+	gnrc_ppp_recv(&dev->ppp_dev, pkt);
+}
 void events(sim900_t *dev)
 {
 	switch(dev->msg.content.value)
@@ -242,6 +247,7 @@ void events(sim900_t *dev)
 				if(dev->fcs == PPPGOODFCS16 && dev->escape == 0)
 				{
 					DEBUG("Good message! :)");
+					dispatch_ppp_pkt(dev);
 					/* Create pkt */
 					
 				}

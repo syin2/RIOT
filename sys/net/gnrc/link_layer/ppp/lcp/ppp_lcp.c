@@ -78,7 +78,7 @@ void lcp_negotiate_nak(void *lcp_opt, cp_pkt_metadata_t *metadata)
 
 static int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr)
 {
-	if(pkt->type == GNRC_NETTYPE_PPP)
+	if(pkt->type == GNRC_NETTYPE_LCP)
 	{
 		*ppp_hdr = (ppp_hdr_t*) pkt->data;
 		return false;
@@ -212,6 +212,7 @@ static int _lcp_handle_rcn_rej(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 	return E_RCN;
 }
 
+#if 0
 void lcp_tlu(ppp_cp_t *lcp)
 {
 	lcp->l_upper_msg |= PPP_MSG_UP;
@@ -340,6 +341,7 @@ void lcp_ser(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 	(void) pkt;
 	//send_cp(lcp,PPP_CP_SER);
 }
+#endif
 
 int _lcp_handle_coderej(gnrc_pktsnip_t *pkt)
 {
@@ -373,7 +375,7 @@ int _lcp_handle_term_ack(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 
 int lcp_handle_pkt(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 {
-	gnrc_pktsnip_t *hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), GNRC_NETTYPE_PPP);
+	gnrc_pktsnip_t *hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), GNRC_NETTYPE_LCP);
 	ppp_hdr_t *ppp_hdr = (ppp_hdr_t*) hdr->data;
 
 
