@@ -44,19 +44,12 @@ typedef struct ppp_dev_t{
 	struct ppp_cp_t *l_lcp;
 	struct ppp_cp_t *l_ncp;
 	gnrc_netdev2_t *dev;
-
-	uint8_t ppp_buf[PPP_BUF_SIZE];
-	uint32_t ppp_buf_size;
 } ppp_dev_t;
 
 
 
-void test_handle_cp_rcr(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt);
-void test_ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt);
-
-
-
-void ppp_send(ppp_dev_t *dev, gnrc_pktsnip_t *pkt);
+gnrc_ptksnip_t *lcp_pkt_build(uint8_t type, uint8_t id, gnrc_pktsnip_t *payload);
+int gnrc_ppp_send(netdev2_t *dev, gnrc_pktsnip_t *pkt);
 
 #ifdef __cplusplus
 }

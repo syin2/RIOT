@@ -29,6 +29,7 @@
 
 #include "net/ethertype.h"
 #include "net/protnum.h"
+#include "net/ppptype.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -104,8 +105,8 @@ typedef enum {
      * @}
      */
 //#ifdef MODULE_GNRC_PPP
-	GNRC_NETTYPE_PPP_LCP,
-	GNRC_NETTYPE_PPP_IPCP,
+	GNRC_NETTYPE_LCP,
+	GNRC_NETTYPE_IPCP,
 	GNRC_NETTYPE_HDLC,
 //#endif
 
@@ -245,6 +246,20 @@ static inline uint8_t gnrc_nettype_to_protnum(gnrc_nettype_t type)
         default:
             return PROTNUM_RESERVED;
     }
+}
+
+static inline uint16_t gnrc_nettype_to_ppp_protnum(gnrc_nettype_t type)
+{
+	case GNRC_NETTYPE_LCP:
+		return PPPTYPE_LCP;
+	case GNRC_NETTYPE_IPCP:
+		return PPPTYPE_NCP_IPV4;
+	case GNRC_NETTYPE_IPV6:
+		return PPPTYPE_IPV6
+	case GNRC_NETTYPE_IPV4:
+		return PPPTYPE_IPV4;
+	default:
+		return PPPTYPE_UNKNOWN;
 }
 
 #ifdef __cplusplus

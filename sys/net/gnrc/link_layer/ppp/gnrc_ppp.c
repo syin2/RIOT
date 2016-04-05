@@ -41,6 +41,7 @@
  * @param[in] event         type of event
  * @param[in] data          optional parameter
  */
+#if 0
 static void _event_cb(gnrc_netdev_event_t event, void *data)
 {
     DEBUG("ppp: event triggered -> %i\n", event);
@@ -57,12 +58,13 @@ static void _event_cb(gnrc_netdev_event_t event, void *data)
         }
     }
 }
+#endif
 
 /*Wake up events for packet reception goes here*/
-static int _ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
+int ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 {
 	/* Mark hdlc header */
-	gnrc_pktsnip_t *result = gnrc_pktbuf_mark(pkt, sizeof(hdlc_hdr_t), GNRC_NETTYPE_UNDEF);
+	gnrc_pktsnip_t *result = gnrc_pktbuf_mark(pkt, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
 	if (!result) {
 		DEBUG("gnrc_ppp: no space left in packet buffer\n");
 		return 0; /*TODO:Fix right value */	
@@ -70,48 +72,34 @@ static int _ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 	
 	hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t*) result->data;
 
-	cp_pkt_t cp_pkt;
 	/* Route the packet according to prot(ocol */
-	switch(hdlc_hdr->protocol)
+	switch(hdlc_hdr_get_protocol(hdlc_hdr))
 	{
 		case PPPTYPE_IPV4:
 			/* Check if NCP is up. Silently discard pkt if not */
-			if (!dev->l_ncp->up)
+			/*if (!dev->l_ncp->up)
 			{
 				break;
-			}
-			_pktsnd_upper_layer(dev, &cp_pkt);
-			goto dont_discard;
+			}*/
+			//_pktsnd_upper_layer(dev, &cp_pkt);
+			//goto dont_discard;
 			break;
 		case PPPTYPE_LCP:
 			/* Populate received pkt */
-			_populate_recv_pkt(pkt, &cp_pkt);
-			_handle_cp_pkt(dev->l_lcp, &cp_pkt);
+			//lcp_handle_pkt(dev->l_lcp, &cp_pkt);
 			break;
 		case PPPTYPE_NCP_IPV4:
-			_populate_recv_pkt(pkt, &cp_pkt);
-			_handle_cp_pkt(dev->l_ncp, &cp_pkt);
+		//	_handle_cp_pkt(dev->l_ncp, &cp_pkt);
 			break;
 		default:
 			break;
 	}
 
-		pkt = result;
 		gnrc_pktbuf_release(pkt);
 		return 0; /*TODO:Fix right value */
 
 	dont_discard:
 		return 0;/*TODO: Fix right value */
-}
-/* Used for unittest */
-void test_handle_cp_rcr(ppp_cp_t *l_lcp, gnrc_pktsnip_t *pkt)
-{
-	DEBUG("Testing _handle_cp_rcr\n");
-	_handle_cp_rcr(l_lcp, pkt);
-}
-void test_ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
-{
-	_ppp_recv_pkt(dev, pkt);
 }
 
 /**
@@ -121,116 +109,41 @@ void test_ppp_recv_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
  *
  * @return                  never returns
  */
-static void *_ppp_thread(void *args)
-{
-    gnrc_netdev2_t *dev = (gnrc_netdev2_t *) args;
-    gnrc_netapi_opt_t *opt;
-
-    int res;
-    msg_t msg, reply, msg_queue[GNRC_PPP_MSG_QUEUE_SIZE];
-
-    /* setup the MAC layers message queue */
-    msg_init_queue(msg_queue, GNRC_PPP_MSG_QUEUE_SIZE);
-    /* save the PID to the device descriptor and register the device */
-    dev->pid = thread_getpid();
-
-    gnrc_netif_add(dev->mac_pid);
-    /* register the event callback with the device driver */
-	//Check this...
-    dev->driver->add_event_callback(dev, _event_cb);
-
-    /* start the event loop */
-    while (1) {
-        DEBUG("ppp: waiting for incoming messages\n");
-        msg_receive(&msg);
-        /* dispatch NETDEV and NETAPI messages */
-		/* Used for getting events to NCP layers*/
-        switch (msg.type) {
-            case GNRC_NETDEV_MSG_TYPE_EVENT:
-                DEBUG("ppp: GNRC_NETDEV_MSG_TYPE_EVENT received\n");
-                break;
-			case GNRC_PPP_
-            case GNRC_NETAPI_MSG_TYPE_SND:
-                DEBUG("ppp: GNRC_NETAPI_MSG_TYPE_SND received\n");
-				_ppp_snd_pkt(dev, (gnrc_pktsnit_t *)msg.content.ptr);
-                break;
-            case GNRC_NETAPI_MSG_TYPE_SET:
-                DEBUG("ppp: GNRC_NETAPI_MSG_TYPE_SET received\n");
-                /* read incoming options */
-                opt = (gnrc_netapi_opt_t *)msg.content.ptr;
-                /* set option for device driver */
-                res = dev->driver->set(dev, opt->opt, opt->data, opt->data_len);
-                DEBUG("ppp: response of netdev->set: %i\n", res);
-                /* send reply to calling thread */
-                reply.type = GNRC_NETAPI_MSG_TYPE_ACK;
-                reply.content.value = (uint32_t)res;
-                msg_reply(&msg, &reply);
-                break;
-            case GNRC_NETAPI_MSG_TYPE_GET:
-                DEBUG("ppp: GNRC_NETAPI_MSG_TYPE_GET received\n");
-                /* read incoming options */
-                opt = (gnrc_netapi_opt_t *)msg.content.ptr;
-                /* get option from device driver */
-                res = dev->driver->get(dev, opt->opt, opt->data, opt->data_len);
-                DEBUG("ppp: response of netdev->get: %i\n", res);
-                /* send reply to calling thread */
-                reply.type = GNRC_NETAPI_MSG_TYPE_ACK;
-                reply.content.value = (uint32_t)res;
-                msg_reply(&msg, &reply);
-                break;
-			case PPP_MSG_TIMEOUT:
-				break;
-            default:
-                DEBUG("ppp: Unknown command %" PRIu16 "\n", msg.type);
-                break;
-        }
-    }
-    /* never reached */
-    return NULL;
-}
-
-kernel_pid_t gnrc_ppp_init(char *stack, int stacksize, char priority,
-                             const char *name, gnrc_netdev_t *dev)
-{
-    kernel_pid_t res;
-
-    /* check if given netdev device is defined and the driver is set */
-    if (dev == NULL || dev->driver == NULL) {
-        return -ENODEV;
-    }
-    /* create new PPP thread */
-    res = thread_create(stack, stacksize, priority, THREAD_CREATE_STACKTEST,
-                        _ppp_thread, (void *)dev, name);
-    if (res <= 0) {
-        return -EINVAL;
-    }
-    return res;
-}
 
 /* Generate PPP pkt */
-static gnrc_pktsnip_t * ppp_pkt_build(uint8_t type, uint8_t id, uint8_t *data, size_t size))
+gnrc_pktsnip_t * _pkt_build(gnrc_nettype_t pkt_type, uint8_t type, uint8_t id, gnrc_pktsnip_t *payload)
 {
 	ppp_hdr_t ppp_hdr;
 	ppp_hdr_set_type(&ppp_hdr, type);
-	int pkt_length = size+sizeof(ppp_hdr_t);
-	ppp_hdr_set_length(&ppp_hdr, pkt_length);
+	int payload_length = gnrc_pkt_len(pkt);
+	ppp_hdr_set_length(&ppp_hdr, payload_length + sizeof(ppp_hdr_t));
 
-	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, pkt_length, GNRC_NETTYPE_PPP);
-	memcpy(pkt->data, (uint8_t*) &ppp_hdr, sizeof(ppp_hdr_t));
-	memcpy(pkt->data+sizeof(ppp_hdr_t), data, size);
-
-	return pkt;
+	gnrc_pktsnip_t *ppp_pkt = gnrc_pktbuf_add(pkt, (void*) &ppp_hdr, sizeof(ppp_hdr_t), pkt_type);
+	return ppp_pkt;
 }
 
-static int gnrc_ppp_send(gnrc_pktsnip_t *pkt, uint8_t protocol)
+gnrc_ptksnip_t *lcp_pkt_build(uint8_t type, uint8_t id, gnrc_pktsnip_t *payload)
 {
-	gnrc_pktsnip_t *hdr = gnrc_pktbuf_add(pkt, NULL, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
+	return _pkt_build(GNRC_NETTYPE_LCP, type, id, payload);
+}
+
+int gnrc_ppp_send(gnrc_netdev2_t *dev, gnrc_pktsnip_t *pkt)
+{
 	hdlc_hdr_t *hdlc_hdr;
 
 	hdlc_set_address(hdlc_hdr, PPP_HDLC_ADDRESS);
 	hdlc_set_control(hdlc_hdr, PPP_HDLC_CONTROL);
-	hdlc_set_protocol(hdlc_hdr, protocol);
+	hdlc_set_protocol(hdlc_hdr, gnrc_nettype_to_ppp_protnum(pkt->type));
 
-	/* Send to driver...*/
-
+	gnrc_pktsnip_t *hdr = gnrc_pktbuf_add(pkt, (void*) &hdlc_hdr_t, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
+	/* Get iovec representation */
+	size_t n;
+	int res = -ENOBUFS;
+	hdr = gnrc_pktbuf_get_iovec(hdr, &n);
+	if (hdr != NULL)
+	{
+		struct iovec *vector = (struct iovec*) hdr->data;
+		res = dev->driver->send(dev, vector, n);
+	}
+	return res;
 }
