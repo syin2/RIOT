@@ -27,19 +27,19 @@ extern "C" {
 #define CP_CREQ_REJ (2)
 
 /*Function flags*/
-#define F_TLU (1<<0)
-#define F_TLD (1<<1)
-#define F_TLS (1<<2)
-#define F_TLF (1<<3)
-#define F_IRC (1<<4)
-#define F_ZRC (1<<5)
-#define F_SRC (1<<6)
-#define F_SCA (1<<7)
-#define F_SCN (1<<8)
-#define F_STR (1<<9)
-#define F_STA (1<<10)
-#define F_SCJ (1<<11)
-#define F_SER (1<<12)
+#define F_TLU (1U<<0)
+#define F_TLD (1U<<1)
+#define F_TLS (1U<<2)
+#define F_TLF (1U<<3)
+#define F_IRC (1U<<4)
+#define F_ZRC (1U<<5)
+#define F_SCR (1U<<6)
+#define F_SCA (1U<<7)
+#define F_SCN (1U<<8)
+#define F_STR (1U<<9)
+#define F_STA (1U<<10)
+#define F_SCJ (1U<<11)
+#define F_SER (1U<<12)
 
 typedef enum{
 	E_UP,
@@ -79,18 +79,18 @@ typedef enum{
 
 /* Functions flags for each state */
 static const uint16_t actions[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
-{0,F_IRC | F_SRC,0,0,0,0,0,0,0,0},
+{0,F_IRC | F_SCR,0,0,0,0,0,0,0,0},
 {0,0,0,F_TLS,0,0,0,0,0,F_TLD},
-{F_TLS,0,F_IRC | F_SRC, 0,0,0,0,0,0,0},
+{F_TLS,0,F_IRC | F_SCR, 0,0,0,0,0,0,0},
 {0,F_TLF,0,0,0,0,F_IRC | F_STR, F_IRC | F_STR, F_IRC | F_STR, F_TLD | F_IRC | F_STR},
-{0,0,0,0,F_STR,F_STR,F_SRC,F_SRC,F_SRC,0},
+{0,0,0,0,F_STR,F_STR,F_SCR,F_SCR,F_SCR,0},
 {0,0,0,0,F_TLF,F_TLF,F_TLF,F_TLF,F_TLF,0},
-{0,0,F_STA,F_IRC | F_SRC | F_SCA,0,0,F_SCA,F_SCA | F_TLU,F_SCA,F_TLD | F_SRC | F_SCA},
-{0,0,F_STA,F_IRC | F_SRC | F_SCA,0,0,F_SCN,F_SCN,F_SCN,F_TLD | F_SRC | F_SCN},
-{0,0,F_STA,F_STA,0,0,F_IRC | F_SRC,F_SRC,F_IRC | F_SRC, F_TLD | F_SRC},
-{0,0,F_STA,F_STA,0,0,F_IRC | F_SRC,F_SRC, F_IRC | F_SRC,F_TLD | F_SRC},
+{0,0,F_STA,F_IRC | F_SCR | F_SCA,0,0,F_SCA,F_SCA | F_TLU,F_SCA,F_TLD | F_SCR | F_SCA},
+{0,0,F_STA,F_IRC | F_SCR | F_SCA,0,0,F_SCN,F_SCN,F_SCN,F_TLD | F_SCR | F_SCN},
+{0,0,F_STA,F_STA,0,0,F_IRC | F_SCR,F_SCR,F_IRC | F_SCR, F_TLD | F_SCR},
+{0,0,F_STA,F_STA,0,0,F_IRC | F_SCR,F_SCR, F_IRC | F_SCR,F_TLD | F_SCR},
 {0,0,F_STA,F_STA,F_STA,F_STA,F_STA,F_STA,F_STA,F_TLD | F_ZRC | F_STA},
-{0,0,0,0,F_TLF,F_TLF,0,0,0,F_TLD | F_SRC},
+{0,0,0,0,F_TLF,F_TLF,0,0,0,F_TLD | F_SCR},
 {0,0,F_SCJ,F_SCJ,F_SCJ,F_SCJ,F_SCJ,F_SCJ,F_SCJ,F_SCJ},
 {0,0,0,0,0,0,0,0,0,0},
 {0,0,F_TLF,F_TLF,F_TLF,F_TLF,F_TLF,F_TLF,F_TLF,F_TLD | F_IRC | F_STR},
@@ -158,10 +158,7 @@ typedef struct ppp_cp_t{
 	/* Select Configure or Terminate timer */
 	uint8_t timer_select;
 
-	uint32_t restart_time;
 	uint32_t restart_counter;
-	uint8_t counter_term;
-	uint8_t counter_config;
 	uint8_t counter_failure;
 
 	struct ppp_dev_t *dev;

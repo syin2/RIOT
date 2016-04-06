@@ -37,19 +37,19 @@ typedef struct lcp_opt_t{
 
 
 /* Implementation of LCP fsm actions */
-void lcp_tlu(ppp_cp_t *lcp);
-void lcp_tld(ppp_cp_t *lcp);
-void lcp_tls(ppp_cp_t *lcp);
-void lcp_tlf(ppp_cp_t *lcp);
-void lcp_irc(ppp_cp_t *lcp);
-void lcp_zrc(ppp_cp_t *lcp);
-void lcp_scr(ppp_cp_t *lcp);
-void lcp_sca(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt);
-void lcp_scn(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt);
-void lcp_str(ppp_cp_t *lcp);
-void lcp_sta(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt);
-void lcp_scj(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt);
-void lcp_ser(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt);
+void lcp_tlu(ppp_cp_t *lcp, void *args);
+void lcp_tld(ppp_cp_t *lcp, void *args);
+void lcp_tls(ppp_cp_t *lcp, void *args);
+void lcp_tlf(ppp_cp_t *lcp, void *args);
+void lcp_irc(ppp_cp_t *lcp, void *args);
+void lcp_zrc(ppp_cp_t *lcp, void *args);
+void lcp_scr(ppp_cp_t *lcp, void *args);
+void lcp_sca(ppp_cp_t *lcp, void *args);
+void lcp_scn(ppp_cp_t *lcp, void *args);
+void lcp_str(ppp_cp_t *lcp, void *args);
+void lcp_sta(ppp_cp_t *lcp, void *args);
+void lcp_scj(ppp_cp_t *lcp, void *args);
+void lcp_ser(ppp_cp_t *lcp, void *args);
 
 
 int lcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *lcp);

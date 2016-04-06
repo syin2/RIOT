@@ -93,7 +93,6 @@ int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 		case PPPTYPE_LCP:
 			/* Populate received pkt */
 			lcp_handle_pkt(&dev->l_lcp, pkt);
-			DEBUG("Received an LCP pkt. It was CRC checked and routed right. Congratz!\n");
 			break;
 		case PPPTYPE_NCP_IPV4:
 		//	_handle_cp_pkt(dev->l_ncp, &cp_pkt);
@@ -168,7 +167,8 @@ int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
 			break;
 		case PPP_LINKUP:
 			DEBUG("!!!!");
-			trigger_lcp_event(dev->l_lcp, E_UP, NULL);
+			trigger_lcp_event(&dev->l_lcp, E_UP, NULL);
+			trigger_lcp_event(&dev->l_lcp, E_OPEN, NULL);
 			break;
 	}
 	return 0;
