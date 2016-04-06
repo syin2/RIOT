@@ -227,7 +227,8 @@ void test_sending(sim900_t *dev)
 }
 void events(sim900_t *dev)
 {
-	switch(dev->msg.content.value)
+	int event = dev->msg.content.value;
+	switch(event)
 	{
 		case MSG_AT_FINISHED:
 			dev->_cb(dev);
@@ -260,6 +261,8 @@ void events(sim900_t *dev)
 				}
 			}
 			break;
+		default:
+			gnrc_ppp_event_callback(&dev->ppp_dev, event);
 	}
 }
 

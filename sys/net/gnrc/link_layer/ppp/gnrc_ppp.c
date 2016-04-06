@@ -168,6 +168,7 @@ int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
 			break;
 		case PPP_LINKUP:
 			DEBUG("!!!!");
+			trigger_lcp_event(dev->l_lcp, E_UP, NULL);
 			break;
 	}
 	return 0;
