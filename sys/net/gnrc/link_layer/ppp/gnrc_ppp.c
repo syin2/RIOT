@@ -77,6 +77,7 @@ int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 	}
 	
 	hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t*) result->data;
+	DEBUG("Type of received packet: %i. (Should be 0)\n", pkt->type);
 
 	/* Route the packet according to prot(ocol */
 	switch(hdlc_hdr_get_protocol(hdlc_hdr))
@@ -157,25 +158,44 @@ int gnrc_ppp_send(netdev2_t *dev, gnrc_pktsnip_t *pkt)
 int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
 {
 	int nbytes;
-	switch (ppp_event)
+	ppp_cp_t *target_protocol;
+	uint8_t event = ppp_event & 0xFF;
+	switch((ppp_event & 0xFF00)>>8)
+	{
+		case 1:
+			target_protocol = &dev->l_lcp;
+			break;
+		case 0xFF:
+			DEBUG("PPP Broadcast msg\n");
+			target_protocol = &dev->l_lcp;
+			break;
+		default:
+			DEBUG("Unrecognized PPP protocol event!\n");
+			return -EBADMSG;
+			break;
+	}
+
+
+	switch (event)
 	{
 		case PPP_RECV:
 			nbytes = dev->netdev->driver->recv(dev->netdev, NULL, 0, NULL);
 			gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, nbytes, GNRC_NETTYPE_UNDEF);
+			DEBUG("Type of received packet: %i. (Should be 0)\n", pkt->type);
 			dev->netdev->driver->recv(dev->netdev, pkt->data, nbytes, NULL);
 			gnrc_ppp_recv(dev, pkt);
 			break;
 		case PPP_LINKUP:
 			DEBUG("!!!!");
-			trigger_lcp_event(&dev->l_lcp, E_UP, NULL);
-			trigger_lcp_event(&dev->l_lcp, E_OPEN, NULL);
+			trigger_lcp_event(target_protocol, E_UP, NULL);
+			trigger_lcp_event(target_protocol, E_OPEN, NULL);
 			break;
 		case PPP_TIMEOUT:
 			DEBUG("PPP Time out\n");
-			if(dev->l_lcp.restart_counter--)
-				trigger_lcp_event(&dev->lcp, E_TOp, NULL);
+			if(dev->l_lcp.restart_counter)
+				trigger_lcp_event(target_protocol, E_TOp, NULL);
 			else
-				trigger_lcp_event(&dev->lcp, E_TOm, NULL);
+				trigger_lcp_event(target_protocol, E_TOm, NULL);
 	}
 	return 0;
 }

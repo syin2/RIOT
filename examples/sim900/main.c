@@ -227,42 +227,61 @@ void test_sending(sim900_t *dev)
 }
 void events(sim900_t *dev)
 {
-	int event = dev->msg.content.value;
-	switch(event)
+	/* Check if event is a Driver or PPP event */
+	int msg_value = dev->msg.content.value;
+	uint8_t event = msg_value & 0xFF;
+	
+	DEBUG("Event: %i\n", msg_value);
+	DEBUG("Msg anded: %i\n", msg_value & 0xFF00);
+	if(!(msg_value & 0xFF00))
 	{
-		case MSG_AT_FINISHED:
-			dev->_cb(dev);
-			break;
-		case MSG_AT_TIMEOUT:
-			dev->_timer_cb(dev);
-			break;
-		case PDP_UP:
-			DEBUG("Welcome to PPP :)\n");
-			/*Trigger LCP up event*/
-			//test_sending(dev);
-			gnrc_ppp_event_callback(&dev->ppp_dev, PPP_LINKUP);
-			break;
-		case RX_FINISHED:
-			if(dev->rx_count < 4)
-			{
-				DEBUG("Frame too short!");
-			}
-			else
-			{
-				if(dev->fcs == PPPGOODFCS16 && dev->escape == 0)
+		/*Driver event*/
+		switch(event)
+		{
+			case MSG_AT_FINISHED:
+				dev->_cb(dev);
+				break;
+			case MSG_AT_TIMEOUT:
+				dev->_timer_cb(dev);
+				break;
+			case PDP_UP:
+				DEBUG("Welcome to PPP :)\n");
+				/*Trigger LCP up event*/
+				//test_sending(dev);
+				puts("Hello");
+				DEBUG("PDP_UP!\n");
+				gnrc_ppp_event_callback(&dev->ppp_dev, 0x0100+PPP_LINKUP);
+				break;
+			case RX_FINISHED:
+				if(dev->rx_count < 4)
 				{
-					DEBUG("Good message! :)\n");
-					gnrc_ppp_event_callback(&dev->ppp_dev, PPP_RECV);
-					
+					DEBUG("Frame too short!");
 				}
 				else
 				{
-					DEBUG("Bad message! :(\n");
+					if(dev->fcs == PPPGOODFCS16 && dev->escape == 0)
+					{
+						DEBUG("Good message! :)\n");
+						dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
+						dev->msg.content.value = 0xFF00+(PPP_RECV);
+						msg_send(&dev->msg, dev->mac_pid);
+						
+					}
+					else
+					{
+						DEBUG("Bad message! :(\n");
+					}
 				}
-			}
-			break;
-		default:
-			gnrc_ppp_event_callback(&dev->ppp_dev, event);
+				break;
+			default:
+				DEBUG("Unrecognized driver msg\n");
+				break;
+		}
+	}
+	else
+	{
+		/*PPP event*/
+		gnrc_ppp_event_callback(&dev->ppp_dev, msg_value);
 	}
 }
 

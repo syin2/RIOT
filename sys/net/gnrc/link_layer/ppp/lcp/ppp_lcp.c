@@ -83,6 +83,7 @@ static void _lcp_event_action(ppp_cp_t *lcp, uint8_t event, gnrc_pktsnip_t *pkt)
 	lcp->l_lower_msg = 0;
 
 	flags = actions[event][lcp->state];
+	DEBUG("LCP state: %i\n", lcp->state);
 
 	if(flags & F_TLU) lcp_tlu(lcp, NULL);
 	if(flags & F_TLD) lcp_tld(lcp, NULL);
@@ -323,8 +324,8 @@ void lcp_scr(ppp_cp_t *lcp, void *args)
 	gnrc_ppp_send(lcp->dev->netdev, pkt);
 	/* TODO: Set timeout for SRC */
 	lcp->msg.type = NETDEV2_MSG_TYPE_EVENT;
-	lcp->msg.content.value = PPP_TIMEOUT;
-	xtimer_set_msg(&lcp->xtimer, LCP_RESTART_TIME, &lcp->msg, thread_getpid());
+	lcp->msg.content.value = 0x0100 +PPP_TIMEOUT;
+	xtimer_set_msg(&lcp->xtimer, LCP_RESTART_TIMER, &lcp->msg, thread_getpid());
 }
 
 void lcp_sca(ppp_cp_t *lcp, void *args)
@@ -335,6 +336,7 @@ void lcp_sca(ppp_cp_t *lcp, void *args)
 
 	gnrc_pktsnip_t *opts = NULL;
 
+	DEBUG("Packet type: %i\n", (int) pkt->type);
 	if(pkt->type == GNRC_NETTYPE_LCP)
 	{
 		DEBUG(">> Received pkt didn't ask for options -> So just ACK\n");
