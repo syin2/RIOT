@@ -254,17 +254,29 @@ void lcp_zrc(ppp_cp_t *lcp)
 	lcp->restart_counter = 0;
 	/* Set timer to appropiate value TODO*/
 }
+#endif
+gnrc_pktsnip_t *build_lcp_options(ppp_cp_t *lcp)
+{
+	(void) lcp;
+	return NULL;
+}
+
 void lcp_scr(ppp_cp_t *lcp)
 {
 	/* Decrement configure counter */
 	lcp->counter_config -= 1;
 
-	ppp_hdr_set_code(&pkt, PPP_CONF_REQ);
-	ppp_hdr_set_id(&pkt, lcp->cr_sent_identifier++);
+	/*TODO: Add options*/
 
-	//send_cp(cp, &pkt);
+	gnrc_pktsnip_t *opts = build_lcp_options(lcp);
+	gnrc_pktsnip_t *pkt = lcp_pkt_build(PPP_CONF_REQ, lcp->cr_sent_identifier,opts);
+	
+	/*Send packet*/
+	gnrc_ppp_send(lcp->dev->dev, pkt);
 	/* TODO: Set timeout for SRC */
+
 }
+#if 0
 void lcp_sca(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 {
 	//ppp_hdr_t *ppp_hdr = (ppp_hdr_t*) pkt->data;

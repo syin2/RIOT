@@ -40,8 +40,8 @@ extern "C" {
 
 /* PPP device */
 typedef struct ppp_dev_t{
-	struct ppp_cp_t *l_lcp;
-	struct ppp_cp_t *l_ncp;
+	struct ppp_cp_t l_lcp;
+	struct ppp_cp_t l_ncp;
 	netdev2_t *dev;
 } ppp_dev_t;
 

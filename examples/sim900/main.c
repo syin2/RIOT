@@ -232,6 +232,7 @@ void events(sim900_t *dev)
 			break;
 		case PDP_UP:
 			DEBUG("Welcome to PPP :)\n");
+			/*Trigger LCP up event*/
 			test_sending(dev);
 			break;
 		case RX_FINISHED:
@@ -377,10 +378,6 @@ int main(void)
 	netdev2_driver_t driver;
 	driver.send = &sim900_send;
     sim900_t dev;
-
-	/* TODO: Of course the following snip doesn't belong here... */
-	ppp_cp_t l_lcp;
-	dev.ppp_dev.l_lcp = &l_lcp;
 
 	dev.netdev.driver = &driver;
 
