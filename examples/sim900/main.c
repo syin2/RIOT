@@ -379,8 +379,7 @@ int main(void)
 	driver.send = &sim900_send;
     sim900_t dev;
 
-	dev.netdev.driver = &driver;
-
+	gnrc_ppp_init(&dev->ppp_dev, &driver);
 	xtimer_init();
 	kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, sim900_thread, &dev, "sim900");
 	(void) pid;

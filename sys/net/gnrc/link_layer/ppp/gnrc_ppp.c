@@ -61,6 +61,12 @@ static void _event_cb(gnrc_netdev_event_t event, void *data)
 #endif
 
 /*Wake up events for packet reception goes here*/
+int gnrc_ppp_init(ppp_dev_t *dev, netdev2_t *netdev)
+{
+	dev->netdev = netdev;
+	dev->l_lcp.dev = dev;
+	dev->l_ncp.dev = dev;
+}
 int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 {
 	/* Mark hdlc header */
