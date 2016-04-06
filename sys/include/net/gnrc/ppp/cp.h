@@ -3,6 +3,8 @@
 
 #include "net/gnrc/pkt.h"
 #include "net/gnrc/pktbuf.h"
+#include "xtimer.h"
+#include "thread.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -162,6 +164,7 @@ typedef struct ppp_cp_t{
 	uint8_t counter_failure;
 
 	struct ppp_dev_t *dev;
+	xtimer_t xtimer;
 
 	/* For Configure Request */
 	uint8_t cr_sent_identifier;
@@ -171,6 +174,8 @@ typedef struct ppp_cp_t{
 
 	/* For terminate request */
 	uint8_t tr_sent_identifier;
+
+	msg_t msg;
 
 	/* Pointer to another struct with CP options*/
 	void *cp_options;

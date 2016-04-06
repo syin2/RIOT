@@ -23,6 +23,7 @@ extern "C" {
 #define LCP_DEFAULT_MRU (1500)
 
 #define LCP_MRU_EN (1)
+#define LCP_RESTART_TIMER (3000000U)
 
 typedef struct lcp_opt_t{
 	uint16_t flags;

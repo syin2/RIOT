@@ -170,6 +170,12 @@ int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
 			trigger_lcp_event(&dev->l_lcp, E_UP, NULL);
 			trigger_lcp_event(&dev->l_lcp, E_OPEN, NULL);
 			break;
+		case PPP_TIMEOUT:
+			DEBUG("PPP Time out\n");
+			if(dev->l_lcp.restart_counter--)
+				trigger_lcp_event(&dev->lcp, E_TOp, NULL);
+			else
+				trigger_lcp_event(&dev->lcp, E_TOm, NULL);
 	}
 	return 0;
 }

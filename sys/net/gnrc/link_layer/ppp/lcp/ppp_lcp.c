@@ -322,7 +322,9 @@ void lcp_scr(ppp_cp_t *lcp, void *args)
 	/*Send packet*/
 	gnrc_ppp_send(lcp->dev->netdev, pkt);
 	/* TODO: Set timeout for SRC */
-
+	lcp->msg.type = NETDEV2_MSG_TYPE_EVENT;
+	lcp->msg.content.value = PPP_TIMEOUT;
+	xtimer_set_msg(&lcp->xtimer, LCP_RESTART_TIME, &lcp->msg, thread_getpid());
 }
 
 void lcp_sca(ppp_cp_t *lcp, void *args)

@@ -38,8 +38,9 @@ extern "C" {
 #define PPP_HDLC_ADDRESS (0xFF)
 #define PPP_HDLC_CONTROL (0x03)
 
-#define PPP_LINKUP (0)
-#define PPP_RECV (1)
+#define PPP_LINKUP (8)
+#define PPP_RECV (9)
+#define PPP_TIMEOUT(10)
 
 /* PPP device */
 typedef struct ppp_dev_t{
