@@ -64,8 +64,8 @@ static void _event_cb(gnrc_netdev_event_t event, void *data)
 int gnrc_ppp_init(ppp_dev_t *dev, netdev2_t *netdev)
 {
 	dev->netdev = netdev;
-	dev->l_lcp.dev = dev;
-	dev->l_ncp.dev = dev;
+	lcp_init(dev, &dev->l_lcp);
+	return 0;
 }
 int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 {
@@ -122,6 +122,7 @@ gnrc_pktsnip_t * _pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, g
 {
 	ppp_hdr_t ppp_hdr;
 	ppp_hdr_set_code(&ppp_hdr, code);
+	ppp_hdr_set_id(&ppp_hdr, id);
 	int payload_length = gnrc_pkt_len(payload);
 	ppp_hdr_set_length(&ppp_hdr, payload_length + sizeof(ppp_hdr_t));
 
@@ -153,4 +154,21 @@ int gnrc_ppp_send(netdev2_t *dev, gnrc_pktsnip_t *pkt)
 		res = dev->driver->send(dev, vector, n);
 	}
 	return res;
+}
+int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
+{
+	int nbytes;
+	switch (ppp_event)
+	{
+		case PPP_RECV:
+			nbytes = dev->netdev->driver->recv(dev->netdev, NULL, 0, NULL);
+			gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, nbytes, GNRC_NETTYPE_UNDEF);
+			dev->netdev->driver->recv(dev->netdev, pkt->data, nbytes, NULL);
+			gnrc_ppp_recv(dev, pkt);
+			break;
+		case PPP_LINKUP:
+			DEBUG("!!!!");
+			break;
+	}
+	return 0;
 }

@@ -17,7 +17,6 @@
  */
 
 #include "net/gnrc/ppp/lcp.h"
-#include "net/gnrc/ppp/ppp.h"
 #include "net/gnrc/ppp/cp.h"
 #include "net/gnrc/ppp/opt.h"
 #include "net/gnrc/pkt.h"
@@ -75,6 +74,48 @@ void lcp_negotiate_nak(void *lcp_opt, cp_pkt_metadata_t *metadata)
 	}
 }
 #endif
+/* Call functions depending on function flag*/
+static void _lcp_event_action(ppp_cp_t *lcp, uint8_t event, gnrc_pktsnip_t *pkt) 
+{
+	uint8_t flags;
+	/* Reset link status */
+	lcp->l_upper_msg = 0;
+	lcp->l_lower_msg = 0;
+
+	flags = actions[lcp->state][event];
+
+	if(flags & F_TLU) lcp_tlu(lcp);
+	if(flags & F_TLD) lcp_tld(lcp);
+	if(flags & F_TLS) lcp_tls(lcp);
+	if(flags & F_TLF) lcp_tlf(lcp);
+	if(flags & F_IRC) lcp_irc(lcp);
+	if(flags & F_ZRC) lcp_zrc(lcp);
+	if(flags & F_SRC) lcp_scr(lcp);
+	if(flags & F_SCA) lcp_sca(lcp, pkt);
+	if(flags & F_SCN) lcp_scn(lcp, pkt);
+	if(flags & F_STR) lcp_str(lcp);
+	if(flags & F_STA) lcp_sta(lcp, pkt);
+	if(flags & F_SCJ) lcp_scj(lcp, pkt);
+	if(flags & F_SER) lcp_ser(lcp, pkt);
+}
+
+int trigger_lcp_event(ppp_cp_t *lcp, uint8_t event, gnrc_pktsnip_t *pkt)
+{
+	if (event < 0)
+	{
+		return -EBADMSG;
+	}
+	int8_t next_state;
+	_lcp_event_action(lcp, event, pkt);
+	next_state = state_trans[lcp->state][lcp->event];
+
+	/* Keep in same state if there's something wrong (RFC 1661) */
+	if(next_state != S_UNDEF){
+		lcp->state = next_state;
+	}
+	return 0;
+}
+
 
 static int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr)
 {
@@ -211,29 +252,34 @@ static int _lcp_handle_rcn_rej(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 	return E_RCN;
 }
 
-#if 0
 void lcp_tlu(ppp_cp_t *lcp)
 {
-	lcp->l_upper_msg |= PPP_MSG_UP;
+	(void) lcp;
+	//lcp->l_upper_msg |= PPP_MSG_UP;
 }
 
 void lcp_tld(ppp_cp_t *lcp)
 {
-	lcp->l_upper_msg |= PPP_MSG_DOWN;
+	(void) lcp;
+	//lcp->l_upper_msg |= PPP_MSG_DOWN;
 }
 
 void lcp_tls(ppp_cp_t *lcp)
 {
-	lcp->l_lower_msg |= PPP_MSG_UP;
+	(void) lcp;
+	//lcp->l_lower_msg |= PPP_MSG_UP;
 }
 
 void lcp_tlf(ppp_cp_t *lcp)
 {
-	lcp->l_lower_msg |= PPP_MSG_DOWN;
+	(void) lcp;
+	//lcp->l_lower_msg |= PPP_MSG_DOWN;
 }
 
 void lcp_irc(ppp_cp_t *lcp)
 {
+	(void) lcp;
+#if 0
 	/*Depending on the state, set the right value for restart counter*/
 	/* TODO: Activate restart timer with corresponding time out */
 	switch(lcp->timer_select)
@@ -248,13 +294,14 @@ void lcp_irc(ppp_cp_t *lcp)
 			/* Shouldn't be here */
 			break;
 	}
+#endif
 }
 void lcp_zrc(ppp_cp_t *lcp)
 {
-	lcp->restart_counter = 0;
+	(void) lcp;
+	//lcp->restart_counter = 0;
 	/* Set timer to appropiate value TODO*/
 }
-#endif
 gnrc_pktsnip_t *build_lcp_options(ppp_cp_t *lcp)
 {
 	(void) lcp;
@@ -272,18 +319,19 @@ void lcp_scr(ppp_cp_t *lcp)
 	gnrc_pktsnip_t *pkt = lcp_pkt_build(PPP_CONF_REQ, lcp->cr_sent_identifier,opts);
 	
 	/*Send packet*/
-	gnrc_ppp_send(lcp->dev->dev, pkt);
+	gnrc_ppp_send(lcp->dev->netdev, pkt);
 	/* TODO: Set timeout for SRC */
 
 }
-#if 0
 void lcp_sca(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 {
+#if 0
 	//ppp_hdr_t *ppp_hdr = (ppp_hdr_t*) pkt->data;
 	//ppp_pkt_get_code(ppp_hdr, PPP_CONF_ACK);
 	(void) lcp;
 	(void) pkt;
 	//send_cp(cp, pkt);
+#endif
 }
 void lcp_scn(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 {
@@ -345,7 +393,6 @@ void lcp_ser(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 	(void) pkt;
 	//send_cp(lcp,PPP_CP_SER);
 }
-#endif
 
 int _lcp_handle_coderej(gnrc_pktsnip_t *pkt)
 {
@@ -364,6 +411,16 @@ int _lcp_handle_coderej(gnrc_pktsnip_t *pkt)
 	{
 		return E_RXJp;
 	}
+}
+int lcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *lcp)
+{
+	lcp->l_upper_msg = 0;
+	lcp->l_lower_msg = 0;
+	lcp->up = 0;
+	lcp->state = S_INITIAL;
+	lcp->cr_sent_identifier = 1;
+	lcp->dev = ppp_dev;
+	return 0;
 }
 
 int _lcp_handle_term_ack(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
@@ -419,6 +476,7 @@ int lcp_handle_pkt(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 	}
 
 	DEBUG("Event was %i\n", event);
+	trigger_lcp_event(lcp, event, pkt);
 	return event;
 }
 

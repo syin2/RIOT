@@ -6,6 +6,7 @@
 #include "net/gnrc/pkt.h"
 #include "net/gnrc/pktbuf.h"
 #include "net/gnrc/ppp/cp.h"
+#include "net/gnrc/ppp/ppp.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,6 +52,8 @@ void lcp_scj(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt);
 void lcp_ser(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt);
 
 
+int lcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *lcp);
+int trigger_lcp_event(ppp_cp_t *lcp, uint8_t event, gnrc_pktsnip_t *pkt);
 int lcp_handle_pkt(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt);
 
 #ifdef __cplusplus

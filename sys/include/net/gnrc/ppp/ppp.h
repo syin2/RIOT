@@ -38,6 +38,9 @@ extern "C" {
 #define PPP_HDLC_ADDRESS (0xFF)
 #define PPP_HDLC_CONTROL (0x03)
 
+#define PPP_LINKUP (0)
+#define PPP_RECV (1)
+
 /* PPP device */
 typedef struct ppp_dev_t{
 	struct ppp_cp_t l_lcp;
@@ -51,6 +54,7 @@ int gnrc_ppp_init(ppp_dev_t *dev, netdev2_t *netdev);
 gnrc_pktsnip_t *lcp_pkt_build(uint8_t code, uint8_t id, gnrc_pktsnip_t *payload);
 int gnrc_ppp_send(netdev2_t *dev, gnrc_pktsnip_t *pkt);
 int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt);
+int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event);
 
 #ifdef __cplusplus
 }

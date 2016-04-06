@@ -175,6 +175,16 @@ void sim900_putchar(uart_t uart, uint8_t c)
 	uart_write(uart, p, 1);
 }
 
+int sim900_recv(netdev2_t *ppp_dev, char *buf, int len, void *info)
+{
+	sim900_t *dev = (sim900_t*) ppp_dev;
+	int payload_length = dev->rx_count-2;
+	if(buf)
+	{
+		memcpy(buf, dev->rx_buf, payload_length);
+	}
+	return payload_length;
+}
 int sim900_send(netdev2_t *ppp_dev, const struct iovec *vector, int count)
 {
 	sim900_t *dev = (sim900_t*) ppp_dev;
@@ -215,11 +225,6 @@ void test_sending(sim900_t *dev)
 	vector.iov_len = 8;
 	sim900_send((netdev2_t*) dev, &vector, 1);
 }
-void dispatch_ppp_pkt(sim900_t *dev)
-{
-	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL,dev->rx_buf,dev->rx_count-2, GNRC_NETTYPE_UNDEF);
-	gnrc_ppp_recv(&dev->ppp_dev, pkt);
-}
 void events(sim900_t *dev)
 {
 	switch(dev->msg.content.value)
@@ -233,7 +238,8 @@ void events(sim900_t *dev)
 		case PDP_UP:
 			DEBUG("Welcome to PPP :)\n");
 			/*Trigger LCP up event*/
-			test_sending(dev);
+			//test_sending(dev);
+			gnrc_ppp_event_callback(&dev->ppp_dev, PPP_LINKUP);
 			break;
 		case RX_FINISHED:
 			if(dev->rx_count < 4)
@@ -245,8 +251,7 @@ void events(sim900_t *dev)
 				if(dev->fcs == PPPGOODFCS16 && dev->escape == 0)
 				{
 					DEBUG("Good message! :)\n");
-					dispatch_ppp_pkt(dev);
-					/* Create pkt */
+					gnrc_ppp_event_callback(&dev->ppp_dev, PPP_RECV);
 					
 				}
 				else
@@ -351,6 +356,9 @@ void *sim900_thread(void *args)
 #if TEST_PPP
 	dev->state = AT_STATE_RX;
 	dev->ppp_rx_state = PPP_RX_IDLE;
+	dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
+	dev->msg.content.value = PDP_UP;
+	msg_send(&dev->msg, dev->mac_pid);
 #else
 	dev->pdp_state = PDP_NOTSIM;
 	/*Start sending an AT command */
@@ -377,9 +385,11 @@ int main(void)
 	gnrc_pktbuf_init();
 	netdev2_driver_t driver;
 	driver.send = &sim900_send;
+	driver.recv = &sim900_recv;
     sim900_t dev;
+	dev.netdev.driver = &driver;
+	gnrc_ppp_init(&dev.ppp_dev, (netdev2_t*) &dev);
 
-	gnrc_ppp_init(&dev->ppp_dev, &driver);
 	xtimer_init();
 	kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, sim900_thread, &dev, "sim900");
 	(void) pid;
