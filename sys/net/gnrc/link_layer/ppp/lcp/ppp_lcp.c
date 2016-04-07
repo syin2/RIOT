@@ -74,6 +74,109 @@ void lcp_negotiate_nak(void *lcp_opt, cp_pkt_metadata_t *metadata)
 	}
 }
 #endif
+static void print_state(int state)
+{
+	switch(state)
+	{
+		case S_UNDEF:
+			DEBUG("UNDEF");
+			break;
+		case S_INITIAL:
+			DEBUG("INITIAL");
+			break;
+		case S_STARTING:
+			DEBUG("STARTING");
+			break;
+		case S_CLOSED:
+			DEBUG("CLOSED");
+			break;
+		case S_STOPPED:
+			DEBUG("STOPPED");
+			break;
+		case S_CLOSING:
+			DEBUG("CLOSING");
+			break;
+		case S_STOPPING:
+			DEBUG("STOPPING");
+			break;
+		case S_REQ_SENT:
+			DEBUG("REQ_SENT");
+			break;
+		case S_ACK_RCVD:
+			DEBUG("ACK_RECV");
+			break;
+		case S_ACK_SENT:
+			DEBUG("ACK_SENT");
+			break;
+		case S_OPENED:
+			DEBUG("OPENED");
+			break;
+	}
+}
+static void print_event(uint8_t event)
+{
+	switch(event)
+	{
+		case E_UP:
+			DEBUG("UP");
+			break;
+		case E_DOWN:
+			DEBUG("DOWN");
+			break;
+		case E_OPEN:
+			DEBUG("OPEN");
+			break;
+		case E_CLOSE:
+			DEBUG("CLOSE");
+			break;
+		case E_TOp:
+			DEBUG("TO+");
+			break;
+		case E_TOm:
+			DEBUG("TO-");
+			break;
+		case E_RCRp:
+			DEBUG("RCR+");
+			break;
+		case E_RCRm:
+			DEBUG("RCR-");
+			break;
+		case E_RCA:
+			DEBUG("RCA");
+			break;
+		case E_RCN:
+			DEBUG("RCN");
+			break;
+		case E_RTR:
+			DEBUG("RTR");
+			break;
+		case E_RTA:
+			DEBUG("RTA");
+			break;
+		case E_RUC:
+			DEBUG("RUC");
+			break;
+		case E_RXJp:
+			DEBUG("RXJ+");
+			break;
+		case E_RXJm:
+			DEBUG("RXJ-");
+			break;
+		case E_RXR:
+			DEBUG("RXR");
+			break;
+	}
+}
+static void print_transition(int state, uint8_t event, int next_state)
+{
+	DEBUG("From state ");
+	print_state(state);
+	DEBUG(" with event ");
+	print_event(event);
+	DEBUG(". Next state is ");
+	print_state(next_state);
+	DEBUG("\n");
+}
 /* Call functions depending on function flag*/
 static void _lcp_event_action(ppp_cp_t *lcp, uint8_t event, gnrc_pktsnip_t *pkt) 
 {
@@ -83,7 +186,6 @@ static void _lcp_event_action(ppp_cp_t *lcp, uint8_t event, gnrc_pktsnip_t *pkt)
 	lcp->l_lower_msg = 0;
 
 	flags = actions[event][lcp->state];
-	DEBUG("LCP state: %i\n", lcp->state);
 
 	if(flags & F_TLU) lcp_tlu(lcp, NULL);
 	if(flags & F_TLD) lcp_tld(lcp, NULL);
@@ -107,14 +209,16 @@ int trigger_lcp_event(ppp_cp_t *lcp, uint8_t event, gnrc_pktsnip_t *pkt)
 		return -EBADMSG;
 	}
 	int8_t next_state;
-	_lcp_event_action(lcp, event, pkt);
 	next_state = state_trans[event][lcp->state];
-	DEBUG("From state %i with event %i, Next state: %i\n", lcp->state, event, next_state);
-
+	print_transition(lcp->state, event, next_state);
+	_lcp_event_action(lcp, event, pkt);
 	/* Keep in same state if there's something wrong (RFC 1661) */
 	if(next_state != S_UNDEF){
 		lcp->state = next_state;
 	}
+	/*Check if next state doesn't have a running timer*/
+	if (lcp->state < S_CLOSING || lcp->state == S_OPENED)
+		xtimer_remove(&lcp->xtimer);
 	return 0;
 }
 
@@ -256,7 +360,7 @@ static int _lcp_handle_rcn_rej(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 
 void lcp_tlu(ppp_cp_t *lcp, void *args)
 {
-	DEBUG("> LCP: This layer up\n");
+	DEBUG("> LCP: This layer up (a.k.a Successfully negotiated Link)\n");
 	(void) lcp;
 	//lcp->l_upper_msg |= PPP_MSG_UP;
 }
@@ -336,7 +440,6 @@ void lcp_sca(ppp_cp_t *lcp, void *args)
 
 	gnrc_pktsnip_t *opts = NULL;
 
-	DEBUG("Packet type: %i\n", (int) pkt->type);
 	if(pkt->type == GNRC_NETTYPE_LCP)
 	{
 		DEBUG(">> Received pkt didn't ask for options -> So just ACK\n");
@@ -459,7 +562,9 @@ int _lcp_handle_term_ack(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 	
 	int id = ppp_hdr_get_id(ppp_hdr);
 	if(id == lcp->tr_sent_identifier)
+	{
 		return E_RTA;
+	}
 	return -EBADMSG;
 }
 

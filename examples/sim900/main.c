@@ -91,7 +91,7 @@ static void rx_cb(void *arg, uint8_t data)
 					}
 					else
 					{
-						puts("Bad");
+						//puts("Bad");
 					}
 				}
 			}
@@ -231,8 +231,6 @@ void events(sim900_t *dev)
 	int msg_value = dev->msg.content.value;
 	uint8_t event = msg_value & 0xFF;
 	
-	DEBUG("Event: %i\n", msg_value);
-	DEBUG("Msg anded: %i\n", msg_value & 0xFF00);
 	if(!(msg_value & 0xFF00))
 	{
 		/*Driver event*/
@@ -248,8 +246,6 @@ void events(sim900_t *dev)
 				DEBUG("Welcome to PPP :)\n");
 				/*Trigger LCP up event*/
 				//test_sending(dev);
-				puts("Hello");
-				DEBUG("PDP_UP!\n");
 				gnrc_ppp_event_callback(&dev->ppp_dev, 0x0100+PPP_LINKUP);
 				break;
 			case RX_FINISHED:
@@ -259,18 +255,9 @@ void events(sim900_t *dev)
 				}
 				else
 				{
-					if(dev->fcs == PPPGOODFCS16 && dev->escape == 0)
-					{
-						DEBUG("Good message! :)\n");
-						dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
-						dev->msg.content.value = 0xFF00+(PPP_RECV);
-						msg_send(&dev->msg, dev->mac_pid);
-						
-					}
-					else
-					{
-						DEBUG("Bad message! :(\n");
-					}
+					dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
+					dev->msg.content.value = 0xFF00+(PPP_RECV);
+					msg_send(&dev->msg, dev->mac_pid);
 				}
 				break;
 			default:
@@ -398,7 +385,6 @@ void *sim900_thread(void *args)
 				events(dev);
 				break;
     	}
-			
     }
 }
 
