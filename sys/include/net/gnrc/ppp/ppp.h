@@ -44,15 +44,15 @@ extern "C" {
 
 /* PPP device */
 typedef struct ppp_dev_t{
-	struct ppp_cp_t l_lcp;
-	struct ppp_cp_t l_ncp;
+	ppp_cp_t l_lcp;
+	ppp_cp_t l_ncp;
 	netdev2_t *netdev;
 } ppp_dev_t;
 
 
 
 int gnrc_ppp_init(ppp_dev_t *dev, netdev2_t *netdev);
-gnrc_pktsnip_t *lcp_pkt_build(uint8_t code, uint8_t id, gnrc_pktsnip_t *payload);
+gnrc_pktsnip_t *pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnrc_pktsnip_t *payload);
 int gnrc_ppp_send(netdev2_t *dev, gnrc_pktsnip_t *pkt);
 int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt);
 int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event);

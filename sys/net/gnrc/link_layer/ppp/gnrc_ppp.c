@@ -36,13 +36,13 @@
 #endif
 
 
-/*Wake up events for packet reception goes here*/
 int gnrc_ppp_init(ppp_dev_t *dev, netdev2_t *netdev)
 {
 	dev->netdev = netdev;
 	lcp_init(dev, &dev->l_lcp);
 	return 0;
 }
+
 int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 {
 	/* Mark hdlc header */
@@ -68,7 +68,7 @@ int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 			break;
 		case PPPTYPE_LCP:
 			/* Populate received pkt */
-			lcp_handle_pkt(&dev->l_lcp, pkt);
+			dev->l_lcp.handle_pkt(&dev->l_lcp, pkt);
 			break;
 		case PPPTYPE_NCP_IPV4:
 		//	_handle_cp_pkt(dev->l_ncp, &cp_pkt);
@@ -93,7 +93,7 @@ int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
  */
 
 /* Generate PPP pkt */
-gnrc_pktsnip_t * _pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnrc_pktsnip_t *payload)
+gnrc_pktsnip_t * pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnrc_pktsnip_t *payload)
 {
 	ppp_hdr_t ppp_hdr;
 	ppp_hdr_set_code(&ppp_hdr, code);
@@ -103,11 +103,6 @@ gnrc_pktsnip_t * _pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, g
 
 	gnrc_pktsnip_t *ppp_pkt = gnrc_pktbuf_add(payload, (void*) &ppp_hdr, sizeof(ppp_hdr_t), pkt_type);
 	return ppp_pkt;
-}
-
-gnrc_pktsnip_t *lcp_pkt_build(uint8_t type, uint8_t id, gnrc_pktsnip_t *payload)
-{
-	return _pkt_build(GNRC_NETTYPE_LCP, type, id, payload);
 }
 
 int gnrc_ppp_send(netdev2_t *dev, gnrc_pktsnip_t *pkt)
@@ -132,6 +127,7 @@ int gnrc_ppp_send(netdev2_t *dev, gnrc_pktsnip_t *pkt)
 }
 int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
 {
+	DEBUG("Hi!");
 	int nbytes;
 	ppp_cp_t *target_protocol;
 	uint8_t event = ppp_event & 0xFF;
@@ -160,19 +156,19 @@ int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
 			break;
 		case PPP_LINKUP:
 			DEBUG("Event: PPP_LINKUP\n");
-			trigger_lcp_event(target_protocol, E_UP, NULL);
-			trigger_lcp_event(target_protocol, E_OPEN, NULL);
+			trigger_event(target_protocol, E_UP, NULL);
+			trigger_event(target_protocol, E_OPEN, NULL);
 			break;
 		case PPP_TIMEOUT:
-			if(dev->l_lcp.restart_counter)
+			if(target_protocol->restart_counter)
 			{
 				DEBUG("Event: TO+\n");
-				trigger_lcp_event(target_protocol, E_TOp, NULL);
+				trigger_event(target_protocol, E_TOp, NULL);
 			}
 			else
 			{
 				DEBUG("Event: TO-\n");
-				trigger_lcp_event(target_protocol, E_TOm, NULL);
+				trigger_event(target_protocol, E_TOm, NULL);
 			}
 	}
 	return 0;

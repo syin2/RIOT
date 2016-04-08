@@ -5,6 +5,7 @@
 #include "net/gnrc/pktbuf.h"
 #include "xtimer.h"
 #include "thread.h"
+#include "net/gnrc/ppp/opt.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -153,17 +154,12 @@ static const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 
 /* Control Protocol struct*/
 typedef struct ppp_cp_t{
-	uint8_t event;
-	uint8_t l_upper_msg;
-	uint8_t l_lower_msg;
-	uint8_t up;
+	gnrc_nettype_t prot;
 	uint8_t state;
 
-	/* Select Configure or Terminate timer */
-	uint8_t timer_select;
-
-	uint32_t restart_counter;
+	uint8_t restart_counter;
 	uint8_t counter_failure;
+	uint32_t restart_timer;
 
 	struct ppp_dev_t *dev;
 	xtimer_t xtimer;
@@ -179,15 +175,33 @@ typedef struct ppp_cp_t{
 
 	msg_t msg;
 
-	/* Pointer to another struct with CP options*/
-	void *cp_options;
-	void (*handle_conf)(struct ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
-	void (*handle_code)(struct ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
-	uint16_t enabled_options;
-
+	int (*get_opt_status)(ppp_option_t *opt);
+	int (*handle_pkt)(struct ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
 } ppp_cp_t;
 
-void handle_cp_pkt(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
+/* Implementation of LCP fsm actions */
+void tlu(ppp_cp_t *lcp, void *args);
+void tld(ppp_cp_t *lcp, void *args);
+void tls(ppp_cp_t *lcp, void *args);
+void tlf(ppp_cp_t *lcp, void *args);
+void irc(ppp_cp_t *lcp, void *args);
+void zrc(ppp_cp_t *lcp, void *args);
+void scr(ppp_cp_t *lcp, void *args);
+void sca(ppp_cp_t *lcp, void *args);
+void scn(ppp_cp_t *lcp, void *args);
+void str(ppp_cp_t *lcp, void *args);
+void sta(ppp_cp_t *lcp, void *args);
+void scj(ppp_cp_t *lcp, void *args);
+void ser(ppp_cp_t *lcp, void *args);
+
+int cp_init(struct ppp_dev_t *ppp_dev, ppp_cp_t *cp);
+int trigger_event(ppp_cp_t *cp, uint8_t event, gnrc_pktsnip_t *pkt);
+int handle_rcr(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
+int handle_rca(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
+int handle_rcn_nak(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
+int handle_rcn_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
+int handle_coderej(gnrc_pktsnip_t *pkt);
+int handle_term_ack(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
 
 #ifdef __cplusplus
 }

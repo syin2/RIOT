@@ -37,25 +37,7 @@ typedef struct lcp_opt_t{
 } lcp_opt_t;
 
 
-/* Implementation of LCP fsm actions */
-void lcp_tlu(ppp_cp_t *lcp, void *args);
-void lcp_tld(ppp_cp_t *lcp, void *args);
-void lcp_tls(ppp_cp_t *lcp, void *args);
-void lcp_tlf(ppp_cp_t *lcp, void *args);
-void lcp_irc(ppp_cp_t *lcp, void *args);
-void lcp_zrc(ppp_cp_t *lcp, void *args);
-void lcp_scr(ppp_cp_t *lcp, void *args);
-void lcp_sca(ppp_cp_t *lcp, void *args);
-void lcp_scn(ppp_cp_t *lcp, void *args);
-void lcp_str(ppp_cp_t *lcp, void *args);
-void lcp_sta(ppp_cp_t *lcp, void *args);
-void lcp_scj(ppp_cp_t *lcp, void *args);
-void lcp_ser(ppp_cp_t *lcp, void *args);
-
-
 int lcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *lcp);
-int trigger_lcp_event(ppp_cp_t *lcp, uint8_t event, gnrc_pktsnip_t *pkt);
-int lcp_handle_pkt(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt);
 
 #ifdef __cplusplus
 }

@@ -74,169 +74,7 @@ void lcp_negotiate_nak(void *lcp_opt, cp_pkt_metadata_t *metadata)
 	}
 }
 #endif
-static void print_state(int state)
-{
-	switch(state)
-	{
-		case S_UNDEF:
-			DEBUG("UNDEF");
-			break;
-		case S_INITIAL:
-			DEBUG("INITIAL");
-			break;
-		case S_STARTING:
-			DEBUG("STARTING");
-			break;
-		case S_CLOSED:
-			DEBUG("CLOSED");
-			break;
-		case S_STOPPED:
-			DEBUG("STOPPED");
-			break;
-		case S_CLOSING:
-			DEBUG("CLOSING");
-			break;
-		case S_STOPPING:
-			DEBUG("STOPPING");
-			break;
-		case S_REQ_SENT:
-			DEBUG("REQ_SENT");
-			break;
-		case S_ACK_RCVD:
-			DEBUG("ACK_RECV");
-			break;
-		case S_ACK_SENT:
-			DEBUG("ACK_SENT");
-			break;
-		case S_OPENED:
-			DEBUG("OPENED");
-			break;
-	}
-}
-static void print_event(uint8_t event)
-{
-	switch(event)
-	{
-		case E_UP:
-			DEBUG("UP");
-			break;
-		case E_DOWN:
-			DEBUG("DOWN");
-			break;
-		case E_OPEN:
-			DEBUG("OPEN");
-			break;
-		case E_CLOSE:
-			DEBUG("CLOSE");
-			break;
-		case E_TOp:
-			DEBUG("TO+");
-			break;
-		case E_TOm:
-			DEBUG("TO-");
-			break;
-		case E_RCRp:
-			DEBUG("RCR+");
-			break;
-		case E_RCRm:
-			DEBUG("RCR-");
-			break;
-		case E_RCA:
-			DEBUG("RCA");
-			break;
-		case E_RCN:
-			DEBUG("RCN");
-			break;
-		case E_RTR:
-			DEBUG("RTR");
-			break;
-		case E_RTA:
-			DEBUG("RTA");
-			break;
-		case E_RUC:
-			DEBUG("RUC");
-			break;
-		case E_RXJp:
-			DEBUG("RXJ+");
-			break;
-		case E_RXJm:
-			DEBUG("RXJ-");
-			break;
-		case E_RXR:
-			DEBUG("RXR");
-			break;
-	}
-}
-static void print_transition(int state, uint8_t event, int next_state)
-{
-	DEBUG("From state ");
-	print_state(state);
-	DEBUG(" with event ");
-	print_event(event);
-	DEBUG(". Next state is ");
-	print_state(next_state);
-	DEBUG("\n");
-}
-/* Call functions depending on function flag*/
-static void _lcp_event_action(ppp_cp_t *lcp, uint8_t event, gnrc_pktsnip_t *pkt) 
-{
-	int flags;
-	/* Reset link status */
-	lcp->l_upper_msg = 0;
-	lcp->l_lower_msg = 0;
-
-	flags = actions[event][lcp->state];
-
-	if(flags & F_TLU) lcp_tlu(lcp, NULL);
-	if(flags & F_TLD) lcp_tld(lcp, NULL);
-	if(flags & F_TLS) lcp_tls(lcp, NULL);
-	if(flags & F_TLF) lcp_tlf(lcp, NULL);
-	if(flags & F_IRC) lcp_irc(lcp, (void*) &flags);
-	if(flags & F_ZRC) lcp_zrc(lcp, NULL);
-	if(flags & F_SCR) lcp_scr(lcp, NULL);
-	if(flags & F_SCA) lcp_sca(lcp, (void*) pkt);
-	if(flags & F_SCN) lcp_scn(lcp, (void*) pkt);
-	if(flags & F_STR) lcp_str(lcp, NULL);
-	if(flags & F_STA) lcp_sta(lcp, (void*) pkt);
-	if(flags & F_SCJ) lcp_scj(lcp, (void*) pkt);
-	if(flags & F_SER) lcp_ser(lcp, (void*) pkt);
-}
-
-int trigger_lcp_event(ppp_cp_t *lcp, uint8_t event, gnrc_pktsnip_t *pkt)
-{
-	if (event < 0)
-	{
-		return -EBADMSG;
-	}
-	int8_t next_state;
-	next_state = state_trans[event][lcp->state];
-	print_transition(lcp->state, event, next_state);
-	_lcp_event_action(lcp, event, pkt);
-	/* Keep in same state if there's something wrong (RFC 1661) */
-	if(next_state != S_UNDEF){
-		lcp->state = next_state;
-	}
-	/*Check if next state doesn't have a running timer*/
-	if (lcp->state < S_CLOSING || lcp->state == S_OPENED)
-		xtimer_remove(&lcp->xtimer);
-	return 0;
-}
-
-
-static int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr)
-{
-	if(pkt->type == GNRC_NETTYPE_LCP)
-	{
-		*ppp_hdr = (ppp_hdr_t*) pkt->data;
-		return false;
-	}
-	else
-	{
-		*ppp_hdr = (ppp_hdr_t*) pkt->next->data;
-		return true;
-	}
-}
-static int _lcp_get_opt_status(ppp_option_t *opt)
+static int lcp_get_opt_status(ppp_option_t *opt)
 {
 	uint8_t opt_type = ppp_opt_get_type(opt);
 	uint8_t * payload = (uint8_t*) ppp_opt_get_payload(opt);
@@ -261,314 +99,7 @@ static int _lcp_get_opt_status(ppp_option_t *opt)
 	return -EBADMSG; /* Never reaches here. Something went wrong if that's the case */
 }
 
-static int _lcp_handle_rcr(gnrc_pktsnip_t *pkt)
-{
-	ppp_hdr_t *ppp_hdr;
-	int has_options = _pkt_get_ppp_header(pkt, &ppp_hdr);
-
-	if(!has_options)
-	{
-		/* If the packet doesn't have options, it's considered as valid. */
-		return E_RCRp;
-	}
-
-	uint8_t pkt_length = ppp_hdr_get_length(ppp_hdr);
-	uint8_t opt_reminder = pkt_length-sizeof(ppp_hdr_t);
-
-	/* Check if options are valid */
-
-	if (!ppp_conf_opts_valid(pkt, opt_reminder))
-	{
-		return -EBADMSG;
-	}
-
-
-	ppp_option_t *curr_opt = (ppp_option_t*) pkt->data;
-	uint8_t opt_length;
-
-
-	while(opt_reminder)
-	{
-		opt_length = ppp_opt_get_length(curr_opt);
-
-		if(_lcp_get_opt_status(curr_opt )!= CP_CREQ_ACK){
-			return E_RCRm;
-		}
-		
-		curr_opt = (void*)((uint8_t*)curr_opt+opt_length);
-		opt_reminder-=opt_length;
-	}
-
-	return E_RCRp;
-}
-
-static int _lcp_handle_rca(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
-{
-	
-	ppp_hdr_t *ppp_hdr;
-	_pkt_get_ppp_header(pkt, &ppp_hdr);
-
-	uint8_t pkt_id = ppp_hdr_get_id(ppp_hdr);
-	uint8_t pkt_length = ppp_hdr_get_length(ppp_hdr);
-
-	if (pkt_id != lcp->cr_sent_identifier || memcmp(lcp->cr_sent_opts,pkt->data,pkt_length-sizeof(ppp_hdr_t)))
-	{
-		return -EBADMSG;
-	}
-	return E_RCA;
-}
-
-static int _lcp_handle_rcn_nak(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
-{
-
-	ppp_hdr_t *ppp_hdr;
-	_pkt_get_ppp_header(pkt, &ppp_hdr);
-
-	if (ppp_hdr_get_id(ppp_hdr) != lcp->cr_sent_identifier)
-		return -EBADMSG;
-	return E_RCN;
-}
-
-static int _lcp_handle_rcn_rej(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
-{
-	ppp_hdr_t *ppp_hdr;
-	int has_options = _pkt_get_ppp_header(pkt, &ppp_hdr);
-
-	if(!has_options)
-		return -EBADMSG;
-
-	if (ppp_hdr_get_id(ppp_hdr) != lcp->cr_sent_identifier)
-		return -EBADMSG;
-
-	/* Check if opts are subset of sent options */
-	ppp_option_t *curr_opt = pkt->data;
-
-	uint16_t size = lcp->cr_sent_size;
-	if(ppp_hdr_get_length(ppp_hdr)-sizeof(ppp_hdr_t) > lcp->cr_sent_size)
-		return -EBADMSG;
-
-	uint8_t cursor=0;
-	while(cursor<size)
-	{
-		if(!ppp_opt_is_subset(curr_opt, lcp->cr_sent_opts, size))
-			return -EBADMSG;
-		cursor+=ppp_opt_get_length(curr_opt);
-		curr_opt = (void*) ((uint8_t*) curr_opt + (int) ppp_opt_get_length(curr_opt));
-	}
-	return E_RCN;
-}
-
-void lcp_tlu(ppp_cp_t *lcp, void *args)
-{
-	DEBUG("> LCP: This layer up (a.k.a Successfully negotiated Link)\n");
-	(void) lcp;
-	//lcp->l_upper_msg |= PPP_MSG_UP;
-}
-
-void lcp_tld(ppp_cp_t *lcp, void *args)
-{
-	DEBUG("> LCP: This layer down\n");
-	(void) lcp;
-	//lcp->l_upper_msg |= PPP_MSG_DOWN;
-}
-
-void lcp_tls(ppp_cp_t *lcp, void *args)
-{
-	DEBUG("> LCP: This layer started\n");
-	(void) lcp;
-	//lcp->l_lower_msg |= PPP_MSG_UP;
-}
-
-void lcp_tlf(ppp_cp_t *lcp, void *args)
-{
-	DEBUG("> LCP: This layer finished\n");
-	(void) lcp;
-	//lcp->l_lower_msg |= PPP_MSG_DOWN;
-}
-
-void lcp_irc(ppp_cp_t *lcp, void *args)
-{
-	DEBUG("> LCP: Init Restart Counter\n");
-	uint8_t cr = *((int*) args) & F_SCR; 
-
-	if(cr)
-	{
-		lcp->restart_counter = PPP_MAX_CONFIG;
-	}
-	else
-	{
-		lcp->restart_counter = PPP_MAX_TERMINATE;
-	}
-}
-void lcp_zrc(ppp_cp_t *lcp, void *args)
-{
-	DEBUG("> LCP: Zero restart counter\n ");
-	(void) lcp;
-	//lcp->restart_counter = 0;
-	/* Set timer to appropiate value TODO*/
-}
-gnrc_pktsnip_t *build_lcp_options(ppp_cp_t *lcp)
-{
-	(void) lcp;
-	return NULL;
-}
-
-void lcp_scr(ppp_cp_t *lcp, void *args)
-{
-	DEBUG("> LCP: Sending Configure Request\n");
-	/* Decrement configure counter */
-	lcp->restart_counter -= 1;
-
-	/*TODO: Add options*/
-
-	gnrc_pktsnip_t *opts = build_lcp_options(lcp);
-	gnrc_pktsnip_t *pkt = lcp_pkt_build(PPP_CONF_REQ, lcp->cr_sent_identifier,opts);
-	
-	/*Send packet*/
-	gnrc_ppp_send(lcp->dev->netdev, pkt);
-	/* TODO: Set timeout for SRC */
-	lcp->msg.type = NETDEV2_MSG_TYPE_EVENT;
-	lcp->msg.content.value = 0x0100 +PPP_TIMEOUT;
-	xtimer_set_msg(&lcp->xtimer, LCP_RESTART_TIMER, &lcp->msg, thread_getpid());
-}
-
-void lcp_sca(ppp_cp_t *lcp, void *args)
-{
-	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("> LCP: Sending Configure Ack\n");
-	ppp_hdr_t *recv_ppp_hdr;
-
-	gnrc_pktsnip_t *opts = NULL;
-
-	if(pkt->type == GNRC_NETTYPE_LCP)
-	{
-		DEBUG(">> Received pkt didn't ask for options -> So just ACK\n");
-		recv_ppp_hdr = (ppp_hdr_t*) pkt->data;
-	}
-	else
-	{
-		DEBUG(">> Received pkt asked for options. Send them back, with ACK pkt\n");
-		recv_ppp_hdr = (ppp_hdr_t*) pkt->next->data;
-		opts = pkt->data;
-	}
-	gnrc_pktsnip_t *send_pkt = lcp_pkt_build(PPP_CONF_ACK, ppp_hdr_get_id(recv_ppp_hdr),opts);
-	
-	/*Send packet*/
-	gnrc_ppp_send(lcp->dev->netdev, send_pkt);
-}
-void lcp_scn(ppp_cp_t *lcp, void *args)
-{
-	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("> LCP: Sending Configure Nak/Rej\n");
-	(void) lcp;
-	(void) pkt;
-#if 0
-	/* Check the content of received options */
-	if(pkt->opts->content_flag & OPT_HAS_REJ)
-	{
-		_remove_opts_by_status(PPP_CP_REQUEST_REJ, pkt->opts);
-		pkt->hdr->code = PPP_CP_REQUEST_REJ;
-		send_cp(cp, pkt);
-	}
-	else
-	{
-		_remove_opts_by_status(PPP_CP_REQUEST_NAK, pkt->opts);
-		pkt->hdr->code = PPP_CP_REQUEST_NAK;
-		send_cp(cp, pkt);
-	}
-#endif
-}
-void lcp_str(ppp_cp_t *lcp, void *args)
-{
-	DEBUG("> LCP: Sending Terminate Request\n");
-	(void) lcp;
-#if 0
-	int id = 666; /*TODO*/
-	gnrc_pktsnip_t pkt;
-	pkt->hdr->code = PPP_CP_TERM_REQUEST;
-	pkt->hdr->id = id;
-	pkt->hdr->length = 4;
-	pkt->opts->num_opts = 0;
-	send_cp(cp, pkt);
-#endif
-}
-
-void lcp_sta(ppp_cp_t *lcp, void *args)
-{ 
-	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("> LCP: Sending Terminate Ack\n");
-	(void) lcp;
-	(void) pkt;
-#if 0
-	int id = 666; /*TODO*/
-	gnrc_pktsnip_t pkt;
-	pkt->hdr->code = PPP_CP_TERM_ACK;
-	pkt->hdr->id = id;
-	pkt->hdr->length = 4;
-	pkt->opts->num_opts = 0;
-	send_cp(cp, pkt);
-#endif
-}
-void lcp_scj(ppp_cp_t *lcp, void *args)
-{
-	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("> LCP: Sending Code Rej\n");
-	(void) lcp;
-	(void) pkt;
-	//send_cp(lcp, PPP_CP_CODE_REJ);
-}
-void lcp_ser(ppp_cp_t *lcp, void *args)
-{
-	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("> LCP: Sending Echo/Discard/Replay\n");
-	(void) lcp;
-	(void) pkt;
-	//send_cp(lcp,PPP_CP_SER);
-}
-
-int _lcp_handle_coderej(gnrc_pktsnip_t *pkt)
-{
-	/* Generate ppp packet from payload */
-	/* Mark ppp headr */
-
-	gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), GNRC_NETTYPE_UNDEF);
-	ppp_hdr_t *rej_hdr = (ppp_hdr_t*) pkt->data;
-
-	uint8_t code = ppp_hdr_get_code(rej_hdr);
-	if (code >= PPP_CONF_REQ && code <= PPP_TERM_ACK)
-	{
-		return E_RXJm;
-	}
-	else
-	{
-		return E_RXJp;
-	}
-}
-int lcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *lcp)
-{
-	lcp->l_upper_msg = 0;
-	lcp->l_lower_msg = 0;
-	lcp->up = 0;
-	lcp->state = S_INITIAL;
-	lcp->cr_sent_identifier = 1;
-	lcp->dev = ppp_dev;
-	return 0;
-}
-
-int _lcp_handle_term_ack(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
-{
-	ppp_hdr_t *ppp_hdr;
-	_pkt_get_ppp_header(pkt, &ppp_hdr);
-	
-	int id = ppp_hdr_get_id(ppp_hdr);
-	if(id == lcp->tr_sent_identifier)
-	{
-		return E_RTA;
-	}
-	return -EBADMSG;
-}
-
-int lcp_handle_pkt(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
+static int lcp_handle_pkt(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 {
 	gnrc_pktsnip_t *hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), GNRC_NETTYPE_LCP);
 	ppp_hdr_t *ppp_hdr = (ppp_hdr_t*) hdr->data;
@@ -579,25 +110,25 @@ int lcp_handle_pkt(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 	
 	switch(type){
 		case PPP_CONF_REQ:
-			event = _lcp_handle_rcr(pkt);
+			event = handle_rcr(lcp, pkt);
 			break;
 		case PPP_CONF_ACK:
-			event = _lcp_handle_rca(lcp, pkt);
+			event = handle_rca(lcp, pkt);
 			break;
 		case PPP_CONF_NAK:
-			event = _lcp_handle_rcn_nak(lcp, pkt);
+			event = handle_rcn_nak(lcp, pkt);
 			break;
 		case PPP_CONF_REJ:
-			event = _lcp_handle_rcn_rej(lcp, pkt);
+			event = handle_rcn_rej(lcp, pkt);
 			break;
 		case PPP_TERM_REQ:
 			event = E_RTR;
 			break;
 		case PPP_TERM_ACK:
-			event = _lcp_handle_term_ack(lcp, pkt);
+			event = handle_term_ack(lcp, pkt);
 			break;
 		case PPP_CODE_REJ:
-			event = _lcp_handle_coderej(pkt);
+			event = handle_coderej(pkt);
 			break;
 		case PPP_ECHO_REQ:
 		case PPP_ECHO_REP:
@@ -609,7 +140,16 @@ int lcp_handle_pkt(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 			break;
 	}
 
-	trigger_lcp_event(lcp, event, pkt);
+	trigger_event(lcp, event, pkt);
 	return event;
 }
 
+int lcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *lcp)
+{
+	cp_init(ppp_dev, lcp);
+	lcp->prot = GNRC_NETTYPE_LCP;
+	lcp->restart_timer = LCP_RESTART_TIMER;
+	lcp->get_opt_status = &lcp_get_opt_status;
+	lcp->handle_pkt = &lcp_handle_pkt;
+	return 0;
+}

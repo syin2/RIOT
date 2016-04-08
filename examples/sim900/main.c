@@ -33,7 +33,7 @@
 #define ENABLE_DEBUG    (1)
 #include "debug.h"
 
-#define TEST_PPP (0)
+#define TEST_PPP (1)
 #define TEST_WRITE (0)
 
 
