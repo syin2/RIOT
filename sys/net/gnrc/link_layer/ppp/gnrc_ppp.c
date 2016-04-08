@@ -35,30 +35,6 @@
 #include <inttypes.h>
 #endif
 
-/**
- * @brief   Function called by the device driver on device events
- *
- * @param[in] event         type of event
- * @param[in] data          optional parameter
- */
-#if 0
-static void _event_cb(gnrc_netdev_event_t event, void *data)
-{
-    DEBUG("ppp: event triggered -> %i\n", event);
-    /* PPP only understands the RX_COMPLETE event... */
-    if (event == NETDEV_EVENT_RX_COMPLETE) {
-        gnrc_pktsnip_t *pkt;
-
-        /* get pointer to the received packet */
-        pkt = (gnrc_pktsnip_t *)data;
-        /* send the packet to everyone interested in it's type */
-        if (!gnrc_netapi_dispatch_receive(pkt->type, GNRC_NETREG_DEMUX_CTX_ALL, pkt)) {
-            DEBUG("ppp: unable to forward packet of type %i\n", pkt->type);
-            gnrc_pktbuf_release(pkt);
-        }
-    }
-}
-#endif
 
 /*Wake up events for packet reception goes here*/
 int gnrc_ppp_init(ppp_dev_t *dev, netdev2_t *netdev)
