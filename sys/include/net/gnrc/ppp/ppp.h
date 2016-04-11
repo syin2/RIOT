@@ -96,15 +96,6 @@ extern "C" {
 #define GNRC_PPP_MSG_QUEUE_SIZE (20)
 
 
-
-#define MAX_CP_OPTIONS (20)
-#define OPT_PAYLOAD_SIZE (20)
-
-
-
-#define RC_SEL_CONF (0)
-#define RC_SEL_TERM (1)
-
 #define OPT_PAYLOAD_BUF_SIZE (100)
 
 #define CP_OPT_MAX (20)
@@ -189,11 +180,11 @@ static const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 #define OPT_ENABLED (1)
 #define OPT_REQUIRED (2)
 
-
+#define OPT_PAYLOAD_SIZE (10)
 typedef struct ppp_opt_t
 {
 	uint8_t type;
-	char* value;
+	uint8_t value[OPT_PAYLOAD_SIZE];
 	size_t size;
 	uint8_t flags;
 } ppp_opt_t;
@@ -226,7 +217,7 @@ typedef struct ppp_cp_t{
 	int (*handle_pkt)(struct ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
 
 	ppp_opt_t *conf;
-	uint8_t _num_opts;
+	uint8_t num_opts;
 } ppp_cp_t;
 
 

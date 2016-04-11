@@ -33,6 +33,10 @@ static inline void * ppp_opt_get_payload(ppp_option_t *opt)
 {
 	return (void*) (((uint8_t*) opt)+2);
 }
+static inline ppp_option_t *ppp_opt_get_next(ppp_option_t *opt)
+{
+	return (ppp_option_t*)(((uint8_t*) opt)+ppp_opt_get_length(opt));
+}
 
 static inline uint8_t ppp_conf_opts_valid(gnrc_pktsnip_t *opts_snip, uint8_t expected_length)
 {

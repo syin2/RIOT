@@ -261,7 +261,7 @@ gnrc_pktsnip_t *build_options(ppp_cp_t *cp)
 	{
 		if(cp->conf[i].flags & OPT_ENABLED)
 		{
-			size += conf[i].size;
+			size += cp->conf[i].size;
 		}
 	}
 
@@ -272,8 +272,8 @@ gnrc_pktsnip_t *build_options(ppp_cp_t *cp)
 	{
 		if(cp->conf[i].flags & OPT_ENABLED)
 		{
-			memcpy(opts->data+cursor, conf[i].value, conf[i].size);	
-			cursor+=conf[i].size;
+			memcpy(opts->data+cursor, cp->conf[i].value, cp->conf[i].size);	
+			cursor+=cp->conf[i].size;
 		}
 	}
 	return opts;
@@ -326,15 +326,67 @@ void sca(ppp_cp_t *cp, void *args)
 	gnrc_ppp_send(cp->dev->netdev, send_pkt);
 }
 
+uint8_t build_nakrej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt, gnrc_pktsnip_t **nak)
+{
+	uint8_t code = PPP_CONF_NAK;
+	uint8_t status;
+	int pkt_length = gnrc_pkt_len(pkt);
+	*nak = gnrc_pktbuf_add(NULL, NULL,pkt_length, GNRC_NETTYPE_UNDEF);
+
+	ppp_option_t *head = (ppp_option_t*) pkt->data;
+	ppp_option_t *curr_opt = head;
+
+	uint8_t opt_length;
+	int cursor = 0;
+
+	while(curr_opt - head <= pkt_length)
+	{
+		opt_length = ppp_opt_get_length(curr_opt);
+
+		status = cp->get_opt_status(curr_opt);
+		switch(status)
+		{
+			case CP_CREQ_ACK:
+				break;
+			case CP_CREQ_NAK:
+				if(code == PPP_CONF_NAK)
+				{
+					cursor+=opt_length;
+					memmove((*nak)->data+cursor, curr_opt, opt_length);
+				}
+				break;
+			case CP_CREQ_REJ:
+				if(code == PPP_CONF_REJ)
+				{
+					cursor+=opt_length;
+				}
+				else
+				{
+					cursor = 0;
+					code = PPP_CONF_REJ;
+				}
+				memmove((*nak)->data+cursor, curr_opt, opt_length);
+				break;
+		}
+		curr_opt = ppp_opt_get_next(curr_opt);
+	}
+	return code;
+}
+
 void scn(ppp_cp_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
 	DEBUG("%i", cp->prot);
 	DEBUG(">  Sending Configure Nak/Rej\n");
 
-	/* Get the size of the pkt */
-	uint8_t rej=0;
+	gnrc_pktsnip_t *nak;
+	uint8_t type = build_nakrej(cp, pkt, &nak);
 
+	ppp_hdr_t *recv_ppp_hdr = (ppp_hdr_t*) pkt->next->data;
+	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prot, type, ppp_hdr_get_id(recv_ppp_hdr),nak);
+	
+	/*Send packet*/
+	gnrc_ppp_send(cp->dev->netdev, send_pkt);
 }
 
 void str(ppp_cp_t *cp, void *args)
