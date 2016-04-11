@@ -1,13 +1,6 @@
 #ifndef PPP_LCP_H_
 #define PPP_LCP_H_
 
-#include <inttypes.h>
-
-#include "net/gnrc/pkt.h"
-#include "net/gnrc/pktbuf.h"
-#include "net/gnrc/ppp/cp.h"
-#include "net/gnrc/ppp/ppp.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -25,19 +18,16 @@ extern "C" {
 #define LCP_MRU_EN (1)
 #define LCP_RESTART_TIMER (3000000U)
 
-typedef struct lcp_opt_t{
-	uint16_t flags;
-	uint16_t mru;
-	uint16_t auth;
-	uint16_t *auth_data;
-	uint16_t quality;
-	uint32_t magic;
-	int b_pfc;
-	int b_acfc;
-} lcp_opt_t;
 
+typedef enum{
+	LCP_MRU,
+	LCP_NUMOPTS
+} lcp_options_t;
 
-int lcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *lcp);
+struct ppp_dev_t;
+struct ppp_cp_t;
+
+int lcp_init(struct ppp_dev_t *ppp_dev, struct ppp_cp_t *lcp);
 
 #ifdef __cplusplus
 }
