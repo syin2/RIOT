@@ -261,7 +261,7 @@ gnrc_pktsnip_t *build_options(ppp_cp_t *cp)
 	{
 		if(cp->conf[i].flags & OPT_ENABLED)
 		{
-			size += cp->conf[i].size;
+			size += 2+cp->conf[i].size;
 		}
 	}
 
@@ -272,11 +272,10 @@ gnrc_pktsnip_t *build_options(ppp_cp_t *cp)
 	{
 		if(cp->conf[i].flags & OPT_ENABLED)
 		{
-			memcpy(opts->data+cursor, cp->conf[i].value, cp->conf[i].size);	
-			cursor+=cp->conf[i].size;
+			memcpy(opts->data+cursor, cp->conf[i].value, 2+cp->conf[i].size);	
+			cursor+=2+cp->conf[i].size;
 		}
 	}
-	return NULL;
 	return opts;
 }
 
@@ -322,6 +321,7 @@ void sca(ppp_cp_t *cp, void *args)
 	}
 
 	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prot, PPP_CONF_ACK, ppp_hdr_get_id(recv_ppp_hdr),opts);
+		DEBUG("I failed");
 	
 	/*Send packet*/
 	gnrc_ppp_send(cp->dev->netdev, send_pkt);
