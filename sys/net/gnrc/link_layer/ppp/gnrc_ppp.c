@@ -164,19 +164,24 @@ static void _event_action(ppp_cp_t *cp, uint8_t event, gnrc_pktsnip_t *pkt)
 	if(flags & F_SER) ser(cp, (void*) pkt);
 }
 
-int trigger_event(ppp_cp_t *cp, uint8_t event, gnrc_pktsnip_t *pkt)
+int trigger_event(ppp_cp_t *cp, int event, gnrc_pktsnip_t *pkt)
 {
 	if (event < 0)
 	{
 		return -EBADMSG;
 	}
-	int8_t next_state;
+	int next_state;
 	next_state = state_trans[event][cp->state];
 	print_transition(cp->state, event, next_state);
-	_event_action(cp, event, pkt);
+
 	/* Keep in same state if there's something wrong (RFC 1661) */
 	if(next_state != S_UNDEF){
+		_event_action(cp, event, pkt);
 		cp->state = next_state;
+	}
+	else
+	{
+		DEBUG("Received illegal transition!\n");
 	}
 	/*Check if next state doesn't have a running timer*/
 	if (cp->state < S_CLOSING || cp->state == S_OPENED)
@@ -265,6 +270,9 @@ gnrc_pktsnip_t *build_options(ppp_cp_t *cp)
 		}
 	}
 
+	if(!size)
+		return NULL;
+
 	gnrc_pktsnip_t *opts = gnrc_pktbuf_add(NULL, NULL, size, GNRC_NETTYPE_UNDEF);
 
 	int cursor=0;
@@ -272,7 +280,9 @@ gnrc_pktsnip_t *build_options(ppp_cp_t *cp)
 	{
 		if(cp->conf[i].flags & OPT_ENABLED)
 		{
-			memcpy(opts->data+cursor, cp->conf[i].value, 2+cp->conf[i].size);	
+			*(((uint8_t*)opts->data)+cursor) = cp->conf[i].type;
+			*(((uint8_t*)opts->data)+cursor+1) = cp->conf[i].size+2;
+			memcpy(opts->data+2+cursor, cp->conf[i].value, cp->conf[i].size);	
 			cursor+=2+cp->conf[i].size;
 		}
 	}
@@ -292,6 +302,9 @@ void scr(ppp_cp_t *cp, void *args)
 	gnrc_pktsnip_t *opts = build_options(cp);
 	gnrc_pktsnip_t *pkt = pkt_build(cp->prot, PPP_CONF_REQ, cp->cr_sent_identifier,opts);
 	
+	if(opts)
+		memcpy(cp->cr_sent_opts, opts->data, opts->size);
+
 	/*Send packet*/
 	gnrc_ppp_send(cp->dev->netdev, pkt);
 
@@ -313,7 +326,7 @@ void sca(ppp_cp_t *cp, void *args)
 	if(has_options)
 	{
 		DEBUG(">> Received pkt asked for options. Send them back, with ACK pkt\n");
-		opts = pkt->data;
+		opts = pkt;
 	}
 	else
 	{
@@ -321,7 +334,6 @@ void sca(ppp_cp_t *cp, void *args)
 	}
 
 	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prot, PPP_CONF_ACK, ppp_hdr_get_id(recv_ppp_hdr),opts);
-		DEBUG("I failed");
 	
 	/*Send packet*/
 	gnrc_ppp_send(cp->dev->netdev, send_pkt);
@@ -331,7 +343,7 @@ uint8_t build_nakrej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt, gnrc_pktsnip_t **nak)
 {
 	uint8_t code = PPP_CONF_NAK;
 	uint8_t status;
-	int pkt_length = gnrc_pkt_len(pkt);
+	int pkt_length = pkt->size;
 	*nak = gnrc_pktbuf_add(NULL, NULL,pkt_length, GNRC_NETTYPE_UNDEF);
 
 	ppp_option_t *head = (ppp_option_t*) pkt->data;
@@ -339,6 +351,12 @@ uint8_t build_nakrej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt, gnrc_pktsnip_t **nak)
 
 	uint8_t opt_length;
 	int cursor = 0;
+
+	DEBUG("Pkt length: %i\n", pkt_length);
+	for(int i=0;i<4;i++)
+	{
+		DEBUG("Opts: %i\n", (int) *(((uint8_t*) pkt->data)+i));
+	}
 
 	while(curr_opt - head <= pkt_length)
 	{
@@ -371,6 +389,7 @@ uint8_t build_nakrej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt, gnrc_pktsnip_t **nak)
 		}
 		curr_opt = ppp_opt_get_next(curr_opt);
 	}
+	gnrc_pktbuf_realloc_data(*nak, (size_t) cursor);
 	return code;
 }
 
@@ -458,7 +477,7 @@ int handle_rcr(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 
 	/* Check if options are valid */
 
-	if (!ppp_conf_opts_valid(pkt, opt_reminder))
+	if (ppp_conf_opts_valid(pkt, pkt->size) <= 0)
 	{
 		return -EBADMSG;
 	}
@@ -484,14 +503,29 @@ int handle_rcr(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 
 int handle_rca(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 {
-	
 	ppp_hdr_t *ppp_hdr;
 	_pkt_get_ppp_header(pkt, &ppp_hdr);
 
 	uint8_t pkt_id = ppp_hdr_get_id(ppp_hdr);
 	uint8_t pkt_length = ppp_hdr_get_length(ppp_hdr);
 
-	if (pkt_id != cp->cr_sent_identifier || memcmp(cp->cr_sent_opts,pkt->data,pkt_length-sizeof(ppp_hdr_t)))
+	void *opts;
+
+	int has_options = _pkt_get_ppp_header(pkt, &ppp_hdr);
+	if (has_options)
+	{
+		if (ppp_conf_opts_valid(pkt, pkt->size) <= 0)
+		{
+			return -EBADMSG;
+		}
+		opts = pkt->data;
+	}
+	else
+	{
+		opts = pkt->next->data;
+	}
+
+	if (pkt_id != cp->cr_sent_identifier || memcmp(cp->cr_sent_opts, opts, pkt_length-sizeof(ppp_hdr_t)))
 	{
 		return -EBADMSG;
 	}
@@ -512,11 +546,8 @@ int handle_rcn_nak(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 		return -EBADMSG;
 	}
 
-	uint8_t pkt_length = ppp_hdr_get_length(ppp_hdr);
-	uint8_t opt_reminder = pkt_length-sizeof(ppp_hdr_t);
-
 	/* Check if options are valid */
-	if (!ppp_conf_opts_valid(pkt, opt_reminder))
+	if (ppp_conf_opts_valid(pkt, pkt->size) <= 0)
 	{
 		return -EBADMSG;
 	}
@@ -537,12 +568,26 @@ int handle_rcn_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 	if (ppp_hdr_get_id(ppp_hdr) != cp->cr_sent_identifier)
 		return -EBADMSG;
 
+	/* Check if options are valid */
+	if (ppp_conf_opts_valid(pkt, pkt->size) <= 0)
+	{
+		return -EBADMSG;
+	}
+
 	/* Check if opts are subset of sent options */
 	ppp_option_t *curr_opt = pkt->data;
 
 	uint16_t size = cp->cr_sent_size;
 	if(ppp_hdr_get_length(ppp_hdr)-sizeof(ppp_hdr_t) > cp->cr_sent_size)
+	{
+		DEBUG("Why I'm here?\n");
+		DEBUG("Hdr length: %i\n", ppp_hdr_get_length(ppp_hdr));
+		for(int i=0;i<16;i++)
+		{
+			DEBUG("%i\n",(int)*(((char*) ppp_hdr)+i));
+		}
 		return -EBADMSG;
+	}
 
 	uint8_t cursor=0;
 	while(cursor<size)
@@ -656,7 +701,7 @@ gnrc_pktsnip_t * pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gn
 	ppp_hdr_t ppp_hdr;
 	ppp_hdr_set_code(&ppp_hdr, code);
 	ppp_hdr_set_id(&ppp_hdr, id);
-	int payload_length = gnrc_pkt_len(payload);
+	int payload_length = payload->size;
 	ppp_hdr_set_length(&ppp_hdr, payload_length + sizeof(ppp_hdr_t));
 
 	gnrc_pktsnip_t *ppp_pkt = gnrc_pktbuf_add(payload, (void*) &ppp_hdr, sizeof(ppp_hdr_t), pkt_type);
@@ -685,7 +730,6 @@ int gnrc_ppp_send(netdev2_t *dev, gnrc_pktsnip_t *pkt)
 }
 int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
 {
-	DEBUG("Hi!");
 	int nbytes;
 	ppp_cp_t *target_protocol;
 	uint8_t event = ppp_event & 0xFF;

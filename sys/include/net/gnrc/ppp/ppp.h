@@ -254,7 +254,7 @@ void scj(ppp_cp_t *lcp, void *args);
 void ser(ppp_cp_t *lcp, void *args);
 
 int cp_init(struct ppp_dev_t *ppp_dev, ppp_cp_t *cp);
-int trigger_event(ppp_cp_t *cp, uint8_t event, gnrc_pktsnip_t *pkt);
+int trigger_event(ppp_cp_t *cp, int event, gnrc_pktsnip_t *pkt);
 int handle_rcr(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
 int handle_rca(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
 int handle_rcn_nak(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
