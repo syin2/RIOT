@@ -276,6 +276,7 @@ gnrc_pktsnip_t *build_options(ppp_cp_t *cp)
 			cursor+=cp->conf[i].size;
 		}
 	}
+	return NULL;
 	return opts;
 }
 
