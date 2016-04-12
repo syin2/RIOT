@@ -8,21 +8,20 @@
 
 /**
  * @{
- * @ingroup     ppp_ipcp
+ * @ingroup     ppp_lcp
  * @file
- * @brief       Implementation of PPP's IPCP protocol
+ * @brief       Implementation of PPP's LCP protocol
  *
  * @author      José Ignacio Alamos <jialamos@uc.cl>
  * @}
  */
 
-#include "net/gnrc/ppp/ipcp.h"
-#include "net/gnrc/ppp/ppp.h"
-
-#include "net/ppp/hdr.h"
-
+#include "net/gnrc/ppp/lcp.h"
+#include <inttypes.h>
+#include "net/gnrc/ppp/cp.h"
 #include "net/gnrc/ppp/opt.h"
 #include "net/gnrc/pkt.h"
+#include "net/ppp/hdr.h"
 #include "net/gnrc/pktbuf.h"
 #include "net/gnrc/nettype.h"
 #include <errno.h>
@@ -36,11 +35,11 @@
 #endif
 
 #if 0
-/* Negotiate local ICPC options with NAK opts sent by peer */
-void ipcp_negotiate_nak(void *ipcp_opt, cp_pkt_metadata_t *metadata)
+/* Negotiate local LCP options with NAK opts sent by peer */
+void lcp_negotiate_nak(void *lcp_opt, cp_pkt_metadata_t *metadata)
 {
-	/* Cast ipcp_opt to corresponding struct */
-	ipcp_opt_t *opts = (ipcp_opt_t*) ipcp_opt;
+	/* Cast lcp_opt to corresponding struct */
+	lcp_opt_t *opts = (lcp_opt_t*) lcp_opt;
 
 	void *curr_opt;
 	uint8_t ctype;
@@ -58,11 +57,11 @@ void ipcp_negotiate_nak(void *ipcp_opt, cp_pkt_metadata_t *metadata)
 		payload = (uint8_t*) ppp_opt_get_payload(curr_opt);
 		switch(ctype)
 		{
-			case IPCP_OPT_MRU:
+			case LCP_OPT_MRU:
 				suggested_value = ((*payload)<<8) + *(payload+1);
 
-				if(suggested_value > IPCP_MAX_MRU){
-					opts->mru = IPCP_MAX_MRU;
+				if(suggested_value > LCP_MAX_MRU){
+					opts->mru = LCP_MAX_MRU;
 				}
 				else
 				{
@@ -76,23 +75,34 @@ void ipcp_negotiate_nak(void *ipcp_opt, cp_pkt_metadata_t *metadata)
 	}
 }
 #endif
-static int ipcp_get_opt_status(ppp_option_t *opt, uint8_t suggested)
+static int lcp_get_opt_status(ppp_option_t *opt)
 {
-	(void) suggested;
 	uint8_t opt_type = ppp_opt_get_type(opt);
+	uint8_t * payload = (uint8_t*) ppp_opt_get_payload(opt);
+	uint8_t length = ppp_opt_get_length(opt);
 
+	uint16_t u16;
 	/* For the moment, only MRU option supported */
 	switch(opt_type)
 	{
-		default:
+		case LCP_OPT_MRU:
+			if(length != 4) 
+				return -EBADMSG; 
+			u16 = ((*payload)<<8) + *(payload+1);
+			if(u16 > LCP_MAX_MRU){
+				return CP_CREQ_NAK;
+			}
 			return CP_CREQ_ACK;
+			break;
+		default:
+			return CP_CREQ_REJ;
 	}
 	return -EBADMSG; /* Never reaches here. Something went wrong if that's the case */
 }
 
-static int ipcp_handle_pkt(ppp_cp_t *ipcp, gnrc_pktsnip_t *pkt)
+static int lcp_handle_pkt(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 {
-	gnrc_pktsnip_t *hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), GNRC_NETTYPE_IPCP);
+	gnrc_pktsnip_t *hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), GNRC_NETTYPE_LCP);
 	ppp_hdr_t *ppp_hdr = (ppp_hdr_t*) hdr->data;
 
 
@@ -101,45 +111,48 @@ static int ipcp_handle_pkt(ppp_cp_t *ipcp, gnrc_pktsnip_t *pkt)
 	
 	switch(type){
 		case PPP_CONF_REQ:
-			event = handle_rcr(ipcp, pkt);
+			event = handle_rcr(lcp, pkt);
 			break;
 		case PPP_CONF_ACK:
-			event = handle_rca(ipcp, pkt);
+			event = handle_rca(lcp, pkt);
 			break;
 		case PPP_CONF_NAK:
-			event = handle_rcn_nak(ipcp, pkt);
+			event = handle_rcn_nak(lcp, pkt);
 			break;
 		case PPP_CONF_REJ:
-			event = handle_rcn_rej(ipcp, pkt);
+			event = handle_rcn_rej(lcp, pkt);
 			break;
 		case PPP_TERM_REQ:
 			event = E_RTR;
 			break;
 		case PPP_TERM_ACK:
-			event = handle_term_ack(ipcp, pkt);
+			event = handle_term_ack(lcp, pkt);
 			break;
 		case PPP_CODE_REJ:
 			event = handle_coderej(pkt);
+			break;
+		case PPP_ECHO_REQ:
+		case PPP_ECHO_REP:
+		case PPP_DISC_REQ:
+			event = E_RXR;
 			break;
 		default:
 			event = E_RUC;
 			break;
 	}
 
-	trigger_event(ipcp, event, pkt);
+	trigger_event(lcp, event, pkt);
 	return event;
 }
 
-int ipcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *ipcp)
+int lcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *lcp)
 {
-	cp_init(ppp_dev, ipcp);
-
-	//ipcp->num_opts = IPCP_NUMOPTS;
-	//ipcp->conf = &ppp_dev->l_ipcp;
-
-	ipcp->prot = GNRC_NETTYPE_IPCP;
-	ipcp->restart_timer = IPCP_RESTART_TIMER;
-	ipcp->get_opt_status = &ipcp_get_opt_status;
-	ipcp->handle_pkt = &ipcp_handle_pkt;
+	cp_init(ppp_dev, lcp);
+	lcp->prot = GNRC_NETTYPE_LCP;
+	lcp->restart_timer = LCP_RESTART_TIMER;
+	lcp->get_opt_status = &lcp_get_opt_status;
+	lcp->handle_pkt = &lcp_handle_pkt;
+	lcp->conf = &ppp_dev->lcp_opts;
+	
 	return 0;
 }

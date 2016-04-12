@@ -1,0 +1,265 @@
+
+#include <errno.h>
+
+#include "msg.h"
+#include "thread.h"
+#include "net/gnrc.h"
+#include "net/ppptype.h"
+#include "net/gnrc/ppp/ppp.h"
+#include "net/gnrc/ppp/lcp.h"
+#include "net/hdlc/hdr.h"
+#include "net/ppp/hdr.h"
+#include <errno.h>
+#include <string.h>
+
+#define ENABLE_DEBUG    (1)
+#include "debug.h"
+
+#if ENABLE_DEBUG
+/* For PRIu16 etc. */
+#include <inttypes.h>
+#endif
+
+int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr)
+{
+	if(pkt->type == GNRC_NETTYPE_UNDEF)
+	{
+		*ppp_hdr = (ppp_hdr_t*) pkt->next->data;
+		return true;
+	}
+	else
+	{
+		*ppp_hdr = (ppp_hdr_t*) pkt->data;
+		return false;
+	}
+}
+
+int handle_rcr(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+{
+	ppp_hdr_t *ppp_hdr;
+	int has_options = _pkt_get_ppp_header(pkt, &ppp_hdr);
+
+	if(!has_options)
+	{
+		/* If the packet doesn't have options, it's considered as valid. */
+		return E_RCRp;
+	}
+
+	uint8_t pkt_length = ppp_hdr_get_length(ppp_hdr);
+	uint8_t opt_reminder = pkt_length-sizeof(ppp_hdr_t);
+
+	/* Check if options are valid */
+
+	if (ppp_conf_opts_valid(pkt, pkt->size) <= 0)
+	{
+		return -EBADMSG;
+	}
+
+	ppp_option_t *curr_opt = (ppp_option_t*) pkt->data;
+	uint8_t opt_length;
+
+
+	while(opt_reminder)
+	{
+		opt_length = ppp_opt_get_length(curr_opt);
+
+		if(cp->get_opt_status(curr_opt, false)!= CP_CREQ_ACK){
+			return E_RCRm;
+		}
+		
+		curr_opt = (void*)((uint8_t*)curr_opt+opt_length);
+		opt_reminder-=opt_length;
+	}
+
+	return E_RCRp;
+}
+
+int handle_rca(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+{
+	ppp_hdr_t *ppp_hdr;
+	_pkt_get_ppp_header(pkt, &ppp_hdr);
+
+	uint8_t pkt_id = ppp_hdr_get_id(ppp_hdr);
+	uint8_t pkt_length = ppp_hdr_get_length(ppp_hdr);
+
+	void *opts;
+
+	int has_options = _pkt_get_ppp_header(pkt, &ppp_hdr);
+	if (has_options)
+	{
+		if (ppp_conf_opts_valid(pkt, pkt->size) <= 0)
+		{
+			return -EBADMSG;
+		}
+		opts = pkt->data;
+	}
+	else
+	{
+		opts = pkt->next->data;
+	}
+
+	if (pkt_id != cp->cr_sent_identifier || memcmp(cp->cr_sent_opts, opts, pkt_length-sizeof(ppp_hdr_t)))
+	{
+		return -EBADMSG;
+	}
+	return E_RCA;
+}
+
+static cp_conf_t *_cp_conf_from_type(ppp_cp_t *cp, uint8_t type)
+{
+	/* Search config */
+	cp_conf_t *head = cp->conf;
+	cp_conf_t *curr_conf = head;
+
+	while(curr_conf)
+	{
+		if(curr_conf->type == type)
+			break;
+		curr_conf = curr_conf->next;
+	}
+
+	return curr_conf;
+}
+static int _cp_negotiation(ppp_cp_t *cp, uint8_t ntype, gnrc_pktsnip_t *pkt)
+{
+	ppp_option_t *head = pkt->data;
+	ppp_option_t *curr_opt = head;
+	int pkt_length = pkt->size;
+	uint8_t status;
+	
+	while(curr_opt)
+	{
+		cp_conf_t *conf = _cp_conf_from_type(cp, ppp_opt_get_type(curr_opt));
+		if(conf == NULL)
+		{
+			DEBUG("Received NAK or REJ but options doesn't exist. Link might fail\n");
+			curr_opt = ppp_opt_get_next(curr_opt, head, pkt_length);
+			continue;
+		}
+		if (ntype == CP_CREQ_NAK)
+		{
+			status = cp->get_opt_status(curr_opt, false);
+			if(status == CP_CREQ_NAK)
+			{
+				/* Turn it off */
+				conf->flags &= (~OPT_ENABLED);
+			}
+			else if (status == CP_CREQ_ACK)
+			{
+				memcpy(conf->value, ppp_opt_get_payload(curr_opt), conf->size);
+			}
+			else
+			{
+				return 0;
+			}
+		}
+		else
+		{
+			conf->flags &= (~OPT_ENABLED);
+		}
+		curr_opt = ppp_opt_get_next(curr_opt, head, pkt_length);
+	}
+	return 1;
+}
+
+int handle_rcn_nak(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+{
+
+	ppp_hdr_t *ppp_hdr;
+	_pkt_get_ppp_header(pkt, &ppp_hdr);
+
+	int has_options = _pkt_get_ppp_header(pkt, &ppp_hdr);
+
+	if(!has_options)
+	{
+		/* If the packet doesn't have options, it's considered as invalid. */
+		return -EBADMSG;
+	}
+
+	/* Check if options are valid */
+	if (ppp_conf_opts_valid(pkt, pkt->size) <= 0)
+	{
+		return -EBADMSG;
+	}
+
+
+	if (ppp_hdr_get_id(ppp_hdr) != cp->cr_sent_identifier)
+		return -EBADMSG;
+
+	if(!_cp_negotiation(cp, CP_CREQ_NAK, pkt))
+		return -EBADMSG;
+	return E_RCN;
+}
+
+int handle_rcn_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+{
+	ppp_hdr_t *ppp_hdr;
+	int has_options = _pkt_get_ppp_header(pkt, &ppp_hdr);
+
+	if(!has_options)
+		return -EBADMSG;
+
+	if (ppp_hdr_get_id(ppp_hdr) != cp->cr_sent_identifier)
+		return -EBADMSG;
+
+	/* Check if options are valid */
+	if (ppp_conf_opts_valid(pkt, pkt->size) <= 0)
+	{
+		return -EBADMSG;
+	}
+
+	/* Check if opts are subset of sent options */
+	ppp_option_t *head = pkt->data;
+	ppp_option_t *curr_opt = head;
+
+	uint16_t size = cp->cr_sent_size;
+	if(ppp_hdr_get_length(ppp_hdr)-sizeof(ppp_hdr_t) > cp->cr_sent_size)
+	{
+		return -EBADMSG;
+	}
+
+	while(curr_opt)
+	{
+		if(!ppp_opt_is_subset(curr_opt, cp->cr_sent_opts, size))
+			return -EBADMSG;
+		curr_opt = ppp_opt_get_next(curr_opt, head, size);
+	}
+
+	if(!_cp_negotiation(cp, CP_CREQ_REJ, pkt))
+		return -EBADMSG;
+
+	return E_RCN;
+}
+int handle_coderej(gnrc_pktsnip_t *pkt)
+{
+	/* Generate ppp packet from payload */
+	/* Mark ppp headr */
+
+	gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), GNRC_NETTYPE_UNDEF);
+	ppp_hdr_t *rej_hdr = (ppp_hdr_t*) pkt->data;
+
+	uint8_t code = ppp_hdr_get_code(rej_hdr);
+	if (code >= PPP_CONF_REQ && code <= PPP_TERM_ACK)
+	{
+		return E_RXJm;
+	}
+	else
+	{
+		return E_RXJp;
+	}
+
+}
+
+
+int handle_term_ack(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+{
+	ppp_hdr_t *ppp_hdr;
+	_pkt_get_ppp_header(pkt, &ppp_hdr);
+	
+	int id = ppp_hdr_get_id(ppp_hdr);
+	if(id == cp->tr_sent_identifier)
+	{
+		return E_RTA;
+	}
+	return -EBADMSG;
+}

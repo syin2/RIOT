@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-typedef void ppp_option_t;
+typedef uint8_t ppp_option_t;
 
 /*Control Protocol option*/
 typedef struct __attribute__((packed)){
@@ -31,18 +31,37 @@ static inline uint8_t ppp_opt_get_type(ppp_option_t *opt)
 	return (uint8_t) *((uint8_t *) opt);
 }
 
+static inline void ppp_opt_set_type(ppp_option_t *opt, uint8_t type)
+{
+	*((uint8_t *) opt) = type;
+}
+
 static inline uint8_t ppp_opt_get_length(ppp_option_t *opt)
 {
 	return (uint8_t) *(((uint8_t*) opt)+1);
+}
+
+static inline void ppp_opt_set_length(ppp_option_t *opt, uint8_t length)
+{
+	*(((uint8_t*) opt)+1) = length;
 }
 
 static inline void * ppp_opt_get_payload(ppp_option_t *opt)
 {
 	return (void*) (((uint8_t*) opt)+2);
 }
-static inline ppp_option_t *ppp_opt_get_next(ppp_option_t *opt)
+
+static inline void ppp_opt_set_payload(ppp_option_t *opt, void *data, size_t size)
 {
-	return (ppp_option_t*)(((uint8_t*) opt)+ppp_opt_get_length(opt));
+	memcpy(((uint8_t*) opt)+2,data,size);
+}
+static inline ppp_option_t *ppp_opt_get_next(ppp_option_t *curr_opt, ppp_option_t *head, size_t opt_size)
+{
+	ppp_option_t *ret = NULL;
+	curr_opt = (ppp_option_t*)(((uint8_t*) curr_opt)+ppp_opt_get_length(curr_opt));
+	if(curr_opt - head < opt_size)
+		return NULL;
+	return ret;
 }
 
 static inline int ppp_conf_opts_valid(gnrc_pktsnip_t *opts_snip, uint8_t expected_length)

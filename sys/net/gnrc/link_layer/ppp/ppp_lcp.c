@@ -34,48 +34,7 @@
 #include <inttypes.h>
 #endif
 
-#if 0
-/* Negotiate local LCP options with NAK opts sent by peer */
-void lcp_negotiate_nak(void *lcp_opt, cp_pkt_metadata_t *metadata)
-{
-	/* Cast lcp_opt to corresponding struct */
-	lcp_opt_t *opts = (lcp_opt_t*) lcp_opt;
-
-	void *curr_opt;
-	uint8_t ctype;
-	uint16_t suggested_value;
-	uint8_t *payload;
-
-	opt_metadata_t *opts_handler = &metadata->opts;
-
-	curr_opt = ppp_opts_get_head(opts_handler);
-	int num_opts = ppp_opts_get_num(opts_handler);
-	/* Iterate through every pkt option */
-	for(int i=0;i<num_opts;i++)
-	{
-		ctype = ppp_opt_get_type(curr_opt);
-		payload = (uint8_t*) ppp_opt_get_payload(curr_opt);
-		switch(ctype)
-		{
-			case LCP_OPT_MRU:
-				suggested_value = ((*payload)<<8) + *(payload+1);
-
-				if(suggested_value > LCP_MAX_MRU){
-					opts->mru = LCP_MAX_MRU;
-				}
-				else
-				{
-					opts->mru = suggested_value;
-				}
-				break;
-			default:
-				break;
-		}
-		curr_opt = ppp_opts_next(opts_handler);
-	}
-}
-#endif
-static int lcp_get_opt_status(ppp_option_t *opt)
+static int lcp_get_opt_status(ppp_option_t *opt, uint8_t suggested)
 {
 	uint8_t opt_type = ppp_opt_get_type(opt);
 	uint8_t * payload = (uint8_t*) ppp_opt_get_payload(opt);
@@ -90,6 +49,11 @@ static int lcp_get_opt_status(ppp_option_t *opt)
 				return -EBADMSG; 
 			u16 = ((*payload)<<8) + *(payload+1);
 			if(u16 > LCP_MAX_MRU){
+				if(suggested)
+				{
+					*(((uint8_t*) payload)) = (LCP_DEFAULT_MRU & 0xFF00)>>8;
+					*(((uint8_t*) payload)+1) = LCP_DEFAULT_MRU & 0xFF;
+				}
 				return CP_CREQ_NAK;
 			}
 			return CP_CREQ_ACK;
@@ -106,6 +70,7 @@ static int lcp_handle_pkt(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 	ppp_hdr_t *ppp_hdr = (ppp_hdr_t*) hdr->data;
 
 
+	/*TODO: Shouldn't be here*/
 	int type = ppp_hdr_get_code(ppp_hdr);
 	int event;
 	
@@ -153,10 +118,11 @@ int lcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *lcp)
 	lcp->num_opts = LCP_NUMOPTS;
 	lcp->conf = ppp_dev->lcp_opts;
 	lcp->conf[LCP_MRU].type = 1;
-	lcp->conf[LCP_MRU].value[0] = 0;
+	lcp->conf[LCP_MRU].value[0] = 0xFF;
 	lcp->conf[LCP_MRU].value[1] = 200;
 	lcp->conf[LCP_MRU].size = 2;
 	lcp->conf[LCP_MRU].flags = OPT_ENABLED;
+	lcp->conf[LCP_MRU].next = NULL;
 
 
 

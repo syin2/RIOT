@@ -181,13 +181,14 @@ static const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 #define OPT_REQUIRED (2)
 
 #define OPT_PAYLOAD_SIZE (10)
-typedef struct ppp_opt_t
+typedef struct cp_conf_t
 {
 	uint8_t type;
 	uint8_t value[OPT_PAYLOAD_SIZE];
 	size_t size;
 	uint8_t flags;
-} ppp_opt_t;
+	struct cp_conf_t *next;
+} cp_conf_t;
 
 
 /* Control Protocol struct*/
@@ -213,10 +214,10 @@ typedef struct ppp_cp_t{
 
 	msg_t msg;
 
-	int (*get_opt_status)(ppp_option_t *opt);
+	int (*get_opt_status)(ppp_option_t *opt, uint8_t suggest);
 	int (*handle_pkt)(struct ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
 
-	ppp_opt_t *conf;
+	cp_conf_t *conf;
 	uint8_t num_opts;
 } ppp_cp_t;
 
@@ -228,7 +229,7 @@ typedef struct ppp_dev_t{
 	ppp_cp_t l_ipcp;
 	netdev2_t *netdev;
 
-	ppp_opt_t lcp_opts[LCP_NUMOPTS];
+	cp_conf_t lcp_opts[LCP_NUMOPTS];
 } ppp_dev_t;
 
 
@@ -261,6 +262,9 @@ int handle_rcn_nak(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
 int handle_rcn_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
 int handle_coderej(gnrc_pktsnip_t *pkt);
 int handle_term_ack(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
+
+void print_pkt(gnrc_pktsnip_t *pkt);
+int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr);
 
 #ifdef __cplusplus
 }
