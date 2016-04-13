@@ -187,6 +187,8 @@ typedef struct cp_conf_t
 	uint8_t value[OPT_PAYLOAD_SIZE];
 	size_t size;
 	uint8_t flags;
+	uint8_t suggested_value[OPT_PAYLOAD_SIZE];
+
 	struct cp_conf_t *next;
 } cp_conf_t;
 
