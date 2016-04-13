@@ -72,20 +72,16 @@ int handle_rcr(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 	ppp_option_t *head = (ppp_option_t*) pkt->data;
 	ppp_option_t *curr_opt = head;
 
-	cp_cont_t *curr_cof=NULL;
+	cp_cont_t *curr_conf=NULL;
 
 	while(curr_opt)
 	{
 		curr_conf = _cp_conf_from_type(cp, ppp_opt_get_type(curr_opt));
-		if(!curr_conf)
+		if(!curr_conf || curr_conf->is_valid(curr_opt))
 			return E_RCRm;
 
-		if(curr_conf->is_valid(curr_opt)){
-			return E_RCRm;
-		}
 		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);;
 	}
-
 	return E_RCRp;
 }
 
@@ -122,7 +118,6 @@ int handle_rca(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 
 int handle_rcn_nak(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 {
-
 	ppp_hdr_t *ppp_hdr;
 	_pkt_get_ppp_header(pkt, &ppp_hdr);
 
@@ -140,10 +135,21 @@ int handle_rcn_nak(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 		return -EBADMSG;
 	}
 
-
 	if (ppp_hdr_get_id(ppp_hdr) != cp->cr_sent_identifier)
 		return -EBADMSG;
 
+	/*Handle nak for each option*/
+	ppp_option_t *head = pkt->data;
+	ppp_option_t *curr_opt = head;
+
+	cp_cont_t *curr_conf;
+	while(curr_opt)
+	{
+		curr_conf = _cp_conf_from_type(cp, ppp_opt_get_type(curr_opt));
+		if(curr_conf != NULL)
+			curr_conf->handle_nak(curr_conf, curr_opt);
+	}
+	return E_RCN;
 }
 
 int handle_rcn_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
@@ -164,14 +170,14 @@ int handle_rcn_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 	}
 
 	/* Check if opts are subset of sent options */
-	ppp_option_t *head = pkt->data;
-	ppp_option_t *curr_opt = head;
-
-	uint16_t size = cp->cr_sent_size;
 	if(ppp_hdr_get_length(ppp_hdr)-sizeof(ppp_hdr_t) > cp->cr_sent_size)
 	{
 		return -EBADMSG;
 	}
+
+	ppp_option_t *head = pkt->data;
+	ppp_option_t *curr_opt = head;
+	uint16_t size = cp->cr_sent_size;
 
 	while(curr_opt)
 	{
@@ -180,9 +186,22 @@ int handle_rcn_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 		curr_opt = ppp_opt_get_next(curr_opt, head, size);
 	}
 
-
+	/* Disable every REJ option */
+	curr_opt = head;
+	cp_cont_t *curr_conf;
+	while(curr_opt)
+	{
+		curr_conf = _cp_conf_from_type(cp, ppp_opt_get_type(curr_opt));
+		if(curr_conf == NULL)
+		{
+			DEBUG("This shouldn't happen...\n");
+			return -EBADMSG;
+		}
+		curr_conf->flags &= ~OPT_ENABLED;
+	}
 	return E_RCN;
 }
+
 int handle_coderej(gnrc_pktsnip_t *pkt)
 {
 	/* Generate ppp packet from payload */
