@@ -55,6 +55,94 @@ gnrc_pktsnip_t *build_options(ppp_cp_t *cp)
 	return opts;
 }
 
+static uint8_t get_scnpkt_data(ppp_cp_t *cp, gnrc_pktsnip_t *pkt, uint16_t *n)
+{
+	ppp_option_t *head = pkt->data;
+	ppp_option_t *curr_opt = head;
+
+	uint8_t rej_size = 0;
+	uint8_t nak_size = 0;
+	uint8_t curr_type;
+
+	cp_conf_t *curr_conf;
+	uint8_t curr_size;
+
+	while(curr_opt)
+	{
+		curr_type = ppp_opt_get_type(curr_opt);
+		curr_conf = cp->get_conf_by_code(cp, curr_type);
+		curr_size = ppp_opt_get_length(curr_opt);
+		if(curr_conf == NULL)
+		{
+			rej_size += curr_size;
+		}
+		else if(!curr_conf->is_valid(curr_opt))
+		{
+			nak_size += curr_conf->build_nak_opts(NULL);
+		}
+		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
+	}
+
+	/* Append required options */
+	curr_conf = cp->conf;
+
+	while(curr_conf)
+	{
+		if(curr_conf->flags & OPT_REQUIRED)
+			nak_size += curr_conf->size;
+		curr_conf = curr_conf->next;
+	}
+
+	*n = rej_size ? rej_size : nak_size;
+	return rej_size ? PPP_CONF_REJ : PPP_CONF_NAK;
+}
+
+static void build_nak_pkt(ppp_cp_t *cp, gnrc_pktsnip_t *pkt, uint8_t *buf)
+{
+	ppp_option_t *head = pkt->data;
+	ppp_option_t *curr_opt = head;
+	cp_conf_t *curr_conf;
+
+	uint8_t curr_type;
+
+	uint8_t cursor = 0;
+	while(curr_opt)
+	{
+		curr_type = ppp_opt_get_type(curr_opt);
+		curr_conf = cp->get_conf_by_code(cp, curr_type);
+
+		if (curr_conf && !curr_conf->is_valid(curr_opt))
+		{
+			cursor += curr_conf->build_nak_opts(buf+cursor);	
+		}
+		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
+	}
+}
+
+static void build_rej_pkt(ppp_cp_t *cp, gnrc_pktsnip_t *pkt, uint8_t *buf)
+{
+	ppp_option_t *head = pkt->data;
+	ppp_option_t *curr_opt = head;
+	cp_conf_t *curr_conf;
+
+	uint8_t curr_type;
+	uint16_t curr_size;
+
+	uint8_t cursor = 0;
+	while(curr_opt)
+	{
+		curr_type = ppp_opt_get_type(curr_opt);
+		curr_conf = cp->get_conf_by_code(cp, curr_type);
+		curr_size = ppp_opt_get_length(curr_opt);
+
+		if(curr_conf == NULL)
+		{
+			memcpy(buf+cursor, curr_opt, curr_size);
+			cursor += curr_size;
+		}
+		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
+	}
+}
 static void print_state(int state)
 {
 	switch(state)
@@ -316,94 +404,6 @@ void sca(ppp_cp_t *cp, void *args)
 	
 	/*Send packet*/
 	gnrc_ppp_send(cp->dev->netdev, send_pkt);
-}
-static uint8_t get_scnpkt_data(ppp_cp_t *cp, gnrc_pktsnip_t *pkt, uint16_t *n)
-{
-	ppp_option_t *head = pkt->data;
-	ppp_option_t *curr_opt = head;
-
-	uint8_t rej_size = 0;
-	uint8_t nak_size = 0;
-	uint8_t curr_type;
-
-	cp_conf_t *curr_conf;
-	uint8_t curr_size;
-
-	while(curr_opt)
-	{
-		curr_type = ppp_opt_get_type(curr_opt);
-		curr_conf = cp->get_conf_by_code(cp, curr_type);
-		curr_size = ppp_opt_get_length(curr_opt);
-		if(curr_conf == NULL)
-		{
-			rej_size += curr_size;
-		}
-		else if(!curr_conf->is_valid(curr_opt))
-		{
-			nak_size += curr_conf->build_nak_opts(NULL);
-		}
-		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
-	}
-
-	/* Append required options */
-	curr_conf = cp->conf;
-
-	while(curr_conf)
-	{
-		if(curr_conf->flags & OPT_REQUIRED)
-			nak_size += curr_conf->size;
-		curr_conf = curr_conf->next;
-	}
-
-	*n = rej_size ? rej_size : nak_size;
-	return rej_size ? PPP_CONF_REJ : PPP_CONF_NAK;
-}
-
-static void build_nak_pkt(ppp_cp_t *cp, gnrc_pktsnip_t *pkt, uint8_t *buf)
-{
-	ppp_option_t *head = pkt->data;
-	ppp_option_t *curr_opt = head;
-	cp_conf_t *curr_conf;
-
-	uint8_t curr_type;
-
-	uint8_t cursor = 0;
-	while(curr_opt)
-	{
-		curr_type = ppp_opt_get_type(curr_opt);
-		curr_conf = cp->get_conf_by_code(cp, curr_type);
-
-		if (curr_conf && !curr_conf->is_valid(curr_opt))
-		{
-			cursor += curr_conf->build_nak_opts(buf+cursor);	
-		}
-		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
-	}
-}
-
-static void build_rej_pkt(ppp_cp_t *cp, gnrc_pktsnip_t *pkt, uint8_t *buf)
-{
-	ppp_option_t *head = pkt->data;
-	ppp_option_t *curr_opt = head;
-	cp_conf_t *curr_conf;
-
-	uint8_t curr_type;
-	uint16_t curr_size;
-
-	uint8_t cursor = 0;
-	while(curr_opt)
-	{
-		curr_type = ppp_opt_get_type(curr_opt);
-		curr_conf = cp->get_conf_by_code(cp, curr_type);
-		curr_size = ppp_opt_get_length(curr_opt);
-
-		if(curr_conf == NULL)
-		{
-			memcpy(buf+cursor, curr_opt, curr_size);
-			cursor += curr_size;
-		}
-		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
-	}
 }
 
 void scn(ppp_cp_t *cp, void *args)
