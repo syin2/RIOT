@@ -23,6 +23,8 @@ gnrc_pktsnip_t *build_options(ppp_cp_t *cp)
 {
 	size_t size=0;
 	cp_conf_t *opt = cp->conf;
+	if(!cp->num_conf)
+		return NULL;
 
 	while(opt)
 	{
@@ -47,7 +49,7 @@ gnrc_pktsnip_t *build_options(ppp_cp_t *cp)
 		{
 			*(((uint8_t*)opts->data)+cursor) = opt->type;
 			*(((uint8_t*)opts->data)+cursor+1) = opt->size+2;
-			memcpy(opts->data+2+cursor, opt->value, opt->size);	
+			memcpy(opts->data+2+cursor, ((uint8_t*) &opt->value)+sizeof(uint32_t)-opt->size, opt->size);	
 			cursor+=2+opt->size;
 		}
 		opt = opt->next;
@@ -55,55 +57,6 @@ gnrc_pktsnip_t *build_options(ppp_cp_t *cp)
 	return opts;
 }
 
-uint8_t build_nakrej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt, gnrc_pktsnip_t **nak)
-{
-	uint8_t code = PPP_CONF_NAK;
-	uint8_t status;
-	int pkt_length = pkt->size;
-	*nak = gnrc_pktbuf_add(NULL, NULL,pkt_length, GNRC_NETTYPE_UNDEF);
-
-	ppp_option_t *head = (ppp_option_t*) pkt->data;
-	ppp_option_t *curr_opt = head;
-
-	uint8_t opt_length;
-	int cursor = 0;
-
-	print_pkt(*nak);
-	while(curr_opt)
-	{
-		opt_length = ppp_opt_get_length(curr_opt);
-
-		status = cp->get_opt_status(curr_opt, false);
-		switch(status)
-		{
-			case CP_CREQ_ACK:
-				break;
-			case CP_CREQ_NAK:
-				if(code == PPP_CONF_NAK)
-				{
-					cp->get_opt_status(curr_opt, true);
-					memmove((*nak)->data+cursor, curr_opt, opt_length);
-					cursor+=opt_length;
-				}
-				break;
-			case CP_CREQ_REJ:
-				if(code == PPP_CONF_REJ)
-				{
-					cursor+=opt_length;
-				}
-				else
-				{
-					cursor = 0;
-					code = PPP_CONF_REJ;
-				}
-				memmove((*nak)->data+cursor, curr_opt, opt_length);
-				break;
-		}
-		curr_opt = ppp_opt_get_next(curr_opt, head, pkt_length);
-	}
-	gnrc_pktbuf_realloc_data(*nak, (size_t) cursor);
-	return code;
-}
 static void print_state(int state)
 {
 	switch(state)
@@ -363,13 +316,62 @@ void scn(ppp_cp_t *cp, void *args)
 	DEBUG("%i", cp->prot);
 	DEBUG(">  Sending Configure Nak/Rej\n");
 
-	gnrc_pktsnip_t *nak;
-	uint8_t type = build_nakrej(cp, pkt, &nak);
+	gnrc_pktsnip_t *opts;
+
+	
+	/*Check pkt size and REJ or NAK*/
+	ppp_option_t *head = pkt->data;
+	ppp_option_t *curr_opt = head;
+
+	uint8_t rej_size = 0;
+	uint8_t nak_size = 0;
+	uint8_t curr_type;
+
+	cp_conf_t *curr_conf;
+	uint8_t curr_size;
+
+	while(curr_opt)
+	{
+		curr_type = ppp_opt_get_type(curr_opt);
+		curr_conf = cp->get_conf_by_code(cp, curr_type);
+		curr_size = ppp_opt_get_length(curr_opt);
+		if(curr_conf == NULL)
+		{
+			rej_size += curr_size;
+		}
+		else if(!curr_conf->is_valid(curr_opt))
+		{
+			nak_size += curr_conf->build_nak_opts(NULL);
+		}
+		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
+	}
+
+	uint8_t size = rej_size ? rej_size : nak_size;
+	opts = gnrc_pktbuf_add(NULL, NULL, size, GNRC_NETTYPE_UNDEF);
+	curr_opt = head;
+	uint8_t cursor = 0;
+	while(curr_opt)
+	{
+		curr_type = ppp_opt_get_type(curr_opt);
+		curr_conf = cp->get_conf_by_code(cp, curr_type);
+		curr_size = ppp_opt_get_length(curr_opt);
+
+		if((rej_size && curr_conf == NULL))
+		{
+			memcpy(opts->data+cursor, curr_opt, curr_size);
+			cursor += curr_size;
+		}
+		else if (!curr_conf->is_valid(curr_opt))
+		{
+			DEBUG("How many times I'm here?\n");
+			cursor += curr_conf->build_nak_opts(opts->data+cursor);	
+		}
+		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
+	}
 
 	ppp_hdr_t *recv_ppp_hdr = (ppp_hdr_t*) pkt->next->data;
-	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prot, type, ppp_hdr_get_id(recv_ppp_hdr),nak);
-	
-	/*Send packet*/
+	uint8_t type = rej_size ? PPP_CONF_REJ : PPP_CONF_NAK;
+	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prot, type, ppp_hdr_get_id(recv_ppp_hdr),opts);
 	gnrc_ppp_send(cp->dev->netdev, send_pkt);
 }
 

@@ -35,6 +35,7 @@
 #include <inttypes.h>
 #endif
 
+#if 0
 static int ipcp_get_opt_status(ppp_option_t *opt, uint8_t suggested)
 {
 	(void) suggested;
@@ -48,6 +49,7 @@ static int ipcp_get_opt_status(ppp_option_t *opt, uint8_t suggested)
 	}
 	return -EBADMSG; /* Never reaches here. Something went wrong if that's the case */
 }
+#endif
 
 static int ipcp_handle_pkt(ppp_cp_t *ipcp, gnrc_pktsnip_t *pkt)
 {
@@ -98,7 +100,7 @@ int ipcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *ipcp)
 
 	ipcp->prot = GNRC_NETTYPE_IPCP;
 	ipcp->restart_timer = IPCP_RESTART_TIMER;
-	ipcp->get_opt_status = &ipcp_get_opt_status;
+	//ipcp->get_opt_status = &ipcp_get_opt_status;
 	ipcp->handle_pkt = &ipcp_handle_pkt;
 	return 0;
 }

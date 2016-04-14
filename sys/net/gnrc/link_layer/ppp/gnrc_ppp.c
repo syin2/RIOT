@@ -100,7 +100,8 @@ gnrc_pktsnip_t * pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gn
 	ppp_hdr_t ppp_hdr;
 	ppp_hdr_set_code(&ppp_hdr, code);
 	ppp_hdr_set_id(&ppp_hdr, id);
-	int payload_length = payload->size;
+
+	int payload_length = payload ? payload->size : 0;
 	ppp_hdr_set_length(&ppp_hdr, payload_length + sizeof(ppp_hdr_t));
 
 	gnrc_pktsnip_t *ppp_pkt = gnrc_pktbuf_add(payload, (void*) &ppp_hdr, sizeof(ppp_hdr_t), pkt_type);

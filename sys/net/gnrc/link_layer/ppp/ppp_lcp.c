@@ -34,34 +34,15 @@
 #include <inttypes.h>
 #endif
 
-static int lcp_get_opt_status(ppp_option_t *opt, uint8_t suggested)
+static cp_conf_t *lcp_get_conf_by_code(ppp_cp_t *cp, uint8_t code)
 {
-	uint8_t opt_type = ppp_opt_get_type(opt);
-	uint8_t * payload = (uint8_t*) ppp_opt_get_payload(opt);
-	uint8_t length = ppp_opt_get_length(opt);
-
-	uint16_t u16;
-	/* For the moment, only MRU option supported */
-	switch(opt_type)
+	switch(code)
 	{
 		case LCP_OPT_MRU:
-			if(length != 4) 
-				return -EBADMSG; 
-			u16 = ((*payload)<<8) + *(payload+1);
-			if(u16 > LCP_MAX_MRU){
-				if(suggested)
-				{
-					*(((uint8_t*) payload)) = (LCP_DEFAULT_MRU & 0xFF00)>>8;
-					*(((uint8_t*) payload)+1) = LCP_DEFAULT_MRU & 0xFF;
-				}
-				return CP_CREQ_NAK;
-			}
-			return CP_CREQ_ACK;
-			break;
+			return &cp->conf[LCP_MRU];
 		default:
-			return CP_CREQ_REJ;
+			return NULL;
 	}
-	return -EBADMSG; /* Never reaches here. Something went wrong if that's the case */
 }
 
 static int lcp_handle_pkt(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
@@ -110,25 +91,59 @@ static int lcp_handle_pkt(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 		trigger_event(lcp, event, pkt);
 	return event;
 }
+static uint8_t lcp_mru_is_valid(ppp_option_t *opt)
+{
+	uint8_t *payload = ppp_opt_get_payload(opt);
+	uint16_t u16 = ((*payload)<<8) + *(payload+1);
+	if(u16 > LCP_MAX_MRU){
+		return false;
+	}
+	return true;
+}
 
+static void lcp_mru_handle_nak(struct cp_conf_t *conf, ppp_option_t *opt)
+{
+	uint8_t *payload = ppp_opt_get_payload(opt);
+	uint16_t suggested_u16 = ((*payload)<<8) + *(payload+1);
+	if(suggested_u16 <= LCP_MAX_MRU)
+		conf->value = byteorder_htonl(suggested_u16);
+	else
+		conf->flags &= ~OPT_ENABLED;
+}
+
+static uint8_t lcp_mru_build_nak_opts(uint8_t *buf)
+{
+	uint8_t len = 4;
+	ppp_option_t *opt = (ppp_option_t*) buf;
+	uint8_t *payload = ppp_opt_get_payload(opt);
+	if(opt)
+	{
+		ppp_opt_set_type(opt, 1);	
+		ppp_opt_set_length(opt, len);
+		*payload = (LCP_DEFAULT_MRU & 0xFF00) >> 8;
+		*(payload+1) = LCP_DEFAULT_MRU & 0xFF;
+	}
+	return len;
+}
 int lcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *lcp)
 {
 	cp_init(ppp_dev, lcp);
 
-	lcp->num_opts = LCP_NUMOPTS;
 	lcp->conf = ppp_dev->lcp_opts;
 	lcp->conf[LCP_MRU].type = 1;
-	lcp->conf[LCP_MRU].value[0] = 0xFF;
-	lcp->conf[LCP_MRU].value[1] = 200;
+	lcp->conf[LCP_MRU].value = byteorder_htonl(3500);
 	lcp->conf[LCP_MRU].size = 2;
 	lcp->conf[LCP_MRU].flags = OPT_ENABLED;
 	lcp->conf[LCP_MRU].next = NULL;
+	lcp->conf[LCP_MRU].is_valid = &lcp_mru_is_valid;
+	lcp->conf[LCP_MRU].handle_nak = &lcp_mru_handle_nak;
+	lcp->conf[LCP_MRU].build_nak_opts = &lcp_mru_build_nak_opts;
 
 
-
+	lcp->num_conf = LCP_NUMOPTS;
 	lcp->prot = GNRC_NETTYPE_LCP;
 	lcp->restart_timer = LCP_RESTART_TIMER;
-	lcp->get_opt_status = &lcp_get_opt_status;
 	lcp->handle_pkt = &lcp_handle_pkt;
+	lcp->get_conf_by_code = &lcp_get_conf_by_code;
 	return 0;
 }

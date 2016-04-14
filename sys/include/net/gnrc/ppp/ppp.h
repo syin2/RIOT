@@ -181,17 +181,10 @@ static const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 #define OPT_REQUIRED (2)
 
 #define OPT_PAYLOAD_SIZE (10)
-typedef struct cp_conf_t
-{
-	uint8_t type;
-	uint8_t value[OPT_PAYLOAD_SIZE];
-	size_t size;
-	uint8_t flags;
-	uint8_t suggested_value[OPT_PAYLOAD_SIZE];
 
-	struct cp_conf_t *next;
-} cp_conf_t;
 
+typedef struct ppp_cp_t ppp_cp_t;
+typedef struct cp_conf_t cp_conf_t;
 
 /* Control Protocol struct*/
 typedef struct ppp_cp_t{
@@ -216,14 +209,26 @@ typedef struct ppp_cp_t{
 
 	msg_t msg;
 
-	int (*get_opt_status)(ppp_option_t *opt, uint8_t suggest);
 	int (*handle_pkt)(struct ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
+	cp_conf_t* (*get_conf_by_code)(ppp_cp_t *cp, uint8_t code);
 
 	cp_conf_t *conf;
-	uint8_t num_opts;
+	int num_conf;
 } ppp_cp_t;
 
 
+typedef struct cp_conf_t
+{
+	uint8_t type;
+	network_uint32_t value;
+	size_t size;
+	uint8_t flags;
+
+	uint8_t (*is_valid)(ppp_option_t *opt);
+	void (*handle_nak)(struct cp_conf_t *conf, ppp_option_t *opt);
+	uint8_t (*build_nak_opts)(ppp_option_t *opt);
+	struct cp_conf_t *next;
+} cp_conf_t;
 
 /* PPP device */
 typedef struct ppp_dev_t{
