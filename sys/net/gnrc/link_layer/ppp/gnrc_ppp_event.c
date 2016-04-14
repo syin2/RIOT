@@ -72,14 +72,31 @@ int handle_rcr(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 
 	/*Check if there's an option that is required but not sent */
 	curr_opt = head;
-	//cp_conf_t *curr_conf = cp->conf;
+	cp_conf_t *curr_conf = cp->conf;
 
-	/*
+	
+	uint8_t found;
 	while(curr_conf)
 	{
-		if(curr_conf 
+		if(!(curr_conf->flags & OPT_REQUIRED))
+		{
+			curr_conf = curr_conf->next;
+			continue;
+		}
+		found = false;
+		while(curr_opt)
+		{
+			if(curr_conf->type == ppp_opt_get_type(curr_opt))
+			{
+				found = true;
+				break;
+			}
+		}
+		if(!found)
+			return E_RCRm;
+
 		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);;
-	}*/
+	}
 
 	return E_RCRp;
 }
