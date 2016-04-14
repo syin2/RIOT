@@ -273,6 +273,7 @@ void scr(ppp_cp_t *cp, void *args)
 
 	/* Build options */
 	gnrc_pktsnip_t *opts = build_options(cp);
+
 	/*In case there are options, copy to sent opts*/
 	if(opts)
 	{
@@ -280,6 +281,7 @@ void scr(ppp_cp_t *cp, void *args)
 		cp->cr_sent_size = opts->size;
 	}
 
+	/*Build pkt*/
 	gnrc_pktsnip_t *pkt = pkt_build(cp->prot, PPP_CONF_REQ, ++cp->cr_sent_identifier,opts);
 	
 
@@ -296,6 +298,7 @@ void sca(ppp_cp_t *cp, void *args)
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
 	DEBUG("%i", cp->prot);
 	DEBUG(">  Sending Configure Ack\n");
+
 	ppp_hdr_t *recv_ppp_hdr;
 
 	gnrc_pktsnip_t *opts = NULL;
