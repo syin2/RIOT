@@ -64,7 +64,7 @@ int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 	
 	hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t*) result->data;
 
-	/* Route the packet according to prot(ocol */
+	/* Route the packet according to protocol */
 	switch(hdlc_hdr_get_protocol(hdlc_hdr))
 	{
 		case PPPTYPE_IPV4:

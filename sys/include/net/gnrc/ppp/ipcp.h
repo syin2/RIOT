@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #define IPCP_RESTART_TIMER (3000000U)
+#define ID_IPCP (2)
 
 typedef enum{
 	IPCP_NUMOPTS

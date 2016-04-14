@@ -98,7 +98,8 @@ int ipcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *ipcp)
 	//ipcp->num_opts = IPCP_NUMOPTS;
 	//ipcp->conf = &ppp_dev->l_ipcp;
 
-	ipcp->prot = GNRC_NETTYPE_IPCP;
+	ipcp->id = ID_IPCP;
+	ipcp->prottype = GNRC_NETTYPE_IPCP;
 	ipcp->restart_timer = IPCP_RESTART_TIMER;
 	//ipcp->get_opt_status = &ipcp_get_opt_status;
 	ipcp->handle_pkt = &ipcp_handle_pkt;

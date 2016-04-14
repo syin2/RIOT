@@ -18,6 +18,8 @@ extern "C" {
 #define LCP_MRU_EN (1)
 #define LCP_RESTART_TIMER (3000000U)
 
+#define ID_LCP (1)
+
 
 typedef enum{
 	LCP_MRU,

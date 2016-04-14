@@ -40,7 +40,6 @@
 extern "C" {
 #endif
 
-#define PPP_BUF_SIZE (200)
 #define PPP_HDLC_ADDRESS (0xFF)
 #define PPP_HDLC_CONTROL (0x03)
 
@@ -62,9 +61,6 @@ extern "C" {
 #define PPP_IDENT (12)
 #define PPP_TIME_REM (13)
 
-#define CP_CREQ_ACK (0)
-#define CP_CREQ_NAK (1)
-#define CP_CREQ_REJ (2)
 
 /*Function flags*/
 #define F_TLU (1U<<0)
@@ -81,24 +77,16 @@ extern "C" {
 #define F_SCJ (1U<<11)
 #define F_SER (1U<<12)
 
-#define PPP_MSG_UP (1)
-#define PPP_MSG_DOWN (2)
-
 #define PPP_MAX_TERMINATE (3)
 #define PPP_MAX_CONFIG (3)
 
-#define PPP_MSG_TIMEOUT (1)
-
-#define PPP_CP_HDR_BASE_SIZE (4)
-
-#define PPP_PAYLOAD_BUF_SIZE (256)
-
 #define GNRC_PPP_MSG_QUEUE_SIZE (20)
-
 
 #define OPT_PAYLOAD_BUF_SIZE (100)
 
-#define CP_OPT_MAX (20)
+#define OPT_ENABLED (1)
+#define OPT_REQUIRED (2)
+
 typedef enum{
 	E_UP,
 	E_DOWN,
@@ -177,10 +165,6 @@ static const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 {S_UNDEF,S_UNDEF,S_CLOSED,S_STOPPED,S_CLOSED,S_STOPPED,S_STOPPED,S_STOPPED,S_STOPPED,S_STOPPING},
 {S_UNDEF,S_UNDEF,S_CLOSED,S_STOPPED,S_CLOSING,S_STOPPING,S_REQ_SENT,S_ACK_RCVD,S_ACK_SENT,S_OPENED}};
 
-#define OPT_ENABLED (1)
-#define OPT_REQUIRED (2)
-
-#define OPT_PAYLOAD_SIZE (10)
 
 
 typedef struct ppp_cp_t ppp_cp_t;
@@ -188,7 +172,8 @@ typedef struct cp_conf_t cp_conf_t;
 
 /* Control Protocol struct*/
 typedef struct ppp_cp_t{
-	gnrc_nettype_t prot;
+	uint8_t id;
+	gnrc_nettype_t prottype;
 	uint8_t state;
 
 	uint8_t restart_counter;

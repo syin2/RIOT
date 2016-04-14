@@ -295,39 +295,35 @@ int trigger_event(ppp_cp_t *cp, int event, gnrc_pktsnip_t *pkt)
 
 void tlu(ppp_cp_t *cp, void *args)
 {
-	DEBUG("%i", cp->prot);
+	DEBUG("%i", cp->id);
 	DEBUG("> This layer up (a.k.a Successfully negotiated Link)\n");
 	(void) cp;
-	//cp->l_upper_msg |= PPP_MSG_UP;
 }
 
 void tld(ppp_cp_t *cp, void *args)
 {
-	DEBUG("%i", cp->prot);
+	DEBUG("%i", cp->id);
 	DEBUG("> This layer down\n");
 	(void) cp;
-	//cp->l_upper_msg |= PPP_MSG_DOWN;
 }
 
 void tls(ppp_cp_t *cp, void *args)
 {
-	DEBUG("%i", cp->prot);
+	DEBUG("%i", cp->id);
 	DEBUG(">  This layer started\n");
 	(void) cp;
-	//cp->l_lower_msg |= PPP_MSG_UP;
 }
 
 void tlf(ppp_cp_t *cp, void *args)
 {
-	DEBUG("%i", cp->prot);
+	DEBUG("%i", cp->id);
 	DEBUG(">  This layer finished\n");
 	(void) cp;
-	//cp->l_lower_msg |= PPP_MSG_DOWN;
 }
 
 void irc(ppp_cp_t *cp, void *args)
 {
-	DEBUG("%i", cp->prot);
+	DEBUG("%i", cp->id);
 	DEBUG(">  Init Restart Counter\n");
 	uint8_t cr = *((int*) args) & F_SCR; 
 
@@ -342,16 +338,23 @@ void irc(ppp_cp_t *cp, void *args)
 }
 void zrc(ppp_cp_t *cp, void *args)
 {
-	DEBUG("%i", cp->prot);
+	DEBUG("%i", cp->id);
 	DEBUG(">  Zero restart counter\n ");
 	(void) cp;
 	//cp->restart_counter = 0;
 	/* Set timer to appropiate value TODO*/
 }
 
+void set_timeout(ppp_cp_t *cp, uint32_t time)
+{
+	cp->msg.type = NETDEV2_MSG_TYPE_EVENT;
+	cp->msg.content.value = 0x0100 +PPP_TIMEOUT;
+	xtimer_set_msg(&cp->xtimer, cp->restart_timer, &cp->msg, thread_getpid());
+}
+
 void scr(ppp_cp_t *cp, void *args)
 {
-	DEBUG("%i", cp->prot);
+	DEBUG("%i", cp->id);
 	DEBUG(">  Sending Configure Request\n");
 
 	/* Decrement configure counter */
@@ -368,21 +371,18 @@ void scr(ppp_cp_t *cp, void *args)
 	}
 
 	/*Build pkt*/
-	gnrc_pktsnip_t *pkt = pkt_build(cp->prot, PPP_CONF_REQ, ++cp->cr_sent_identifier,opts);
+	gnrc_pktsnip_t *pkt = pkt_build(cp->prottype, PPP_CONF_REQ, ++cp->cr_sent_identifier,opts);
 	
 
 	/*Send packet*/
 	gnrc_ppp_send(cp->dev->netdev, pkt);
-
-	cp->msg.type = NETDEV2_MSG_TYPE_EVENT;
-	cp->msg.content.value = 0x0100 +PPP_TIMEOUT;
-	xtimer_set_msg(&cp->xtimer, cp->restart_timer, &cp->msg, thread_getpid());
+	set_timeout(cp, cp->restart_timer);
 }
 
 void sca(ppp_cp_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("%i", cp->prot);
+	DEBUG("%i", cp->id);
 	DEBUG(">  Sending Configure Ack\n");
 
 	ppp_hdr_t *recv_ppp_hdr;
@@ -400,7 +400,7 @@ void sca(ppp_cp_t *cp, void *args)
 		DEBUG(">> Received pkt didn't ask for options -> So just ACK\n");
 	}
 
-	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prot, PPP_CONF_ACK, ppp_hdr_get_id(recv_ppp_hdr),opts);
+	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, PPP_CONF_ACK, ppp_hdr_get_id(recv_ppp_hdr),opts);
 	
 	/*Send packet*/
 	gnrc_ppp_send(cp->dev->netdev, send_pkt);
@@ -409,7 +409,7 @@ void sca(ppp_cp_t *cp, void *args)
 void scn(ppp_cp_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("%i", cp->prot);
+	DEBUG("%i", cp->id);
 	DEBUG(">  Sending Configure Nak/Rej\n");
 
 	gnrc_pktsnip_t *opts;
@@ -432,13 +432,13 @@ void scn(ppp_cp_t *cp, void *args)
 	}
 
 	ppp_hdr_t *recv_ppp_hdr = (ppp_hdr_t*) pkt->next->data;
-	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prot, type, ppp_hdr_get_id(recv_ppp_hdr),opts);
+	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, type, ppp_hdr_get_id(recv_ppp_hdr),opts);
 	gnrc_ppp_send(cp->dev->netdev, send_pkt);
 }
 
 void str(ppp_cp_t *cp, void *args)
 {
-	DEBUG("%i", cp->prot);
+	DEBUG("%i", cp->id);
 	DEBUG(">  Sending Terminate Request\n");
 	(void) cp;
 #if 0
@@ -455,7 +455,7 @@ void str(ppp_cp_t *cp, void *args)
 void sta(ppp_cp_t *cp, void *args)
 { 
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("%i", cp->prot);
+	DEBUG("%i", cp->id);
 	DEBUG(">  Sending Terminate Ack\n");
 	(void) cp;
 	(void) pkt;
@@ -472,7 +472,7 @@ void sta(ppp_cp_t *cp, void *args)
 void scj(ppp_cp_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("%i", cp->prot);
+	DEBUG("%i", cp->id);
 	DEBUG(">  Sending Code Rej\n");
 	(void) cp;
 	(void) pkt;
@@ -481,7 +481,7 @@ void scj(ppp_cp_t *cp, void *args)
 void ser(ppp_cp_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("%i", cp->prot);
+	DEBUG("%i", cp->id);
 	DEBUG(">  Sending Echo/Discard/Replay\n");
 	(void) cp;
 	(void) pkt;
