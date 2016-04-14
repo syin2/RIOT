@@ -23,8 +23,6 @@ gnrc_pktsnip_t *build_options(ppp_cp_t *cp)
 {
 	size_t size=0;
 	cp_conf_t *opt = cp->conf;
-	if(!cp->num_conf)
-		return NULL;
 
 	while(opt)
 	{

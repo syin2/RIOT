@@ -140,7 +140,6 @@ int lcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *lcp)
 	lcp->conf[LCP_MRU].build_nak_opts = &lcp_mru_build_nak_opts;
 
 
-	lcp->num_conf = LCP_NUMOPTS;
 	lcp->prot = GNRC_NETTYPE_LCP;
 	lcp->restart_timer = LCP_RESTART_TIMER;
 	lcp->handle_pkt = &lcp_handle_pkt;

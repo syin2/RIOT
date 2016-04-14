@@ -26,8 +26,8 @@ static int _opt_is_ack(ppp_cp_t *cp, ppp_option_t *opt)
 	cp_conf_t *curr_conf=NULL;
 	curr_conf = cp->get_conf_by_code(cp, ppp_opt_get_type(opt));
 	return curr_conf && curr_conf->is_valid(opt);
-
 }
+
 int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr)
 {
 	if(pkt->type == GNRC_NETTYPE_UNDEF)
@@ -65,11 +65,21 @@ int handle_rcr(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 
 	while(curr_opt)
 	{
-		if(!_opt_is_ack(cp, curr_opt));
-		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);;
+		if(!_opt_is_ack(cp, curr_opt))
+			return E_RCRm;
+		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
 	}
 
 	/*Check if there's an option that is required but not sent */
+	curr_opt = head;
+	//cp_conf_t *curr_conf = cp->conf;
+
+	/*
+	while(curr_conf)
+	{
+		if(curr_conf 
+		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);;
+	}*/
 
 	return E_RCRp;
 }

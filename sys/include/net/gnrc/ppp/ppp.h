@@ -213,7 +213,6 @@ typedef struct ppp_cp_t{
 	cp_conf_t* (*get_conf_by_code)(ppp_cp_t *cp, uint8_t code);
 
 	cp_conf_t *conf;
-	int num_conf;
 } ppp_cp_t;
 
 
