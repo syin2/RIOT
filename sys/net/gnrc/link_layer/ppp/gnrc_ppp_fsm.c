@@ -348,7 +348,7 @@ void zrc(ppp_cp_t *cp, void *args)
 void set_timeout(ppp_cp_t *cp, uint32_t time)
 {
 	cp->msg.type = NETDEV2_MSG_TYPE_EVENT;
-	cp->msg.content.value = 0x0100 +PPP_TIMEOUT;
+	cp->msg.content.value = (cp->id<<8) +PPP_TIMEOUT;
 	xtimer_set_msg(&cp->xtimer, cp->restart_timer, &cp->msg, thread_getpid());
 }
 

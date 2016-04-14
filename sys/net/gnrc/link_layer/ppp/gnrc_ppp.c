@@ -135,7 +135,7 @@ int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
 	uint8_t event = ppp_event & 0xFF;
 	switch((ppp_event & 0xFF00)>>8)
 	{
-		case 1:
+		case ID_LCP:
 			target_protocol = &dev->l_lcp;
 			break;
 		case 0xFF:

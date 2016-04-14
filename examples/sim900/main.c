@@ -246,7 +246,7 @@ void events(sim900_t *dev)
 				DEBUG("Welcome to PPP :)\n");
 				/*Trigger LCP up event*/
 				//test_sending(dev);
-				gnrc_ppp_event_callback(&dev->ppp_dev, 0x0100+PPP_LINKUP);
+				gnrc_ppp_event_callback(&dev->ppp_dev, 0xFF00+PPP_LINKUP);
 				break;
 			case RX_FINISHED:
 				if(dev->rx_count < 4)
