@@ -267,14 +267,21 @@ void scr(ppp_cp_t *cp, void *args)
 {
 	DEBUG("%i", cp->prot);
 	DEBUG(">  Sending Configure Request\n");
+
 	/* Decrement configure counter */
 	cp->restart_counter -= 1;
 
+	/* Build options */
 	gnrc_pktsnip_t *opts = build_options(cp);
+	/*In case there are options, copy to sent opts*/
+	if(opts)
+	{
+		memcpy(cp->cr_sent_opts, opts->data, opts->size);
+		cp->cr_sent_size = opts->size;
+	}
+
 	gnrc_pktsnip_t *pkt = pkt_build(cp->prot, PPP_CONF_REQ, ++cp->cr_sent_identifier,opts);
 	
-	if(opts)
-		memcpy(cp->cr_sent_opts, opts->data, opts->size);
 
 	/*Send packet*/
 	gnrc_ppp_send(cp->dev->netdev, pkt);
