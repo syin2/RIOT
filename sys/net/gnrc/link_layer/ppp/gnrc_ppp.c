@@ -53,7 +53,7 @@ int gnrc_ppp_init(ppp_dev_t *dev, netdev2_t *netdev)
 	return 0;
 }
 
-int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
+int ppp_dispatch_event_from_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 {
 	/* Mark hdlc header */
 	gnrc_pktsnip_t *result = gnrc_pktbuf_mark(pkt, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
@@ -81,6 +81,7 @@ int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 			dev->l_lcp.handle_pkt(&dev->l_lcp, pkt);
 			break;
 		case PPPTYPE_NCP_IPV4:
+			/*if dev->l_lcp is up...*/
 		//	_handle_cp_pkt(dev->l_ncp, &cp_pkt);
 			break;
 		default:
@@ -128,25 +129,51 @@ int gnrc_ppp_send(netdev2_t *dev, gnrc_pktsnip_t *pkt)
 	}
 	return res;
 }
-int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
+
+static ppp_cp_t *get_protocol_from_target(ppp_dev_t *dev, uint8_t target)
 {
-	int nbytes;
-	ppp_cp_t *target_protocol;
-	uint8_t event = ppp_event & 0xFF;
-	switch((ppp_event & 0xFF00)>>8)
+	switch(target)
 	{
 		case ID_LCP:
-			target_protocol = &dev->l_lcp;
-			break;
+			return &dev->l_lcp;
+		default:
+			return NULL;
+	}
+	return NULL;
+}
+
+int ppp_dispatch_event(ppp_dev_t *dev, uint8_t target, uint8_t event)
+{
+	ppp_cp_t *target_protocol = get_protocol_from_target(dev, target);
+
+	if(target_protocol)
+	{
+		trigger_event(target_protocol, event, NULL);
+		return 0;
+	}
+
+	/*If target was broadcast type:*/
+
+	switch(target)
+	{
 		case 0xFF:
-			target_protocol = &dev->l_lcp;
+			trigger_event(&dev->l_lcp, event, NULL);
 			break;
 		default:
 			DEBUG("Unrecognized PPP protocol event!\n");
 			return -EBADMSG;
 			break;
 	}
+	return 0;
+}
 
+int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
+{
+	int nbytes;
+	ppp_cp_t *target_protocol;
+
+	uint8_t target = (ppp_event & 0xFF00)>>8;
+	uint8_t event = ppp_event & 0xFF;
 
 	switch (event)
 	{
@@ -154,14 +181,15 @@ int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
 			nbytes = dev->netdev->driver->recv(dev->netdev, NULL, 0, NULL);
 			gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, nbytes, GNRC_NETTYPE_UNDEF);
 			dev->netdev->driver->recv(dev->netdev, pkt->data, nbytes, NULL);
-			gnrc_ppp_recv(dev, pkt);
+			ppp_dispatch_event_from_pkt(dev, pkt);
 			break;
 		case PPP_LINKUP:
 			DEBUG("Event: PPP_LINKUP\n");
-			trigger_event(target_protocol, E_UP, NULL);
-			trigger_event(target_protocol, E_OPEN, NULL);
+			ppp_dispatch_event(dev, target, E_UP);
+			ppp_dispatch_event(dev, target, E_OPEN);
 			break;
 		case PPP_TIMEOUT:
+			target_protocol = get_protocol_from_target(dev, target);
 			if(target_protocol->restart_counter)
 			{
 				DEBUG("Event: TO+\n");
