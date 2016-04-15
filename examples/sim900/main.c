@@ -225,6 +225,41 @@ void test_sending(sim900_t *dev)
 	vector.iov_len = 8;
 	sim900_send((netdev2_t*) dev, &vector, 1);
 }
+
+void driver_events(sim900_t *dev, uint8_t event)
+{
+	/*Driver event*/
+	switch(event)
+	{
+		case MSG_AT_FINISHED:
+			dev->_cb(dev);
+			break;
+		case MSG_AT_TIMEOUT:
+			dev->_timer_cb(dev);
+			break;
+		case PDP_UP:
+			DEBUG("Welcome to PPP :)\n");
+			/*Trigger LCP up event*/
+			//test_sending(dev);
+			gnrc_ppp_event_callback(&dev->ppp_dev, 0xFF00+PPP_LINKUP);
+			break;
+		case RX_FINISHED:
+			if(dev->rx_count < 4)
+			{
+				DEBUG("Frame too short!");
+			}
+			else
+			{
+				dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
+				dev->msg.content.value = 0xFF00+(PPP_RECV);
+				msg_send(&dev->msg, dev->mac_pid);
+			}
+			break;
+		default:
+			DEBUG("Unrecognized driver msg\n");
+			break;
+	}
+}
 void events(sim900_t *dev)
 {
 	/* Check if event is a Driver or PPP event */
@@ -233,37 +268,7 @@ void events(sim900_t *dev)
 	
 	if(!(msg_value & 0xFF00))
 	{
-		/*Driver event*/
-		switch(event)
-		{
-			case MSG_AT_FINISHED:
-				dev->_cb(dev);
-				break;
-			case MSG_AT_TIMEOUT:
-				dev->_timer_cb(dev);
-				break;
-			case PDP_UP:
-				DEBUG("Welcome to PPP :)\n");
-				/*Trigger LCP up event*/
-				//test_sending(dev);
-				gnrc_ppp_event_callback(&dev->ppp_dev, 0xFF00+PPP_LINKUP);
-				break;
-			case RX_FINISHED:
-				if(dev->rx_count < 4)
-				{
-					DEBUG("Frame too short!");
-				}
-				else
-				{
-					dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
-					dev->msg.content.value = 0xFF00+(PPP_RECV);
-					msg_send(&dev->msg, dev->mac_pid);
-				}
-				break;
-			default:
-				DEBUG("Unrecognized driver msg\n");
-				break;
-		}
+		driver_events(dev, event);
 	}
 	else
 	{
