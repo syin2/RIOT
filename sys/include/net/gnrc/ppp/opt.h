@@ -58,8 +58,8 @@ static inline void ppp_opt_set_payload(ppp_option_t *opt, void *data, size_t siz
 static inline ppp_option_t *ppp_opt_get_next(ppp_option_t *curr_opt, ppp_option_t *head, size_t opt_size)
 {
 	ppp_option_t *ret = NULL;
-	curr_opt = (ppp_option_t*)(((uint8_t*) curr_opt)+ppp_opt_get_length(curr_opt));
-	if(curr_opt - head < opt_size)
+	ret = (ppp_option_t*)(((uint8_t*) curr_opt)+ppp_opt_get_length(curr_opt));
+	if(ret - head >= opt_size)
 		return NULL;
 	return ret;
 }
