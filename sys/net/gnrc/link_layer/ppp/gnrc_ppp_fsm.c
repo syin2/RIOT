@@ -426,6 +426,7 @@ void scn(ppp_cp_t *cp, void *args)
 			break;
 		case PPP_CONF_REJ:
 			build_rej_pkt(cp, pkt, (uint8_t*) opts->data);
+			break;
 		default:
 			DEBUG("Shouldn't be here...\n");
 			break;
