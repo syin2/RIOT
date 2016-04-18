@@ -33,7 +33,7 @@
 #define ENABLE_DEBUG    (1)
 #include "debug.h"
 
-#define TEST_PPP (1)
+#define TEST_PPP (0)
 #define TEST_WRITE (0)
 
 
@@ -311,7 +311,8 @@ void check_data_mode(sim900_t *dev)
 void pdp_enter_data_mode(sim900_t *dev)
 {
 	puts("Entering data mode");
-	send_at_command(dev, "AT+CGDATA=\"PPP\",1\r\n", 19, 3, &check_data_mode);
+	//send_at_command(dev, "AT+CGDATA=\"PPP\",1\r\n", 19, 3, &check_data_mode);
+	send_at_command(dev, "ATD*99#\r\n", 9, 3, &check_data_mode);
 }
 
 void pdp_activate(sim900_t *dev)
@@ -329,7 +330,7 @@ void pdp_netattach(sim900_t *dev)
 	else
 	{
 		puts("Network attach!.");
-		send_at_command(dev, "AT+CGDCONT=1,\"IP\",\"mmsbouygtel.com\"\r\n", 37, 3, &pdp_activate);
+		send_at_command(dev, "AT+CGDCONT=1,\"IP\",\"mmsbouygtel.com\"\r\n", 37, 3, &pdp_enter_data_mode);
 	}
 }
 
@@ -345,17 +346,17 @@ void pdp_context_attach(sim900_t *dev)
 
 void pdp_nosim(sim900_t *dev)
 {
-	if(dev->at_status & HAS_OK)
-	{
+	//if(dev->at_status & HAS_OK)
+	//{
 		//Switch to next state
 		//dev->pdp_state = PDP_NETATTACH;
-		send_at_command(dev, "AT+CGATT=1\r\n", 12, 3, &pdp_netattach);
 		puts("Sim working! :)");
-	}
+		send_at_command(dev, "AT+CGATT=1\r\n", 12, 3, &pdp_netattach);
+/*	}
 	else
 	{
 		puts("Error unlocking SIM");
-	}
+	}*/
 }
 
 void *sim900_thread(void *args)
@@ -363,7 +364,7 @@ void *sim900_thread(void *args)
     //Setup a new sim900 devide
 
 	sim900_t *dev = (sim900_t*) args;
-    sim900_init(dev,1,96000);
+    sim900_init(dev,1,9600);
 
 	msg_t msg_queue[SIM900_MSG_QUEUE];;
 	msg_init_queue(msg_queue, SIM900_MSG_QUEUE);
@@ -376,7 +377,7 @@ void *sim900_thread(void *args)
 #else
 	dev->pdp_state = PDP_NOTSIM;
 	/*Start sending an AT command */
-	send_at_command(dev, "AT+CPIN=0000\r\n",14, 3, &pdp_nosim);
+	send_at_command(dev, "AT+CPIN?\r\n",10, 5, &pdp_nosim);
 #endif
 #if TEST_WRITE
 	test_sending(dev);
