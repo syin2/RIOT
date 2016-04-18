@@ -64,6 +64,8 @@ int ppp_dispatch_event_from_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 	
 	hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t*) result->data;
 
+	DEBUG("Printing pkt...");
+	print_pkt(pkt);
 	/* Route the packet according to protocol */
 	switch(hdlc_hdr_get_protocol(hdlc_hdr))
 	{
