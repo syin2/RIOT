@@ -35,22 +35,15 @@
 #include <inttypes.h>
 #endif
 
-#if 0
-static int ipcp_get_opt_status(ppp_option_t *opt, uint8_t suggested)
-{
-	(void) suggested;
-	uint8_t opt_type = ppp_opt_get_type(opt);
 
-	/* For the moment, only MRU option supported */
-	switch(opt_type)
+static cp_conf_t *ipcp_get_conf_by_code(ppp_cp_t *cp, uint8_t code)
+{
+	switch(code)
 	{
 		default:
-			return CP_CREQ_ACK;
+			return NULL;
 	}
-	return -EBADMSG; /* Never reaches here. Something went wrong if that's the case */
 }
-#endif
-
 static int ipcp_handle_pkt(ppp_cp_t *ipcp, gnrc_pktsnip_t *pkt)
 {
 	gnrc_pktsnip_t *hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), GNRC_NETTYPE_IPCP);
@@ -97,11 +90,12 @@ int ipcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *ipcp)
 
 	//ipcp->num_opts = IPCP_NUMOPTS;
 	//ipcp->conf = &ppp_dev->l_ipcp;
+	ipcp->conf = NULL;
 
 	ipcp->id = ID_IPCP;
 	ipcp->prottype = GNRC_NETTYPE_IPCP;
 	ipcp->restart_timer = IPCP_RESTART_TIMER;
-	//ipcp->get_opt_status = &ipcp_get_opt_status;
 	ipcp->handle_pkt = &ipcp_handle_pkt;
+	ipcp->get_conf_by_code = &ipcp_get_conf_by_code;
 	return 0;
 }

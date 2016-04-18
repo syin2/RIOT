@@ -276,6 +276,7 @@ int trigger_event(ppp_cp_t *cp, int event, gnrc_pktsnip_t *pkt)
 	}
 	int next_state;
 	next_state = state_trans[event][cp->state];
+	DEBUG("%i> ", cp->id);
 	print_transition(cp->state, event, next_state);
 
 	/* Keep in same state if there's something wrong (RFC 1661) */
@@ -297,6 +298,7 @@ void tlu(ppp_cp_t *cp, void *args)
 {
 	DEBUG("%i", cp->id);
 	DEBUG("> This layer up (a.k.a Successfully negotiated Link)\n");
+	broadcast_lower_layer(&cp->msg, cp->id, PPP_LINKUP);
 	(void) cp;
 }
 

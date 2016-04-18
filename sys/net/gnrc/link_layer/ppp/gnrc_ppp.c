@@ -50,6 +50,7 @@ int gnrc_ppp_init(ppp_dev_t *dev, netdev2_t *netdev)
 {
 	dev->netdev = netdev;
 	lcp_init(dev, &dev->l_lcp);
+	ipcp_init(dev, &dev->l_ipcp);
 	return 0;
 }
 
@@ -84,7 +85,8 @@ int ppp_dispatch_event_from_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
 			break;
 		case PPPTYPE_NCP_IPV4:
 			/*if dev->l_lcp is up...*/
-		//	_handle_cp_pkt(dev->l_ncp, &cp_pkt);
+			DEBUG("NCP!!!!\n");
+			dev->l_ipcp.handle_pkt(&dev->l_ipcp, pkt);
 			break;
 		default:
 			break;
@@ -119,7 +121,11 @@ int gnrc_ppp_send(netdev2_t *dev, gnrc_pktsnip_t *pkt)
 	hdlc_hdr_set_control(&hdlc_hdr, PPP_HDLC_CONTROL);
 	hdlc_hdr_set_protocol(&hdlc_hdr, gnrc_nettype_to_ppp_protnum(pkt->type));
 
+	DEBUG("Sending with protocol: %i\n", gnrc_nettype_to_ppp_protnum(pkt->type));
 	gnrc_pktsnip_t *hdr = gnrc_pktbuf_add(pkt, (void*) &hdlc_hdr, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
+	DEBUG("Sending:\n");
+	print_pkt(hdr);
+	print_pkt(pkt);
 	/* Get iovec representation */
 	size_t n;
 	int res = -ENOBUFS;
@@ -138,6 +144,9 @@ static ppp_cp_t *get_protocol_from_target(ppp_dev_t *dev, uint8_t target)
 	{
 		case ID_LCP:
 			return &dev->l_lcp;
+			break;
+		case ID_IPCP:
+			return &dev->l_ipcp;
 		default:
 			return NULL;
 	}
@@ -160,6 +169,9 @@ int ppp_dispatch_event(ppp_dev_t *dev, uint8_t target, uint8_t event)
 	{
 		case 0xFF:
 			trigger_event(&dev->l_lcp, event, NULL);
+			break;
+		case 0xFE:
+			trigger_event(&dev->l_ipcp, event, NULL);
 			break;
 		default:
 			DEBUG("Unrecognized PPP protocol event!\n");
@@ -187,6 +199,7 @@ int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
 			break;
 		case PPP_LINKUP:
 			DEBUG("Event: PPP_LINKUP\n");
+			/*Set here PPP states...*/
 			ppp_dispatch_event(dev, target, E_UP);
 			ppp_dispatch_event(dev, target, E_OPEN);
 			break;
@@ -204,4 +217,22 @@ int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
 			}
 	}
 	return 0;
+}
+
+void broadcast_lower_layer(msg_t *msg, uint8_t id, uint8_t event)
+{
+	DEBUG("Sending msg to lower layer...");
+	msg->type = NETDEV2_MSG_TYPE_EVENT;
+	uint8_t target;
+	switch(id)
+	{
+		case ID_LCP:
+			target = 0xFE;
+			break;
+		default:
+			DEBUG("Unrecognized lower layer!\n");
+			return;
+	}
+	msg->content.value = (target<<8) + event;
+	msg_send(msg, thread_getpid());
 }
