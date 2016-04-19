@@ -26,6 +26,7 @@
 #include "periph/uart.h"
 #include "board.h"
 #include "sim900.h"
+#include "net/gnrc/netdev2.h"
 
 #define PPPINITFCS16    0xffff
 #define PPPGOODFCS16    0xf0b8
@@ -52,7 +53,7 @@ static void rx_cb(void *arg, uint8_t data)
 	
 	sim900_t *dev = (sim900_t*) arg;
     msg_t msg;
-    msg.type = PPPDEV_MSG_TYPE_EVENT;
+    msg.type = NETDEV2_MSG_TYPE_EVENT;
 	msg.content.value = MSG_AT_FINISHED;
 
 	dev->_stream += data;
@@ -246,7 +247,7 @@ void events(sim900_t *dev)
 
 void at_timeout(sim900_t *dev, uint32_t ms, void (*cb)(sim900_t *dev))
 {
-	dev->msg.type = PPPDEV_MSG_TYPE_EVENT;
+	dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
 	dev->msg.content.value = MSG_AT_TIMEOUT;
 	dev->_timer_cb = cb;
 	xtimer_set_msg(&dev->xtimer, ms, &dev->msg, dev->mac_pid);
@@ -265,7 +266,7 @@ void check_data_mode(sim900_t *dev)
 		puts("Successfully entered data mode");
 		dev->state = AT_STATE_RX;
 		dev->ppp_rx_state = PPP_RX_IDLE;
-		dev->msg.type = PPPDEV_MSG_TYPE_EVENT;
+		dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
 		dev->msg.content.value = PDP_UP;
 		msg_send(&dev->msg, dev->mac_pid);
 	}
@@ -372,7 +373,7 @@ void *sim900_thread(void *args)
 #if TEST_PPP
 	dev->state = AT_STATE_RX;
 	dev->ppp_rx_state = PPP_RX_IDLE;
-	dev->msg.type = PPPDEV_MSG_TYPE_EVENT;
+	dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
 	dev->msg.content.value = PDP_UP;
 	msg_send(&dev->msg, dev->mac_pid);
 #else
@@ -384,12 +385,17 @@ void *sim900_thread(void *args)
 	test_sending(dev);
 #endif
 
+	int event;
     while(1)
     {
     	msg_receive(&dev->msg);
+		event = dev->msg.content.value;	
 		switch(dev->msg.type){
 			case PPPDEV_MSG_TYPE_EVENT:
-				events(dev);
+				gnrc_ppp_event_callback(&dev->ppp_dev, event);
+				break;
+			case NETDEV2_MSG_TYPE_EVENT:
+				driver_events((pppdev_t*) dev, event);
 				break;
     	}
     }
