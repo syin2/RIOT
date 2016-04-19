@@ -78,7 +78,7 @@ extern "C" {
 #define F_SER (1U<<12)
 
 #define PPP_MAX_TERMINATE (3)
-#define PPP_MAX_CONFIG (10)
+#define PPP_MAX_CONFIG (3)
 
 #define GNRC_PPP_MSG_QUEUE_SIZE (20)
 
@@ -121,7 +121,7 @@ typedef enum{
 	S_ACK_SENT,
 	S_OPENED,
 	PPP_NUM_STATES
-} ppp_state_t;
+} ppp_cp_state_t;
 
 
 
@@ -144,6 +144,16 @@ static const uint16_t actions[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 {0,0,F_TLF,F_TLF,F_TLF,F_TLF,F_TLF,F_TLF,F_TLF,F_TLD | F_IRC | F_STR},
 {0,0,0,0,0,0,0,0,0,F_SER}};
 
+
+typedef enum
+{
+	PPP_LINK_DEAD,
+	PPP_LINK_ESTABLISHED,
+	PPP_AUTHENTICATION,
+	PPP_NETWORK,
+	PPP_OPEN,
+	PPP_TERMINATION
+} ppp_state_t;
 
 
 /* state transition for control layer FSM */
@@ -222,6 +232,8 @@ typedef struct ppp_dev_t{
 
 	cp_conf_t lcp_opts[LCP_NUMOPTS];
 	cp_conf_t ipcp_opts[IPCP_NUMOPTS];
+
+	uint8_t state;
 } ppp_dev_t;
 
 

@@ -49,6 +49,7 @@ void print_pkt(gnrc_pktsnip_t *pkt)
 int gnrc_ppp_init(ppp_dev_t *dev, netdev2_t *netdev)
 {
 	dev->netdev = netdev;
+	dev->state = PPP_LINK_DEAD;
 	lcp_init(dev, &dev->l_lcp);
 	ipcp_init(dev, &dev->l_ipcp);
 	return 0;
@@ -173,6 +174,7 @@ int ppp_dispatch_event(ppp_dev_t *dev, uint8_t target, uint8_t event)
 			trigger_event(&dev->l_lcp, event, NULL);
 			break;
 		case 0xFE:
+			//Just for testing, send terminate request
 			trigger_event(&dev->l_ipcp, event, NULL);
 			break;
 		default:
@@ -217,6 +219,7 @@ int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
 				DEBUG("Event: TO-\n");
 				trigger_event(target_protocol, E_TOm, NULL);
 			}
+			break;
 	}
 	return 0;
 }
