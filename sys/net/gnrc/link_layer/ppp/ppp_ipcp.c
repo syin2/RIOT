@@ -84,13 +84,34 @@ static int ipcp_handle_pkt(ppp_cp_t *ipcp, gnrc_pktsnip_t *pkt)
 	return event;
 }
 
+uint8_t ipcp_ipaddress_is_valid(ppp_option_t *opt)
+{
+	return true;
+}
+
+void ipcp_ipaddress_handle_nak(struct cp_conf_t *conf, ppp_option_t *opt)
+{
+		conf->flags &= ~OPT_ENABLED;
+}
+
+uint8_t ipcp_ipaddress_build_nak_opts(uint8_t *buf)
+{
+	return 0;
+}
+
 int ipcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *ipcp)
 {
 	cp_init(ppp_dev, ipcp);
 
-	//ipcp->num_opts = IPCP_NUMOPTS;
-	//ipcp->conf = &ppp_dev->l_ipcp;
-	ipcp->conf = NULL;
+	ipcp->conf = ppp_dev->ipcp_opts;
+	ipcp->conf[IPCP_IPADDRESS].type = 4;
+	ipcp->conf[IPCP_IPADDRESS].value = byteorder_htonl(0x0A000002);
+	ipcp->conf[IPCP_IPADDRESS].size = 4;
+	ipcp->conf[IPCP_IPADDRESS].flags = OPT_ENABLED;
+	ipcp->conf[IPCP_IPADDRESS].next = NULL;
+	ipcp->conf[IPCP_IPADDRESS].is_valid = &ipcp_ipaddress_is_valid;
+	ipcp->conf[IPCP_IPADDRESS].handle_nak = &ipcp_ipaddress_handle_nak;
+	ipcp->conf[IPCP_IPADDRESS].build_nak_opts = &ipcp_ipaddress_build_nak_opts;
 
 	ipcp->id = ID_IPCP;
 	ipcp->prottype = GNRC_NETTYPE_IPCP;

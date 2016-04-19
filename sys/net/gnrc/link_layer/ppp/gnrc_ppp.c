@@ -126,6 +126,8 @@ int gnrc_ppp_send(netdev2_t *dev, gnrc_pktsnip_t *pkt)
 	DEBUG("Sending:\n");
 	print_pkt(hdr);
 	print_pkt(pkt);
+	if(pkt->next)
+		print_pkt(pkt->next);
 	/* Get iovec representation */
 	size_t n;
 	int res = -ENOBUFS;

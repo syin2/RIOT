@@ -19,6 +19,13 @@
 #include <inttypes.h>
 #endif
 
+void set_timeout(ppp_cp_t *cp, uint32_t time)
+{
+	cp->msg.type = NETDEV2_MSG_TYPE_EVENT;
+	cp->msg.content.value = (cp->id<<8) +PPP_TIMEOUT;
+	xtimer_set_msg(&cp->xtimer, cp->restart_timer, &cp->msg, thread_getpid());
+}
+
 gnrc_pktsnip_t *build_options(ppp_cp_t *cp)
 {
 	size_t size=0;
@@ -347,12 +354,6 @@ void zrc(ppp_cp_t *cp, void *args)
 	/* Set timer to appropiate value TODO*/
 }
 
-void set_timeout(ppp_cp_t *cp, uint32_t time)
-{
-	cp->msg.type = NETDEV2_MSG_TYPE_EVENT;
-	cp->msg.content.value = (cp->id<<8) +PPP_TIMEOUT;
-	xtimer_set_msg(&cp->xtimer, cp->restart_timer, &cp->msg, thread_getpid());
-}
 
 void scr(ppp_cp_t *cp, void *args)
 {

@@ -78,7 +78,7 @@ extern "C" {
 #define F_SER (1U<<12)
 
 #define PPP_MAX_TERMINATE (3)
-#define PPP_MAX_CONFIG (3)
+#define PPP_MAX_CONFIG (10)
 
 #define GNRC_PPP_MSG_QUEUE_SIZE (20)
 
@@ -221,6 +221,7 @@ typedef struct ppp_dev_t{
 	netdev2_t *netdev;
 
 	cp_conf_t lcp_opts[LCP_NUMOPTS];
+	cp_conf_t ipcp_opts[IPCP_NUMOPTS];
 } ppp_dev_t;
 
 

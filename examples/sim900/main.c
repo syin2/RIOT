@@ -311,8 +311,7 @@ void check_data_mode(sim900_t *dev)
 void pdp_enter_data_mode(sim900_t *dev)
 {
 	puts("Entering data mode");
-	//send_at_command(dev, "AT+CGDATA=\"PPP\",1\r\n", 19, 3, &check_data_mode);
-	send_at_command(dev, "ATD*99#\r\n", 9, 3, &check_data_mode);
+	send_at_command(dev, "ATD*99***1#\r\n", 13, 3, &check_data_mode);
 }
 
 void pdp_activate(sim900_t *dev)

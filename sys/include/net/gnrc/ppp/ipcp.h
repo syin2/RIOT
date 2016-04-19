@@ -9,6 +9,7 @@ extern "C" {
 #define ID_IPCP (2)
 
 typedef enum{
+	IPCP_IPADDRESS,
 	IPCP_NUMOPTS
 } ipcp_options_t;
 
