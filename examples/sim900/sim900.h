@@ -87,7 +87,7 @@ typedef struct raw_t{
 } raw_t;
 
 typedef struct sim900_t {
-	netdev2_t netdev;
+	pppdev_t netdev;
 	uart_t uart;
 	uint8_t resp_buf[SIM900_MAX_RESP_SIZE];
 	uint8_t tx_buf[SIM900_MAX_CMD_SIZE];

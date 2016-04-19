@@ -21,7 +21,7 @@
 
 void set_timeout(ppp_cp_t *cp, uint32_t time)
 {
-	cp->msg.type = NETDEV2_MSG_TYPE_EVENT;
+	cp->msg.type = PPPDEV_MSG_TYPE_EVENT;
 	cp->msg.content.value = (cp->id<<8) +PPP_TIMEOUT;
 	xtimer_set_msg(&cp->xtimer, cp->restart_timer, &cp->msg, thread_getpid());
 }

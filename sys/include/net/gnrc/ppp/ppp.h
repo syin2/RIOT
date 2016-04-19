@@ -26,7 +26,6 @@
 #include <inttypes.h>
 
 #include "net/gnrc.h"
-#include "net/gnrc/netdev2.h"
 #include "net/ppp/hdr.h"
 #include "net/gnrc/pkt.h"
 #include "net/gnrc/pktbuf.h"
@@ -35,6 +34,7 @@
 #include "net/gnrc/ppp/opt.h"
 #include "net/gnrc/ppp/lcp.h"
 #include "net/gnrc/ppp/ipcp.h"
+#include "sys/uio.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,6 +86,9 @@ extern "C" {
 
 #define OPT_ENABLED (1)
 #define OPT_REQUIRED (2)
+
+/*TODO: Of course, change!*/
+#define PPPDEV_MSG_TYPE_EVENT (100)
 
 typedef enum{
 	E_UP,
@@ -211,17 +214,21 @@ typedef struct ppp_cp_t{
 } ppp_cp_t;
 
 
-typedef struct pppdev_t
-{
-	void *driver;
-} pppdev_t;
+typedef struct pppdev_t pppdev_t;
 
 typedef struct pppdev_driver_t
 {
 	int (*send)(pppdev_t *dev, const struct iovec *vector, int count);
 	int (*recv)(pppdev_t *dev, char *buf, int len, void *info);
+	void (*driver_ev)(pppdev_t *dev, uint8_t event);
+
 } pppdev_driver_t;
 
+typedef struct pppdev_t
+{
+	pppdev_driver_t *driver;
+	void *device;
+} pppdev_t;
 
 typedef struct cp_conf_t
 {
@@ -240,7 +247,7 @@ typedef struct cp_conf_t
 typedef struct ppp_dev_t{
 	ppp_cp_t l_lcp;
 	ppp_cp_t l_ipcp;
-	netdev2_t *netdev;
+	pppdev_t *netdev;
 
 	cp_conf_t lcp_opts[LCP_NUMOPTS];
 	cp_conf_t ipcp_opts[IPCP_NUMOPTS];
@@ -249,9 +256,9 @@ typedef struct ppp_dev_t{
 } ppp_dev_t;
 
 
-int gnrc_ppp_init(ppp_dev_t *dev, netdev2_t *netdev);
+int gnrc_ppp_init(ppp_dev_t *dev, pppdev_t *netdev);
 gnrc_pktsnip_t *pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnrc_pktsnip_t *payload);
-int gnrc_ppp_send(netdev2_t *dev, gnrc_pktsnip_t *pkt);
+int gnrc_ppp_send(pppdev_t *dev, gnrc_pktsnip_t *pkt);
 int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt);
 int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event);
 

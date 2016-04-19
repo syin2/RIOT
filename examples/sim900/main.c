@@ -52,7 +52,7 @@ static void rx_cb(void *arg, uint8_t data)
 	
 	sim900_t *dev = (sim900_t*) arg;
     msg_t msg;
-    msg.type = NETDEV2_MSG_TYPE_EVENT;
+    msg.type = PPPDEV_MSG_TYPE_EVENT;
 	msg.content.value = MSG_AT_FINISHED;
 
 	dev->_stream += data;
@@ -175,7 +175,7 @@ void sim900_putchar(uart_t uart, uint8_t c)
 	uart_write(uart, p, 1);
 }
 
-int sim900_recv(netdev2_t *ppp_dev, char *buf, int len, void *info)
+int sim900_recv(pppdev_t *ppp_dev, char *buf, int len, void *info)
 {
 	sim900_t *dev = (sim900_t*) ppp_dev;
 	int payload_length = dev->rx_count-2;
@@ -185,7 +185,7 @@ int sim900_recv(netdev2_t *ppp_dev, char *buf, int len, void *info)
 	}
 	return payload_length;
 }
-int sim900_send(netdev2_t *ppp_dev, const struct iovec *vector, int count)
+int sim900_send(pppdev_t *ppp_dev, const struct iovec *vector, int count)
 {
 	sim900_t *dev = (sim900_t*) ppp_dev;
 	uint16_t fcs = PPPINITFCS16;
@@ -223,7 +223,7 @@ void test_sending(sim900_t *dev)
 	struct iovec vector;
 	vector.iov_base = &pkt;
 	vector.iov_len = 8;
-	sim900_send((netdev2_t*) dev, &vector, 1);
+	sim900_send((pppdev_t*) dev, &vector, 1);
 }
 
 void driver_events(sim900_t *dev, uint8_t event)
@@ -249,7 +249,7 @@ void driver_events(sim900_t *dev, uint8_t event)
 			}
 			else
 			{
-				dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
+				dev->msg.type = PPPDEV_MSG_TYPE_EVENT;
 				dev->msg.content.value = 0xFF00+(PPP_RECV);
 				msg_send(&dev->msg, dev->mac_pid);
 			}
@@ -278,7 +278,7 @@ void events(sim900_t *dev)
 
 void at_timeout(sim900_t *dev, uint32_t ms, void (*cb)(sim900_t *dev))
 {
-	dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
+	dev->msg.type = PPPDEV_MSG_TYPE_EVENT;
 	dev->msg.content.value = MSG_AT_TIMEOUT;
 	dev->_timer_cb = cb;
 	xtimer_set_msg(&dev->xtimer, ms, &dev->msg, dev->mac_pid);
@@ -297,7 +297,7 @@ void check_data_mode(sim900_t *dev)
 		puts("Successfully entered data mode");
 		dev->state = AT_STATE_RX;
 		dev->ppp_rx_state = PPP_RX_IDLE;
-		dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
+		dev->msg.type = PPPDEV_MSG_TYPE_EVENT;
 		dev->msg.content.value = PDP_UP;
 		msg_send(&dev->msg, dev->mac_pid);
 	}
@@ -369,7 +369,7 @@ void *sim900_thread(void *args)
 #if TEST_PPP
 	dev->state = AT_STATE_RX;
 	dev->ppp_rx_state = PPP_RX_IDLE;
-	dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
+	dev->msg.type = PPPDEV_MSG_TYPE_EVENT;
 	dev->msg.content.value = PDP_UP;
 	msg_send(&dev->msg, dev->mac_pid);
 #else
@@ -385,7 +385,7 @@ void *sim900_thread(void *args)
     {
     	msg_receive(&dev->msg);
 		switch(dev->msg.type){
-			case NETDEV2_MSG_TYPE_EVENT:
+			case PPPDEV_MSG_TYPE_EVENT:
 				events(dev);
 				break;
     	}
@@ -395,12 +395,12 @@ void *sim900_thread(void *args)
 int main(void)
 {
 	gnrc_pktbuf_init();
-	netdev2_driver_t driver;
+	pppdev_driver_t driver;
 	driver.send = &sim900_send;
 	driver.recv = &sim900_recv;
     sim900_t dev;
 	dev.netdev.driver = &driver;
-	gnrc_ppp_init(&dev.ppp_dev, (netdev2_t*) &dev);
+	gnrc_ppp_init(&dev.ppp_dev, (pppdev_t*) &dev);
 
 	xtimer_init();
 	kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, sim900_thread, &dev, "sim900");

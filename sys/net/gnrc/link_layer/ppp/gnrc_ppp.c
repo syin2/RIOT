@@ -46,7 +46,7 @@ void print_pkt(gnrc_pktsnip_t *pkt)
 	}
 }
 
-int gnrc_ppp_init(ppp_dev_t *dev, netdev2_t *netdev)
+int gnrc_ppp_init(ppp_dev_t *dev, pppdev_t *netdev)
 {
 	dev->netdev = netdev;
 	dev->state = PPP_LINK_DEAD;
@@ -114,7 +114,7 @@ gnrc_pktsnip_t * pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gn
 	return ppp_pkt;
 }
 
-int gnrc_ppp_send(netdev2_t *dev, gnrc_pktsnip_t *pkt)
+int gnrc_ppp_send(pppdev_t *dev, gnrc_pktsnip_t *pkt)
 {
 	hdlc_hdr_t hdlc_hdr;
 
@@ -227,7 +227,7 @@ int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
 void broadcast_lower_layer(msg_t *msg, uint8_t id, uint8_t event)
 {
 	DEBUG("Sending msg to lower layer...");
-	msg->type = NETDEV2_MSG_TYPE_EVENT;
+	msg->type = PPPDEV_MSG_TYPE_EVENT;
 	uint8_t target;
 	switch(id)
 	{
