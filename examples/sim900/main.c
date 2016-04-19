@@ -120,38 +120,6 @@ static void rx_cb(void *arg, uint8_t data)
 	dev->_stream = (dev->_stream << 8);
 }
 
-static int sim900_init(sim900_t *dev, uart_t uart, uint32_t baud)
-{
-	dev->uart = (uart_t) uart;
-	dev->rx_count = 0;
-	dev->int_count = 0;
-	dev->int_fcs = PPPINITFCS16;
-	memset(dev->resp_buf,'\0',SIM900_MAX_RESP_SIZE);
-    memset(dev->tx_buf,'\0',SIM900_MAX_CMD_SIZE);
-	dev->resp_count = 0;
-	dev->_num_esc = 0; //Count of escape strings;
-	dev->b_CR = FALSE; //flag for receiving a CR.
-	dev->urc_counter = 0;
-	dev->pdp_state = PDP_IDLE;
-	dev->_stream = 0;
-
-	//mutex_init(&(dev->resp_lock));
-	//mutex_lock(&(dev->resp_lock));
-	/* initialize UART */
-	uint8_t res;
-    res = uart_init(dev->uart, baud, rx_cb, dev);
-    if (res == -1) {
-        return 1;
-    }
-    else if (res < -1) {
-        return 1;
-    }
-    //Set current thread to mac_pid
-    dev->mac_pid = thread_getpid();
-    xtimer_usleep(100);
-    //Initiate response buffer
-	return 0;
-}
 
 int send_at_command(sim900_t *dev, char *cmd, size_t size, uint8_t ne, void (*cb)(sim900_t *dev))
 {
@@ -171,7 +139,6 @@ void sim900_putchar(uart_t uart, uint8_t c)
 {
 	uint8_t *p = &c;
 	//puts("Called");
-	//DEBUG("Printing %i\n",c);
 	uart_write(uart, p, 1);
 }
 
@@ -226,8 +193,9 @@ void test_sending(sim900_t *dev)
 	sim900_send((pppdev_t*) dev, &vector, 1);
 }
 
-void driver_events(sim900_t *dev, uint8_t event)
+void driver_events(pppdev_t *d, uint8_t event)
 {
+	sim900_t *dev = (sim900_t*) d;
 	/*Driver event*/
 	switch(event)
 	{
@@ -267,7 +235,7 @@ void events(sim900_t *dev)
 	
 	if(!(msg_value & 0xFF00))
 	{
-		driver_events(dev, event);
+		driver_events((pppdev_t*) dev, event);
 	}
 	else
 	{
@@ -357,12 +325,47 @@ void pdp_nosim(sim900_t *dev)
 	}*/
 }
 
+int sim900_init(pppdev_t *d)
+{
+	sim900_t *dev = (sim900_t*) d;
+
+	dev->uart = (uart_t) 1;
+	dev->rx_count = 0;
+	dev->int_count = 0;
+	dev->int_fcs = PPPINITFCS16;
+	memset(dev->resp_buf,'\0',SIM900_MAX_RESP_SIZE);
+    memset(dev->tx_buf,'\0',SIM900_MAX_CMD_SIZE);
+	dev->resp_count = 0;
+	dev->_num_esc = 0; //Count of escape strings;
+	dev->b_CR = FALSE; //flag for receiving a CR.
+	dev->urc_counter = 0;
+	dev->pdp_state = PDP_IDLE;
+	dev->_stream = 0;
+
+	//mutex_init(&(dev->resp_lock));
+	//mutex_lock(&(dev->resp_lock));
+	/* initialize UART */
+	uint8_t res;
+    res = uart_init(dev->uart, 9600, rx_cb, dev);
+    if (res == -1) {
+        return 1;
+    }
+    else if (res < -1) {
+        return 1;
+    }
+    //Set current thread to mac_pid
+    dev->mac_pid = thread_getpid();
+    xtimer_usleep(100);
+    //Initiate response buffer
+	return 0;
+}
 void *sim900_thread(void *args)
 {
     //Setup a new sim900 devide
 
-	sim900_t *dev = (sim900_t*) args;
-    sim900_init(dev,1,9600);
+	pppdev_t *d = (pppdev_t*) args;
+    sim900_init(d);
+	sim900_t *dev = (sim900_t*) d;
 
 	msg_t msg_queue[SIM900_MSG_QUEUE];;
 	msg_init_queue(msg_queue, SIM900_MSG_QUEUE);
@@ -398,6 +401,9 @@ int main(void)
 	pppdev_driver_t driver;
 	driver.send = &sim900_send;
 	driver.recv = &sim900_recv;
+	driver.driver_ev = &driver_events;
+	driver.init = &sim900_init;
+
     sim900_t dev;
 	dev.netdev.driver = &driver;
 	gnrc_ppp_init(&dev.ppp_dev, (pppdev_t*) &dev);

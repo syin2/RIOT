@@ -221,6 +221,7 @@ typedef struct pppdev_driver_t
 	int (*send)(pppdev_t *dev, const struct iovec *vector, int count);
 	int (*recv)(pppdev_t *dev, char *buf, int len, void *info);
 	void (*driver_ev)(pppdev_t *dev, uint8_t event);
+	int (*init)(pppdev_t *dev);
 
 } pppdev_driver_t;
 
