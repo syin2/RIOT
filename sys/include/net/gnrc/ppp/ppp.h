@@ -211,6 +211,18 @@ typedef struct ppp_cp_t{
 } ppp_cp_t;
 
 
+typedef struct pppdev_t
+{
+	void *driver;
+} pppdev_t;
+
+typedef struct pppdev_driver_t
+{
+	int (*send)(pppdev_t *dev, const struct iovec *vector, int count);
+	int (*recv)(pppdev_t *dev, char *buf, int len, void *info);
+} pppdev_driver_t;
+
+
 typedef struct cp_conf_t
 {
 	uint8_t type;
