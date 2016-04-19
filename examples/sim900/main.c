@@ -228,22 +228,6 @@ void driver_events(pppdev_t *d, uint8_t event)
 			break;
 	}
 }
-void events(sim900_t *dev)
-{
-	/* Check if event is a Driver or PPP event */
-	int msg_value = dev->msg.content.value;
-	uint8_t event = msg_value & 0xFF;
-	
-	if(!(msg_value & 0xFF00))
-	{
-		driver_events((pppdev_t*) dev, event);
-	}
-	else
-	{
-		/*PPP event*/
-		gnrc_ppp_event_callback(&dev->ppp_dev, msg_value);
-	}
-}
 
 void at_timeout(sim900_t *dev, uint32_t ms, void (*cb)(sim900_t *dev))
 {
