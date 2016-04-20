@@ -351,7 +351,7 @@ void *sim900_thread(void *args)
     //Setup a new sim900 devide
 
 	pppdev_t *d = (pppdev_t*) args;
-    sim900_init(d);
+    d->driver->init(d);
 	sim900_t *dev = (sim900_t*) d;
 
 	msg_t msg_queue[SIM900_MSG_QUEUE];;
