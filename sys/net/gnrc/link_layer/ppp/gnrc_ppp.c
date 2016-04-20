@@ -69,8 +69,12 @@ int ppp_dispatch_event_from_pkt(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 
 	DEBUG("Printing pkt...");
 	print_pkt(pkt);
-	/* Route the packet according to protocol */
 	int event;
+
+	gnrc_pktsnip_t *ppp_hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), GNRC_NETTYPE_UNDEF);
+	ppp_hdr_t *hdr = (ppp_hdr_t*) ppp_hdr->data;
+
+	/* Route the packet according to protocol */
 	switch(hdlc_hdr_get_protocol(hdlc_hdr))
 	{
 		case PPPTYPE_IPV4:
@@ -84,13 +88,13 @@ int ppp_dispatch_event_from_pkt(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 			break;
 		case PPPTYPE_LCP:
 			/* Populate received pkt */
-			event = dev->l_lcp.handle_pkt(&dev->l_lcp, NULL, pkt);
+			ppp_hdr->type = GNRC_NETTYPE_LCP;
+			event = dev->l_lcp.handle_pkt(&dev->l_lcp, hdr, pkt);
 			trigger_event(&dev->l_lcp, event, pkt);
 			break;
 		case PPPTYPE_NCP_IPV4:
-			/*if dev->l_lcp is up...*/
-			DEBUG("NCP!!!!\n");
-			event = dev->l_ipcp.handle_pkt(&dev->l_ipcp, NULL, pkt);
+			ppp_hdr->type = GNRC_NETTYPE_IPCP;
+			event = dev->l_ipcp.handle_pkt(&dev->l_ipcp, hdr, pkt);
 			trigger_event(&dev->l_ipcp, event, pkt);
 			break;
 		default:
