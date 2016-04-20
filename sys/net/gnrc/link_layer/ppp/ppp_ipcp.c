@@ -108,7 +108,7 @@ int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_cp_t *ipcp)
 	ipcp->conf[IPCP_IPADDRESS].handle_nak = &ipcp_ipaddress_handle_nak;
 	ipcp->conf[IPCP_IPADDRESS].build_nak_opts = &ipcp_ipaddress_build_nak_opts;
 
-	ipcp->supported_codes = FLAG_CONF_REJ | FLAG_CONF_ACK | FLAG_CONF_NAK | FLAG_CONF_REJ | FLAG_TERM_REQ | FLAG_TERM_ACK | FLAG_CODE_REJ;
+	ipcp->supported_codes = FLAG_CONF_REQ | FLAG_CONF_ACK | FLAG_CONF_NAK | FLAG_CONF_REJ | FLAG_TERM_REQ | FLAG_TERM_ACK | FLAG_CODE_REJ;
 	ipcp->id = ID_IPCP;
 	ipcp->prottype = GNRC_NETTYPE_IPCP;
 	ipcp->restart_timer = IPCP_RESTART_TIMER;

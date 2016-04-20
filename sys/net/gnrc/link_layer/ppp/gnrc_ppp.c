@@ -89,12 +89,13 @@ int ppp_dispatch_event_from_pkt(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 		case PPPTYPE_LCP:
 			/* Populate received pkt */
 			ppp_hdr->type = GNRC_NETTYPE_LCP;
-			event = dev->l_lcp.handle_pkt(&dev->l_lcp, hdr, pkt);
+			//event = dev->l_lcp.handle_pkt(&dev->l_lcp, hdr, pkt);
+			event = fsm_event_from_pkt(&dev->l_lcp, hdr, pkt);
 			trigger_event(&dev->l_lcp, event, pkt);
 			break;
 		case PPPTYPE_NCP_IPV4:
 			ppp_hdr->type = GNRC_NETTYPE_IPCP;
-			event = dev->l_ipcp.handle_pkt(&dev->l_ipcp, hdr, pkt);
+			event = fsm_event_from_pkt(&dev->l_ipcp, hdr, pkt);
 			trigger_event(&dev->l_ipcp, event, pkt);
 			break;
 		default:
