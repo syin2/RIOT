@@ -209,7 +209,10 @@ void driver_events(pppdev_t *d, uint8_t event)
 		case PDP_UP:
 			DEBUG("Welcome to PPP :)\n");
 			/*Trigger LCP up event*/
-			gnrc_ppp_event_callback(&dev->ppp_dev, 0xFF00+PPP_LINKUP);
+			//gnrc_ppp_event_callback(&dev->ppp_dev, 0xFF00+PPP_LINKUP);
+			dev->msg.type = PPPDEV_MSG_TYPE_EVENT;
+			dev->msg.content.value = 0xFF00+(PPP_LINKUP);
+			msg_send(&dev->msg, dev->mac_pid);
 			break;
 		case RX_FINISHED:
 			if(dev->rx_count < 4)
@@ -350,7 +353,10 @@ void *sim900_thread(void *args)
 {
     //Setup a new sim900 devide
 
-	pppdev_t *d = (pppdev_t*) args;
+	gnrc_pppdev_t *pppdev = (gnrc_pppdev_t*) args;
+
+	pppdev_t *d = pppdev->netdev;
+
     d->driver->init(d);
 	sim900_t *dev = (sim900_t*) d;
 
@@ -375,7 +381,7 @@ void *sim900_thread(void *args)
 		event = dev->msg.content.value;	
 		switch(dev->msg.type){
 			case PPPDEV_MSG_TYPE_EVENT:
-				gnrc_ppp_event_callback(&dev->ppp_dev, event);
+				gnrc_ppp_event_callback(pppdev, event);
 				break;
 			case NETDEV2_MSG_TYPE_EVENT:
 				driver_events((pppdev_t*) dev, event);
@@ -395,10 +401,12 @@ int main(void)
 
     sim900_t dev;
 	dev.netdev.driver = &driver;
-	gnrc_ppp_init(&dev.ppp_dev, (pppdev_t*) &dev);
+
+	gnrc_pppdev_t pppd;
+	gnrc_ppp_init(&pppd, (pppdev_t*) &dev);
 
 	xtimer_init();
-	kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, sim900_thread, &dev, "sim900");
+	kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, sim900_thread, &pppd, "sim900");
 	(void) pid;
 
 	while(1)
