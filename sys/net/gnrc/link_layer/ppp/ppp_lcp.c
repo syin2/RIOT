@@ -45,47 +45,6 @@ static cp_conf_t *lcp_get_conf_by_code(ppp_cp_t *cp, uint8_t code)
 	}
 }
 
-static int lcp_handle_pkt(ppp_cp_t *lcp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
-{
-	/*TODO: Shouldn't be here*/
-	int type = ppp_hdr_get_code(hdr);
-	int event;
-	
-	switch(type){
-		case PPP_CONF_REQ:
-			event = handle_rcr(lcp, hdr, pkt);
-			break;
-		case PPP_CONF_ACK:
-			event = handle_rca(lcp, hdr, pkt);
-			break;
-		case PPP_CONF_NAK:
-			event = handle_rcn_nak(lcp, hdr, pkt);
-			break;
-		case PPP_CONF_REJ:
-			event = handle_rcn_rej(lcp, hdr, pkt);
-			break;
-		case PPP_TERM_REQ:
-			event = E_RTR;
-			break;
-		case PPP_TERM_ACK:
-			event = handle_term_ack(lcp, hdr, pkt);
-			break;
-		case PPP_CODE_REJ:
-			event = handle_coderej(hdr, pkt);
-			break;
-		case PPP_ECHO_REQ:
-		case PPP_ECHO_REP:
-		case PPP_DISC_REQ:
-			event = E_RXR;
-			break;
-		default:
-			event = E_RUC;
-			break;
-	}
-
-	return event;
-}
-
 uint8_t lcp_mru_is_valid(ppp_option_t *opt)
 {
 	uint8_t *payload = ppp_opt_get_payload(opt);
@@ -140,7 +99,6 @@ int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_cp_t *lcp)
 	lcp->id = ID_LCP;
 	lcp->prottype = GNRC_NETTYPE_LCP;
 	lcp->restart_timer = LCP_RESTART_TIMER;
-	lcp->handle_pkt = &lcp_handle_pkt;
 	lcp->get_conf_by_code = &lcp_get_conf_by_code;
 	return 0;
 }

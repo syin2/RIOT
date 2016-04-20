@@ -225,7 +225,6 @@ typedef struct ppp_cp_t{
 
 	msg_t msg;
 
-	int (*handle_pkt)(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 	cp_conf_t* (*get_conf_by_code)(ppp_cp_t *cp, uint8_t code);
 
 	cp_conf_t *conf;

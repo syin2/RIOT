@@ -44,40 +44,6 @@ static cp_conf_t *ipcp_get_conf_by_code(ppp_cp_t *cp, uint8_t code)
 			return NULL;
 	}
 }
-static int ipcp_handle_pkt(ppp_cp_t *ipcp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
-{
-	int type = ppp_hdr_get_code(hdr);
-	int event;
-	
-	switch(type){
-		case PPP_CONF_REQ:
-			event = handle_rcr(ipcp, hdr, pkt);
-			break;
-		case PPP_CONF_ACK:
-			event = handle_rca(ipcp, hdr, pkt);
-			break;
-		case PPP_CONF_NAK:
-			event = handle_rcn_nak(ipcp, hdr, pkt);
-			break;
-		case PPP_CONF_REJ:
-			event = handle_rcn_rej(ipcp, hdr, pkt);
-			break;
-		case PPP_TERM_REQ:
-			event = E_RTR;
-			break;
-		case PPP_TERM_ACK:
-			event = handle_term_ack(ipcp, hdr, pkt);
-			break;
-		case PPP_CODE_REJ:
-			event = handle_coderej(hdr, pkt);
-			break;
-		default:
-			event = E_RUC;
-			break;
-	}
-
-	return event;
-}
 
 uint8_t ipcp_ipaddress_is_valid(ppp_option_t *opt)
 {
@@ -112,7 +78,6 @@ int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_cp_t *ipcp)
 	ipcp->id = ID_IPCP;
 	ipcp->prottype = GNRC_NETTYPE_IPCP;
 	ipcp->restart_timer = IPCP_RESTART_TIMER;
-	ipcp->handle_pkt = &ipcp_handle_pkt;
 	ipcp->get_conf_by_code = &ipcp_get_conf_by_code;
 	return 0;
 }
