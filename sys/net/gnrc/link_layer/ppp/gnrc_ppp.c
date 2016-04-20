@@ -208,7 +208,6 @@ int gnrc_ppp_event_callback(gnrc_pppdev_t *dev, int ppp_event)
 		case PPP_LINKUP:
 			DEBUG("Event: PPP_LINKUP\n");
 			/*Set here PPP states...*/
-			ppp_dispatch_event(dev, target, E_UP);
 			ppp_dispatch_event(dev, target, E_OPEN);
 			if(target == 0xFF)
 			{
@@ -220,10 +219,10 @@ int gnrc_ppp_event_callback(gnrc_pppdev_t *dev, int ppp_event)
 				dev->state = PPP_OPEN;
 				DEBUG("PPP STATE: OPEN\n");
 			}
+			ppp_dispatch_event(dev, target, E_UP);
 			break;
 		case PPP_LINKDOWN:
 			/* Just to test, print message when this happens */
-			puts("Come on!\n");
 			DEBUG("Some layer finished\n");
 			break;
 		case PPP_TIMEOUT:
