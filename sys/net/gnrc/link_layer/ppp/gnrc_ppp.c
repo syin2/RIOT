@@ -210,6 +210,21 @@ int gnrc_ppp_event_callback(gnrc_pppdev_t *dev, int ppp_event)
 			/*Set here PPP states...*/
 			ppp_dispatch_event(dev, target, E_UP);
 			ppp_dispatch_event(dev, target, E_OPEN);
+			if(target == 0xFF)
+			{
+				dev->state = PPP_LINK_ESTABLISHED;
+				DEBUG("PPP STATE: LINK ESTABLISHED\n");
+			}
+			else if (target == 0xFE)
+			{
+				dev->state = PPP_OPEN;
+				DEBUG("PPP STATE: OPEN\n");
+			}
+			break;
+		case PPP_LINKDOWN:
+			/* Just to test, print message when this happens */
+			puts("Come on!\n");
+			DEBUG("Some layer finished\n");
 			break;
 		case PPP_TIMEOUT:
 			target_protocol = get_protocol_from_target(dev, target);
@@ -270,9 +285,9 @@ void *gnrc_ppp_thread(void *args)
     }
 }
 
-void broadcast_lower_layer(msg_t *msg, uint8_t id, uint8_t event)
+void broadcast_upper_layer(msg_t *msg, uint8_t id, uint8_t event)
 {
-	DEBUG("Sending msg to lower layer...");
+	DEBUG("Sending msg to upper layer...\n");
 	msg->type = PPPDEV_MSG_TYPE_EVENT;
 	uint8_t target;
 	switch(id)
@@ -287,3 +302,4 @@ void broadcast_lower_layer(msg_t *msg, uint8_t id, uint8_t event)
 	msg->content.value = (target<<8) + event;
 	msg_send(msg, thread_getpid());
 }
+

@@ -305,7 +305,7 @@ void tlu(ppp_cp_t *cp, void *args)
 {
 	DEBUG("%i", cp->id);
 	DEBUG("> This layer up (a.k.a Successfully negotiated Link)\n");
-	broadcast_lower_layer(&cp->msg, cp->id, PPP_LINKUP);
+	broadcast_upper_layer(&cp->msg, cp->id, PPP_LINKUP);
 	(void) cp;
 }
 
@@ -327,6 +327,7 @@ void tlf(ppp_cp_t *cp, void *args)
 {
 	DEBUG("%i", cp->id);
 	DEBUG(">  This layer finished\n");
+	broadcast_upper_layer(&cp->msg, cp->id, PPP_LINKDOWN);
 	(void) cp;
 }
 
