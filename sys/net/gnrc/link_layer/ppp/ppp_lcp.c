@@ -127,7 +127,7 @@ uint8_t lcp_mru_build_nak_opts(uint8_t *buf)
 	return len;
 }
 
-int lcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *lcp)
+int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_cp_t *lcp)
 {
 	cp_init(ppp_dev, lcp);
 

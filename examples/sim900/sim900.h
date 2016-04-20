@@ -122,7 +122,7 @@ typedef struct sim900_t {
 	uint8_t escape;
 	uint16_t fcs;
 	uint16_t int_fcs;
-	ppp_dev_t ppp_dev;
+	gnrc_pppdev_t ppp_dev;
 
 } sim900_t;
 

@@ -99,7 +99,7 @@ uint8_t ipcp_ipaddress_build_nak_opts(uint8_t *buf)
 	return 0;
 }
 
-int ipcp_init(ppp_dev_t *ppp_dev, ppp_cp_t *ipcp)
+int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_cp_t *ipcp)
 {
 	cp_init(ppp_dev, ipcp);
 

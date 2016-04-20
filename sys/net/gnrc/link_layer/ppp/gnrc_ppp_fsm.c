@@ -492,7 +492,7 @@ void ser(ppp_cp_t *cp, void *args)
 	//send_cp(cp,PPP_CP_SER);
 }
 
-int cp_init(ppp_dev_t *ppp_dev, ppp_cp_t *cp)
+int cp_init(gnrc_pppdev_t *ppp_dev, ppp_cp_t *cp)
 {
 	cp->state = S_INITIAL;
 	cp->cr_sent_identifier = 0;

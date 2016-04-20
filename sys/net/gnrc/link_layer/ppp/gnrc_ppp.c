@@ -46,7 +46,7 @@ void print_pkt(gnrc_pktsnip_t *pkt)
 	}
 }
 
-int gnrc_ppp_init(ppp_dev_t *dev, pppdev_t *netdev)
+int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev)
 {
 	dev->netdev = netdev;
 	dev->state = PPP_LINK_DEAD;
@@ -55,7 +55,7 @@ int gnrc_ppp_init(ppp_dev_t *dev, pppdev_t *netdev)
 	return 0;
 }
 
-int ppp_dispatch_event_from_pkt(ppp_dev_t *dev, gnrc_pktsnip_t *pkt)
+int ppp_dispatch_event_from_pkt(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 {
 	/* Mark hdlc header */
 	gnrc_pktsnip_t *result = gnrc_pktbuf_mark(pkt, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
@@ -141,7 +141,7 @@ int gnrc_ppp_send(pppdev_t *dev, gnrc_pktsnip_t *pkt)
 	return res;
 }
 
-static ppp_cp_t *get_protocol_from_target(ppp_dev_t *dev, uint8_t target)
+static ppp_cp_t *get_protocol_from_target(gnrc_pppdev_t *dev, uint8_t target)
 {
 	switch(target)
 	{
@@ -156,7 +156,7 @@ static ppp_cp_t *get_protocol_from_target(ppp_dev_t *dev, uint8_t target)
 	return NULL;
 }
 
-int ppp_dispatch_event(ppp_dev_t *dev, uint8_t target, uint8_t event)
+int ppp_dispatch_event(gnrc_pppdev_t *dev, uint8_t target, uint8_t event)
 {
 	ppp_cp_t *target_protocol = get_protocol_from_target(dev, target);
 
@@ -185,7 +185,7 @@ int ppp_dispatch_event(ppp_dev_t *dev, uint8_t target, uint8_t event)
 	return 0;
 }
 
-int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event)
+int gnrc_ppp_event_callback(gnrc_pppdev_t *dev, int ppp_event)
 {
 	int nbytes;
 	ppp_cp_t *target_protocol;

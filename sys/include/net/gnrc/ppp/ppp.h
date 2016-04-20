@@ -193,7 +193,7 @@ typedef struct ppp_cp_t{
 	uint8_t counter_failure;
 	uint32_t restart_timer;
 
-	struct ppp_dev_t *dev;
+	struct gnrc_pppdev_t *dev;
 	xtimer_t xtimer;
 
 	/* For Configure Request */
@@ -244,7 +244,7 @@ typedef struct cp_conf_t
 } cp_conf_t;
 
 /* PPP device */
-typedef struct ppp_dev_t{
+typedef struct gnrc_pppdev_t{
 	ppp_cp_t l_lcp;
 	ppp_cp_t l_ipcp;
 	pppdev_t *netdev;
@@ -253,14 +253,14 @@ typedef struct ppp_dev_t{
 	cp_conf_t ipcp_opts[IPCP_NUMOPTS];
 
 	uint8_t state;
-} ppp_dev_t;
+} gnrc_pppdev_t;
 
 
-int gnrc_ppp_init(ppp_dev_t *dev, pppdev_t *netdev);
+int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev);
 gnrc_pktsnip_t *pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnrc_pktsnip_t *payload);
 int gnrc_ppp_send(pppdev_t *dev, gnrc_pktsnip_t *pkt);
-int gnrc_ppp_recv(ppp_dev_t *dev, gnrc_pktsnip_t *pkt);
-int gnrc_ppp_event_callback(ppp_dev_t *dev, int ppp_event);
+int gnrc_ppp_recv(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt);
+int gnrc_ppp_event_callback(gnrc_pppdev_t *dev, int ppp_event);
 
 /* Implementation of LCP fsm actions */
 void tlu(ppp_cp_t *lcp, void *args);
@@ -277,7 +277,7 @@ void sta(ppp_cp_t *lcp, void *args);
 void scj(ppp_cp_t *lcp, void *args);
 void ser(ppp_cp_t *lcp, void *args);
 
-int cp_init(struct ppp_dev_t *ppp_dev, ppp_cp_t *cp);
+int cp_init(struct gnrc_pppdev_t *ppp_dev, ppp_cp_t *cp);
 int trigger_event(ppp_cp_t *cp, int event, gnrc_pktsnip_t *pkt);
 int handle_rcr(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
 int handle_rca(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
