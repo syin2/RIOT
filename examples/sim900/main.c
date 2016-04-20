@@ -334,10 +334,7 @@ int sim900_init(pppdev_t *d)
 	/* initialize UART */
 	uint8_t res;
     res = uart_init(dev->uart, 9600, rx_cb, dev);
-    if (res == -1) {
-        return 1;
-    }
-    else if (res < -1) {
+    if (res < 0) {
         return 1;
     }
     //Set current thread to mac_pid

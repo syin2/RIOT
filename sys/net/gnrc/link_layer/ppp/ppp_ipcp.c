@@ -80,7 +80,6 @@ static int ipcp_handle_pkt(ppp_cp_t *ipcp, gnrc_pktsnip_t *pkt)
 			break;
 	}
 
-	trigger_event(ipcp, event, pkt);
 	return event;
 }
 

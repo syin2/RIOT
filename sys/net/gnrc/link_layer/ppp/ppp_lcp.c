@@ -87,8 +87,6 @@ static int lcp_handle_pkt(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
 			break;
 	}
 
-	if (event >= 0)
-		trigger_event(lcp, event, pkt);
 	return event;
 }
 
