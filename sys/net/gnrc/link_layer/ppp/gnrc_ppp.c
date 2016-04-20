@@ -21,6 +21,7 @@
 #include "msg.h"
 #include "thread.h"
 #include "net/gnrc.h"
+#include "net/gnrc/netdev2.h"
 #include "net/ppptype.h"
 #include "net/gnrc/ppp/ppp.h"
 #include "net/gnrc/ppp/lcp.h"
@@ -222,6 +223,48 @@ int gnrc_ppp_event_callback(gnrc_pppdev_t *dev, int ppp_event)
 			break;
 	}
 	return 0;
+}
+
+void *gnrc_ppp_thread(void *args)
+{
+    //Setup a new sim900 devide
+
+	gnrc_pppdev_t *pppdev = (gnrc_pppdev_t*) args;
+	pppdev_t *d = pppdev->netdev;
+    d->driver->init(d);
+
+	msg_t msg_queue[GNRC_PPP_MSG_QUEUE];;
+	msg_init_queue(msg_queue, GNRC_PPP_MSG_QUEUE);
+	msg_t msg;
+#if 0
+	sim900_t *dev = (sim900_t*) d;
+#if TEST_PPP
+	dev->state = AT_STATE_RX;
+	dev->ppp_rx_state = PPP_RX_IDLE;
+	dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
+	dev->msg.content.value = PDP_UP;
+	msg_send(&dev->msg, dev->mac_pid);
+#else
+#endif
+#if TEST_WRITE
+	test_sending(dev);
+#endif
+#endif
+
+	int event;
+    while(1)
+    {
+    	msg_receive(&msg);
+		event = msg.content.value;	
+		switch(msg.type){
+			case PPPDEV_MSG_TYPE_EVENT:
+				gnrc_ppp_event_callback(pppdev, event);
+				break;
+			case NETDEV2_MSG_TYPE_EVENT:
+				d->driver->driver_ev((pppdev_t*) d, event);
+				break;
+    	}
+    }
 }
 
 void broadcast_lower_layer(msg_t *msg, uint8_t id, uint8_t event)

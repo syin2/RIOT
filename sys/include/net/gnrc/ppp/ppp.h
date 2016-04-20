@@ -40,6 +40,8 @@
 extern "C" {
 #endif
 
+#define GNRC_PPP_MSG_QUEUE 64
+
 #define PPP_HDLC_ADDRESS (0xFF)
 #define PPP_HDLC_CONTROL (0x03)
 
@@ -290,6 +292,7 @@ void print_pkt(gnrc_pktsnip_t *pkt);
 int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr);
 
 void broadcast_lower_layer(msg_t *msg, uint8_t id, uint8_t event);
+void *gnrc_ppp_thread(void *args);
 
 #ifdef __cplusplus
 }
