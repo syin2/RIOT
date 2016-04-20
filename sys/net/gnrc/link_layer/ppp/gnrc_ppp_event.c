@@ -216,6 +216,7 @@ int handle_rcn_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 			return -EBADMSG;
 		}
 		curr_conf->flags &= ~OPT_ENABLED;
+		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
 	}
 	return E_RCN;
 }

@@ -38,8 +38,8 @@ static cp_conf_t *lcp_get_conf_by_code(ppp_cp_t *cp, uint8_t code)
 {
 	switch(code)
 	{
-		//case LCP_OPT_MRU:
-		//	return &cp->conf[LCP_MRU];
+		case LCP_OPT_MRU:
+			return &cp->conf[LCP_MRU];
 		default:
 			return NULL;
 	}
@@ -129,7 +129,6 @@ int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_cp_t *lcp)
 {
 	cp_init(ppp_dev, lcp);
 
-	/*
 	lcp->conf = ppp_dev->lcp_opts;
 	lcp->conf[LCP_MRU].type = 1;
 	lcp->conf[LCP_MRU].value = byteorder_htonl(3500);
@@ -139,8 +138,6 @@ int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_cp_t *lcp)
 	lcp->conf[LCP_MRU].is_valid = &lcp_mru_is_valid;
 	lcp->conf[LCP_MRU].handle_nak = &lcp_mru_handle_nak;
 	lcp->conf[LCP_MRU].build_nak_opts = &lcp_mru_build_nak_opts;
-	*/
-	lcp->conf = NULL;
 
 
 	lcp->id = ID_LCP;
