@@ -63,6 +63,7 @@ extern "C" {
 #define PPP_DISC_REQ (11)
 #define PPP_IDENT (12)
 #define PPP_TIME_REM (13)
+#define PPP_UNKNOWN_CODE (0)
 
 
 #define FLAG_CONF_REQ (1<<0)
@@ -302,6 +303,7 @@ int handle_rcn_nak(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 int handle_rcn_rej(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 int handle_coderej(ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 int handle_term_ack(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
+int fsm_event_from_pkt(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 
 void print_pkt(gnrc_pktsnip_t *pkt);
 int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr);

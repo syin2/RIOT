@@ -254,3 +254,47 @@ int handle_term_ack(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 	}
 	return -EBADMSG;
 }
+
+
+int fsm_event_from_pkt(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
+{
+	int code = ppp_hdr_get_code(hdr);
+	int supported = cp->supported_codes & (1<<(code-1));
+	int type = supported ? code : PPP_UNKNOWN_CODE; 
+
+	int event;
+	switch(type){
+		case PPP_CONF_REQ:
+			event = handle_rcr(cp, hdr, pkt);
+			break;
+		case PPP_CONF_ACK:
+			event = handle_rca(cp, hdr, pkt);
+			break;
+		case PPP_CONF_NAK:
+			event = handle_rcn_nak(cp, hdr, pkt);
+			break;
+		case PPP_CONF_REJ:
+			event = handle_rcn_rej(cp, hdr, pkt);
+			break;
+		case PPP_TERM_REQ:
+			event = E_RTR;
+			break;
+		case PPP_TERM_ACK:
+			event = handle_term_ack(cp, hdr, pkt);
+			break;
+		case PPP_CODE_REJ:
+			event = handle_coderej(hdr, pkt);
+			break;
+		case PPP_ECHO_REQ:
+		case PPP_ECHO_REP:
+		case PPP_DISC_REQ:
+			event = E_RXR;
+			break;
+		default:
+			event = E_RUC;
+			break;
+	}
+
+	return event;
+}
+
