@@ -65,6 +65,20 @@ extern "C" {
 #define PPP_TIME_REM (13)
 
 
+#define FLAG_CONF_REQ (1<<0)
+#define FLAG_CONF_ACK (1<<1)
+#define FLAG_CONF_NAK (1<<2)
+#define FLAG_CONF_REJ (1<<3)
+#define FLAG_TERM_REQ (1<<4)
+#define FLAG_TERM_ACK (1<<5)
+#define FLAG_CODE_REJ (1<<6)
+#define FLAG_PROT_REJ (1<<7)
+#define FLAG_ECHO_REQ (1<<8)
+#define FLAG_ECHO_REP (1<<9)
+#define FLAG_DISC_REQ (1<<10)
+#define FLAG_IDENT (1<<11)
+#define FLAG_TIME_REM (1<<12)
+
 /*Function flags*/
 #define F_TLU (1U<<0)
 #define F_TLD (1U<<1)
@@ -189,6 +203,7 @@ typedef struct cp_conf_t cp_conf_t;
 typedef struct ppp_cp_t{
 	uint8_t id;
 	gnrc_nettype_t prottype;
+	uint16_t supported_codes;
 	uint8_t state;
 
 	uint8_t restart_counter;
