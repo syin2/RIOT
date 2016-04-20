@@ -354,14 +354,14 @@ void *sim900_thread(void *args)
     //Setup a new sim900 devide
 
 	gnrc_pppdev_t *pppdev = (gnrc_pppdev_t*) args;
-
 	pppdev_t *d = pppdev->netdev;
-
     d->driver->init(d);
-	sim900_t *dev = (sim900_t*) d;
 
 	msg_t msg_queue[SIM900_MSG_QUEUE];;
 	msg_init_queue(msg_queue, SIM900_MSG_QUEUE);
+	msg_t msg;
+#if 0
+	sim900_t *dev = (sim900_t*) d;
 #if TEST_PPP
 	dev->state = AT_STATE_RX;
 	dev->ppp_rx_state = PPP_RX_IDLE;
@@ -373,18 +373,19 @@ void *sim900_thread(void *args)
 #if TEST_WRITE
 	test_sending(dev);
 #endif
+#endif
 
 	int event;
     while(1)
     {
-    	msg_receive(&dev->msg);
-		event = dev->msg.content.value;	
-		switch(dev->msg.type){
+    	msg_receive(&msg);
+		event = msg.content.value;	
+		switch(msg.type){
 			case PPPDEV_MSG_TYPE_EVENT:
 				gnrc_ppp_event_callback(pppdev, event);
 				break;
 			case NETDEV2_MSG_TYPE_EVENT:
-				driver_events((pppdev_t*) dev, event);
+				driver_events((pppdev_t*) d, event);
 				break;
     	}
     }
