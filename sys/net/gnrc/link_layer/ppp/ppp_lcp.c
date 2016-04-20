@@ -45,10 +45,10 @@ static cp_conf_t *lcp_get_conf_by_code(ppp_cp_t *cp, uint8_t code)
 	}
 }
 
-static int lcp_handle_pkt(ppp_cp_t *lcp, gnrc_pktsnip_t *pkt)
+static int lcp_handle_pkt(ppp_cp_t *lcp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
-	gnrc_pktsnip_t *hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), GNRC_NETTYPE_LCP);
-	ppp_hdr_t *ppp_hdr = (ppp_hdr_t*) hdr->data;
+	gnrc_pktsnip_t *hdr_ = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), GNRC_NETTYPE_LCP);
+	ppp_hdr_t *ppp_hdr = (ppp_hdr_t*) hdr_->data;
 
 
 	/*TODO: Shouldn't be here*/
