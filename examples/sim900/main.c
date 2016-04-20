@@ -324,7 +324,6 @@ int sim900_init(pppdev_t *d)
 	dev->_num_esc = 0; //Count of escape strings;
 	dev->b_CR = FALSE; //flag for receiving a CR.
 	dev->urc_counter = 0;
-	dev->pdp_state = PDP_IDLE;
 	dev->_stream = 0;
 
 	//mutex_init(&(dev->resp_lock));
@@ -342,6 +341,9 @@ int sim900_init(pppdev_t *d)
     dev->mac_pid = thread_getpid();
     xtimer_usleep(100);
     //Initiate response buffer
+	dev->pdp_state = PDP_NOTSIM;
+	/*Start sending an AT command */
+	send_at_command(dev, "AT+CPIN?\r\n",10, 5, &pdp_nosim);
 	return 0;
 }
 void *sim900_thread(void *args)
@@ -361,9 +363,6 @@ void *sim900_thread(void *args)
 	dev->msg.content.value = PDP_UP;
 	msg_send(&dev->msg, dev->mac_pid);
 #else
-	dev->pdp_state = PDP_NOTSIM;
-	/*Start sending an AT command */
-	send_at_command(dev, "AT+CPIN?\r\n",10, 5, &pdp_nosim);
 #endif
 #if TEST_WRITE
 	test_sending(dev);

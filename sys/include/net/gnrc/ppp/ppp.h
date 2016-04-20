@@ -228,7 +228,6 @@ typedef struct pppdev_driver_t
 typedef struct pppdev_t
 {
 	pppdev_driver_t *driver;
-	void *device;
 } pppdev_t;
 
 typedef struct cp_conf_t
