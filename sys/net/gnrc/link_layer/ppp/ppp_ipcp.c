@@ -51,25 +51,25 @@ static int ipcp_handle_pkt(ppp_cp_t *ipcp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 	
 	switch(type){
 		case PPP_CONF_REQ:
-			event = handle_rcr(ipcp, pkt);
+			event = handle_rcr(ipcp, hdr, pkt);
 			break;
 		case PPP_CONF_ACK:
-			event = handle_rca(ipcp, pkt);
+			event = handle_rca(ipcp, hdr, pkt);
 			break;
 		case PPP_CONF_NAK:
-			event = handle_rcn_nak(ipcp, pkt);
+			event = handle_rcn_nak(ipcp, hdr, pkt);
 			break;
 		case PPP_CONF_REJ:
-			event = handle_rcn_rej(ipcp, pkt);
+			event = handle_rcn_rej(ipcp, hdr, pkt);
 			break;
 		case PPP_TERM_REQ:
 			event = E_RTR;
 			break;
 		case PPP_TERM_ACK:
-			event = handle_term_ack(ipcp, pkt);
+			event = handle_term_ack(ipcp, hdr, pkt);
 			break;
 		case PPP_CODE_REJ:
-			event = handle_coderej(pkt);
+			event = handle_coderej(hdr, pkt);
 			break;
 		default:
 			event = E_RUC;

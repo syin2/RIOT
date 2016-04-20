@@ -42,7 +42,7 @@ int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr)
 	}
 }
 
-int handle_rcr(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+int handle_rcr(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
 	ppp_hdr_t *ppp_hdr;
 	int has_options = _pkt_get_ppp_header(pkt, &ppp_hdr);
@@ -101,7 +101,7 @@ int handle_rcr(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 	return E_RCRp;
 }
 
-int handle_rca(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+int handle_rca(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
 	ppp_hdr_t *ppp_hdr;
 	_pkt_get_ppp_header(pkt, &ppp_hdr);
@@ -132,7 +132,7 @@ int handle_rca(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 	return E_RCA;
 }
 
-int handle_rcn_nak(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+int handle_rcn_nak(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
 	ppp_hdr_t *ppp_hdr;
 	_pkt_get_ppp_header(pkt, &ppp_hdr);
@@ -170,7 +170,7 @@ int handle_rcn_nak(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 	return E_RCN;
 }
 
-int handle_rcn_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+int handle_rcn_rej(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
 	ppp_hdr_t *ppp_hdr;
 	int has_options = _pkt_get_ppp_header(pkt, &ppp_hdr);
@@ -221,7 +221,7 @@ int handle_rcn_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 	return E_RCN;
 }
 
-int handle_coderej(gnrc_pktsnip_t *pkt)
+int handle_coderej(ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
 	/* Generate ppp packet from payload */
 	/* Mark ppp headr */
@@ -242,7 +242,7 @@ int handle_coderej(gnrc_pktsnip_t *pkt)
 }
 
 
-int handle_term_ack(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+int handle_term_ack(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
 	ppp_hdr_t *ppp_hdr;
 	_pkt_get_ppp_header(pkt, &ppp_hdr);

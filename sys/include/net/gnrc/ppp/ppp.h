@@ -281,12 +281,12 @@ void ser(ppp_cp_t *lcp, void *args);
 
 int cp_init(struct gnrc_pppdev_t *ppp_dev, ppp_cp_t *cp);
 int trigger_event(ppp_cp_t *cp, int event, gnrc_pktsnip_t *pkt);
-int handle_rcr(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
-int handle_rca(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
-int handle_rcn_nak(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
-int handle_rcn_rej(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
-int handle_coderej(gnrc_pktsnip_t *pkt);
-int handle_term_ack(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
+int handle_rcr(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
+int handle_rca(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
+int handle_rcn_nak(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
+int handle_rcn_rej(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
+int handle_coderej(ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
+int handle_term_ack(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 
 void print_pkt(gnrc_pktsnip_t *pkt);
 int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr);
