@@ -246,6 +246,52 @@ int gnrc_ppp_event_callback(gnrc_pppdev_t *dev, int ppp_event)
 	}
 	return 0;
 }
+uint8_t mark_ppp_pkt(gnrc_pktsnip_t *pkt)
+{
+	gnrc_pktsnip_t *result = gnrc_pktbuf_mark(pkt, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
+	if (!result) {
+		DEBUG("gnrc_ppp: no space left in packet buffer\n");
+		return 0; /*TODO:Fix right value */	
+	}
+	
+	hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t*) result->data;
+
+	switch(hdlc_hdr_get_protocol(hdlc_hdr))
+	{
+		case PPPTYPE_LCP:
+			pkt->type = GNRC_NETTYPE_LCP;
+			break;
+		case PPPTYPE_NCP_IPV4:
+			pkt->type = GNRC_NETTYPE_IPCP;
+			break;
+		default:
+			DEBUG("Unknown PPP protocol");
+	}
+	return 0;
+}
+gnrc_pktsnip_t *retrieve_pkt(pppdev_t *dev)
+{
+		int nbytes;
+		nbytes = dev->driver->recv(dev, NULL, 0, NULL);
+		gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, nbytes, GNRC_NETTYPE_UNDEF);
+		dev->driver->recv(dev, pkt->data, nbytes, NULL);
+		return pkt;
+}
+
+int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_event)
+{
+	uint8_t target = (ppp_event & 0xFF00)>>8;
+	(void) target;
+	uint8_t event = ppp_event & 0xFF;
+	gnrc_pktsnip_t *pkt;
+	if(event == PPP_RECV)
+	{
+		pkt = retrieve_pkt(dev->netdev);
+		target = mark_ppp_pkt(pkt);
+	}
+	/*Here we have the target*/
+	return 0;
+}
 
 void *gnrc_ppp_thread(void *args)
 {

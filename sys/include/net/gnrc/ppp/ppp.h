@@ -272,6 +272,10 @@ typedef struct gnrc_pppdev_t{
 	uint8_t state;
 } gnrc_pppdev_t;
 
+typedef struct ppp_protocol_t
+{
+	/* TODO: Add handler */
+} ppp_protocol_t;
 
 int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev);
 gnrc_pktsnip_t *pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnrc_pktsnip_t *payload);
