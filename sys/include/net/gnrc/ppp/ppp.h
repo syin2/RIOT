@@ -308,7 +308,7 @@ int handle_coderej(ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 int handle_term_ack(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 int fsm_event_from_pkt(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
 
-void print_pkt(gnrc_pktsnip_t *pkt);
+void print_pkt(gnrc_pktsnip_t *hdlc, gnrc_pktsnip_t *ppp, gnrc_pktsnip_t *pkt);
 int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr);
 
 void broadcast_upper_layer(msg_t *msg, uint8_t id, uint8_t event);

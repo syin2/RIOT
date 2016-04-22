@@ -38,13 +38,148 @@
 #include <inttypes.h>
 #endif
 
+#define dump_hex 1
 
-void print_pkt(gnrc_pktsnip_t *pkt)
+
+void print_protocol(uint16_t protocol)
 {
-	for(int i=0;i<pkt->size;i++)
+	switch(protocol)
 	{
-		DEBUG("%i\n", (int)*(((uint8_t*)pkt->data)+i));
+		case PPPTYPE_LCP:
+			DEBUG("LCP");
+			break;
+		case PPPTYPE_NCP_IPV4:
+			DEBUG("IPCP");
+			break;
+		default:
+			DEBUG("UNKNOWN_PROTOCOL");
+			break;
 	}
+}
+void print_ppp_code(uint8_t code)
+{
+	switch(code)
+	{
+		case PPP_CONF_REQ:
+			DEBUG("Configure Request");
+			break;
+		case PPP_CONF_ACK:
+			DEBUG("Configure Ack");
+			break;
+		case PPP_CONF_NAK:
+			DEBUG("Configure Nak");
+			break;
+		case PPP_CONF_REJ:
+			DEBUG("Configure Rej");
+			break;
+		case PPP_TERM_REQ:
+			DEBUG("Terminate Request");
+			break;
+		case PPP_TERM_ACK:
+			DEBUG("Terminate Ack");
+			break;
+		case PPP_CODE_REJ:
+			DEBUG("Code Reject");
+			break;
+		case PPP_PROT_REJ:
+			DEBUG("Protocol Reject");
+			break;
+		case PPP_ECHO_REQ:
+			DEBUG("Echo Request");
+			break;
+		case PPP_ECHO_REP:
+			DEBUG("Echo Reply");
+			break;
+		case PPP_DISC_REQ:
+			DEBUG("Discard Request");
+			break;
+		case PPP_IDENT:
+			DEBUG("Identification");
+			break;
+		case PPP_TIME_REM:
+			DEBUG("Time Remaining");
+			break;
+		case PPP_UNKNOWN_CODE:
+			DEBUG("Unknown");
+			break;
+	}
+}
+void print_opts(gnrc_pktsnip_t *payload)
+{
+	DEBUG("OPTS:<");
+	ppp_option_t *head = payload->data;
+	ppp_option_t *curr_opt = head;
+	uint8_t type, length;
+	uint8_t *p;
+	if(payload)
+	{
+		while(curr_opt)
+		{
+			type = ppp_opt_get_type(curr_opt);
+			length = ppp_opt_get_length(curr_opt);
+			DEBUG("\n\t[TYPE:%i, LENGTH:%i, VALUE:<",type, length);
+			p = (uint8_t*) ppp_opt_get_payload(curr_opt);
+			for(int i=0;i<length-2; i++)
+			{
+				DEBUG(" %02x ", *(p+i));
+			}
+			DEBUG(">]");
+			curr_opt = ppp_opt_get_next(curr_opt, head, payload->size);
+			if(curr_opt)
+				DEBUG(",");
+		}
+	}
+	else
+	{
+		DEBUG("None");
+	}
+	DEBUG(">");
+}
+void print_pkt(gnrc_pktsnip_t *hdlc_hdr, gnrc_pktsnip_t *ppp_hdr, gnrc_pktsnip_t *payload)
+{
+	hdlc_hdr_t *hdlc = (hdlc_hdr_t*) hdlc_hdr->data;
+	DEBUG("[");
+	print_protocol(hdlc_hdr_get_protocol(hdlc));
+	DEBUG(": ");
+
+	ppp_hdr_t *ppp = (ppp_hdr_t*) ppp_hdr->data;
+	uint8_t code = ppp_hdr_get_code(ppp);
+	print_ppp_code(code);
+	DEBUG(",ID:%i,SIZE:%i,", ppp_hdr_get_id(ppp), ppp_hdr_get_length(ppp));
+	if(code >= PPP_CONF_REQ && code <= PPP_CODE_REJ)
+	{
+		print_opts(payload);
+	}
+	else
+	{
+		DEBUG("DATA:<");
+		for(int i=0;i<payload->size;i++)
+		{
+			DEBUG(" %02x ", (int)*(((uint8_t*)payload->data)+i));
+		}
+	}
+	DEBUG("] ");
+
+	int i;
+	DEBUG("HEX: <");
+	for(i=0;i<4;i++)
+	{
+		DEBUG("%02x ", *(((uint8_t*)hdlc_hdr->data)+i));
+	}
+	for(i=0;i<4;i++)
+	{
+		DEBUG("%02x ", *(((uint8_t*)ppp_hdr->data)+i));
+	}
+	int payload_len;
+	if(payload)
+	{
+		payload_len = payload->size;
+		for(i=0;i<payload_len;i++)
+		{
+			DEBUG("%02x ", *(((uint8_t*)payload->data)+i));
+		}
+	}
+	DEBUG(">\n");
 }
 
 int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev)
@@ -79,13 +214,9 @@ int gnrc_ppp_send(pppdev_t *dev, gnrc_pktsnip_t *pkt)
 	hdlc_hdr_set_control(&hdlc_hdr, PPP_HDLC_CONTROL);
 	hdlc_hdr_set_protocol(&hdlc_hdr, gnrc_nettype_to_ppp_protnum(pkt->type));
 
-	DEBUG("Sending with protocol: %i\n", gnrc_nettype_to_ppp_protnum(pkt->type));
 	gnrc_pktsnip_t *hdr = gnrc_pktbuf_add(pkt, (void*) &hdlc_hdr, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
-	DEBUG("Sending:\n");
-	print_pkt(hdr);
-	print_pkt(pkt);
-	if(pkt->next)
-		print_pkt(pkt->next);
+	DEBUG(">>>>>>>>>> SEND:");
+	print_pkt(hdr, pkt, pkt->next);
 	/* Get iovec representation */
 	size_t n;
 	int res = -ENOBUFS;
@@ -214,29 +345,12 @@ void *gnrc_ppp_thread(void *args)
 
 	gnrc_ppp_init(&pppdev, (pppdev_t*) args);
 
-
-
 	pppdev_t *d = pppdev.netdev;
     d->driver->init(d);
 
 	msg_t msg_queue[GNRC_PPP_MSG_QUEUE];;
 	msg_init_queue(msg_queue, GNRC_PPP_MSG_QUEUE);
 	msg_t msg;
-#if 0
-	sim900_t *dev = (sim900_t*) d;
-#if TEST_PPP
-	dev->state = AT_STATE_RX;
-	dev->ppp_rx_state = PPP_RX_IDLE;
-	dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
-	dev->msg.content.value = PDP_UP;
-	msg_send(&dev->msg, dev->mac_pid);
-#else
-#endif
-#if TEST_WRITE
-	test_sending(dev);
-#endif
-#endif
-
 	int event;
     while(1)
     {
