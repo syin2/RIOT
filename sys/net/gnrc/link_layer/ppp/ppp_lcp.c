@@ -100,5 +100,6 @@ int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_cp_t *lcp)
 	lcp->prottype = GNRC_NETTYPE_LCP;
 	lcp->restart_timer = LCP_RESTART_TIMER;
 	lcp->get_conf_by_code = &lcp_get_conf_by_code;
+	lcp->prot.handler = &fsm_handle_ppp_msg;
 	return 0;
 }

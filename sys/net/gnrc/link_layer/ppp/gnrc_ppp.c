@@ -51,62 +51,10 @@ int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev)
 {
 	dev->netdev = netdev;
 	dev->state = PPP_LINK_DEAD;
-	lcp_init(dev, &dev->l_lcp);
-	ipcp_init(dev, &dev->l_ipcp);
+
+	lcp_init(dev, (ppp_cp_t*) dev->l_lcp);
+	ipcp_init(dev, (ppp_cp_t*) dev->l_ipcp);
 	return 0;
-}
-
-int ppp_dispatch_event_from_pkt(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
-{
-	/* Mark hdlc header */
-	gnrc_pktsnip_t *result = gnrc_pktbuf_mark(pkt, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
-	if (!result) {
-		DEBUG("gnrc_ppp: no space left in packet buffer\n");
-		return 0; /*TODO:Fix right value */	
-	}
-	
-	hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t*) result->data;
-
-	DEBUG("Printing pkt...");
-	print_pkt(pkt);
-	int event;
-
-	gnrc_pktsnip_t *ppp_hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), GNRC_NETTYPE_UNDEF);
-	ppp_hdr_t *hdr = (ppp_hdr_t*) ppp_hdr->data;
-
-	/* Route the packet according to protocol */
-	switch(hdlc_hdr_get_protocol(hdlc_hdr))
-	{
-		case PPPTYPE_IPV4:
-			/* Check if NCP is up. Silently discard pkt if not */
-			/*if (!dev->l_ncp->up)
-			{
-				break;
-			}*/
-			//_pktsnd_upper_layer(dev, &cp_pkt);
-			//goto dont_discard;
-			break;
-		case PPPTYPE_LCP:
-			/* Populate received pkt */
-			ppp_hdr->type = GNRC_NETTYPE_LCP;
-			//event = dev->l_lcp.handle_pkt(&dev->l_lcp, hdr, pkt);
-			event = fsm_event_from_pkt(&dev->l_lcp, hdr, pkt);
-			trigger_event(&dev->l_lcp, event, pkt);
-			break;
-		case PPPTYPE_NCP_IPV4:
-			ppp_hdr->type = GNRC_NETTYPE_IPCP;
-			event = fsm_event_from_pkt(&dev->l_ipcp, hdr, pkt);
-			trigger_event(&dev->l_ipcp, event, pkt);
-			break;
-		default:
-			break;
-	}
-
-		gnrc_pktbuf_release(pkt);
-		return 0; /*TODO:Fix right value */
-
-	//dont_discard:
-	//	return 0;/*TODO: Fix right value */
 }
 
 /* Generate PPP pkt */
@@ -150,102 +98,6 @@ int gnrc_ppp_send(pppdev_t *dev, gnrc_pktsnip_t *pkt)
 	return res;
 }
 
-static ppp_cp_t *get_protocol_from_target(gnrc_pppdev_t *dev, uint8_t target)
-{
-	switch(target)
-	{
-		case ID_LCP:
-			return &dev->l_lcp;
-			break;
-		case ID_IPCP:
-			return &dev->l_ipcp;
-		default:
-			return NULL;
-	}
-	return NULL;
-}
-
-int ppp_dispatch_event(gnrc_pppdev_t *dev, uint8_t target, uint8_t event)
-{
-	ppp_cp_t *target_protocol = get_protocol_from_target(dev, target);
-
-	if(target_protocol)
-	{
-		trigger_event(target_protocol, event, NULL);
-		return 0;
-	}
-
-	/*If target was broadcast type:*/
-
-	switch(target)
-	{
-		case 0xFF:
-			trigger_event(&dev->l_lcp, event, NULL);
-			break;
-		case 0xFE:
-			//Just for testing, send terminate request
-			trigger_event(&dev->l_ipcp, event, NULL);
-			break;
-		default:
-			DEBUG("Unrecognized PPP protocol event!\n");
-			return -EBADMSG;
-			break;
-	}
-	return 0;
-}
-
-int gnrc_ppp_event_callback(gnrc_pppdev_t *dev, int ppp_event)
-{
-	int nbytes;
-	ppp_cp_t *target_protocol;
-
-	uint8_t target = (ppp_event & 0xFF00)>>8;
-	uint8_t event = ppp_event & 0xFF;
-
-	switch (event)
-	{
-		case PPP_RECV:
-			nbytes = dev->netdev->driver->recv(dev->netdev, NULL, 0, NULL);
-			gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, nbytes, GNRC_NETTYPE_UNDEF);
-			dev->netdev->driver->recv(dev->netdev, pkt->data, nbytes, NULL);
-			ppp_dispatch_event_from_pkt(dev, pkt);
-			break;
-		case PPP_LINKUP:
-			DEBUG("Event: PPP_LINKUP\n");
-			/*Set here PPP states...*/
-			ppp_dispatch_event(dev, target, E_OPEN);
-			if(target == 0xFF)
-			{
-				dev->state = PPP_LINK_ESTABLISHED;
-				DEBUG("PPP STATE: LINK ESTABLISHED\n");
-			}
-			else if (target == 0xFE)
-			{
-				dev->state = PPP_OPEN;
-				DEBUG("PPP STATE: OPEN\n");
-			}
-			ppp_dispatch_event(dev, target, E_UP);
-			break;
-		case PPP_LINKDOWN:
-			/* Just to test, print message when this happens */
-			DEBUG("Some layer finished\n");
-			break;
-		case PPP_TIMEOUT:
-			target_protocol = get_protocol_from_target(dev, target);
-			if(target_protocol->restart_counter)
-			{
-				DEBUG("Event: TO+\n");
-				trigger_event(target_protocol, E_TOp, NULL);
-			}
-			else
-			{
-				DEBUG("Event: TO-\n");
-				trigger_event(target_protocol, E_TOm, NULL);
-			}
-			break;
-	}
-	return 0;
-}
 uint8_t mark_ppp_pkt(gnrc_pktsnip_t *pkt)
 {
 	gnrc_pktsnip_t *result = gnrc_pktbuf_mark(pkt, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
@@ -259,10 +111,10 @@ uint8_t mark_ppp_pkt(gnrc_pktsnip_t *pkt)
 	switch(hdlc_hdr_get_protocol(hdlc_hdr))
 	{
 		case PPPTYPE_LCP:
-			pkt->type = GNRC_NETTYPE_LCP;
+			return ID_LCP;
 			break;
 		case PPPTYPE_NCP_IPV4:
-			pkt->type = GNRC_NETTYPE_IPCP;
+			return ID_IPCP;
 			break;
 		default:
 			DEBUG("Unknown PPP protocol");
@@ -278,27 +130,93 @@ gnrc_pktsnip_t *retrieve_pkt(pppdev_t *dev)
 		return pkt;
 }
 
-int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_event)
+int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
-	uint8_t target = (ppp_event & 0xFF00)>>8;
-	(void) target;
-	uint8_t event = ppp_event & 0xFF;
-	gnrc_pktsnip_t *pkt;
+	ppp_cp_t *target = (ppp_cp_t*) protocol;
+	uint8_t event;
+	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
+	switch(ppp_event)
+	{
+		case PPP_RECV:
+			event = fsm_event_from_pkt(target, pkt);
+			trigger_event(target, event, pkt);
+			/*TODO: Fix this*/
+			gnrc_pktbuf_release(pkt);
+			break;
+		case PPP_LINKUP:
+			DEBUG("Event: PPP_LINKUP\n");
+			/*Set here PPP states...*/
+			trigger_event(target, E_OPEN, NULL);
+			trigger_event(target, E_UP, NULL);
+			break;
+		case PPP_LINKDOWN:
+			/* Just to test, print message when this happens */
+			DEBUG("Some layer finished\n");
+			break;
+		case PPP_TIMEOUT:
+			if(target->restart_counter)
+			{
+				DEBUG("Event: TO+\n");
+				trigger_event(target, E_TOp, NULL);
+			}
+			else
+			{
+				DEBUG("Event: TO-\n");
+				trigger_event(target, E_TOm, NULL);
+			}
+			break;
+	}
+	return 0;
+}
+
+int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
+{
+	DEBUG("Receiving a PPP_NETTYPE msg\n");
+	uint8_t target = (ppp_msg & 0xFF00)>>8;
+	uint8_t event = ppp_msg & 0xFF;
+	gnrc_pktsnip_t *pkt = NULL;
 	if(event == PPP_RECV)
 	{
 		pkt = retrieve_pkt(dev->netdev);
 		target = mark_ppp_pkt(pkt);
+		if(!target)
+		{
+			DEBUG("Please implement protocol reject!");
+			return -EBADMSG;
+		}
 	}
 	/*Here we have the target*/
+	switch(target)
+	{
+		case ID_LCP:
+		case 0xFF:
+			dev->l_lcp->handler(dev->l_lcp, event, pkt);
+			break;
+		case ID_IPCP:
+		case 0xFE:
+			dev->l_ipcp->handler(dev->l_ipcp, event, pkt);
+			break;
+		default:
+			break;
+	}
 	return 0;
 }
 
 void *gnrc_ppp_thread(void *args)
 {
     //Setup a new sim900 devide
+	gnrc_pppdev_t pppdev;
+	ppp_cp_t lcp;
+	ppp_cp_t ipcp;
 
-	gnrc_pppdev_t *pppdev = (gnrc_pppdev_t*) args;
-	pppdev_t *d = pppdev->netdev;
+	pppdev.l_lcp = (ppp_protocol_t*) &lcp;
+	pppdev.l_ipcp = (ppp_protocol_t*) &ipcp;
+
+	gnrc_ppp_init(&pppdev, (pppdev_t*) args);
+
+
+
+	pppdev_t *d = pppdev.netdev;
     d->driver->init(d);
 
 	msg_t msg_queue[GNRC_PPP_MSG_QUEUE];;
@@ -326,7 +244,7 @@ void *gnrc_ppp_thread(void *args)
 		event = msg.content.value;	
 		switch(msg.type){
 			case PPPDEV_MSG_TYPE_EVENT:
-				gnrc_ppp_event_callback(pppdev, event);
+				dispatch_ppp_msg(&pppdev, event);
 				break;
 			case NETDEV2_MSG_TYPE_EVENT:
 				d->driver->driver_ev((pppdev_t*) d, event);

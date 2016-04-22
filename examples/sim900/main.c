@@ -368,13 +368,10 @@ int main(void)
     sim900_t dev;
 	dev.netdev.driver = &driver;
 
-	gnrc_pppdev_t pppd;
-	gnrc_ppp_init(&pppd, (pppdev_t*) &dev);
-
 	xtimer_init();
-	kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, gnrc_ppp_thread, &pppd, "gnrc_ppp");
+	kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, gnrc_ppp_thread, &dev, "gnrc_ppp");
 
-	kernel_pid_t blinker_thread = thread_create(blinker_stack, sizeof(blinker_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, blinker, &pppd, "blinker");
+	kernel_pid_t blinker_thread = thread_create(blinker_stack, sizeof(blinker_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, blinker, &dev, "blinker");
 	(void) blinker_thread;
 	(void) pid;
 

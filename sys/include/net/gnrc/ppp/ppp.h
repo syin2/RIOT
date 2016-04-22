@@ -200,8 +200,14 @@ static const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 typedef struct ppp_cp_t ppp_cp_t;
 typedef struct cp_conf_t cp_conf_t;
 
+typedef struct ppp_protocol_t
+{
+	int (*handler)(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args);
+} ppp_protocol_t;
+
 /* Control Protocol struct*/
 typedef struct ppp_cp_t{
+	ppp_protocol_t prot;
 	uint8_t id;
 	gnrc_nettype_t prottype;
 	uint16_t supported_codes;
@@ -224,9 +230,7 @@ typedef struct ppp_cp_t{
 	uint8_t tr_sent_identifier;
 
 	msg_t msg;
-
 	cp_conf_t* (*get_conf_by_code)(ppp_cp_t *cp, uint8_t code);
-
 	cp_conf_t *conf;
 } ppp_cp_t;
 
@@ -262,8 +266,8 @@ typedef struct cp_conf_t
 
 /* PPP device */
 typedef struct gnrc_pppdev_t{
-	ppp_cp_t l_lcp;
-	ppp_cp_t l_ipcp;
+	ppp_protocol_t *l_lcp;
+	ppp_protocol_t *l_ipcp;
 	pppdev_t *netdev;
 
 	cp_conf_t lcp_opts[LCP_NUMOPTS];
@@ -272,10 +276,6 @@ typedef struct gnrc_pppdev_t{
 	uint8_t state;
 } gnrc_pppdev_t;
 
-typedef struct ppp_protocol_t
-{
-	/* TODO: Add handler */
-} ppp_protocol_t;
 
 int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev);
 gnrc_pktsnip_t *pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnrc_pktsnip_t *payload);
@@ -306,14 +306,14 @@ int handle_rcn_nak(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 int handle_rcn_rej(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 int handle_coderej(ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 int handle_term_ack(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
-int fsm_event_from_pkt(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
+int fsm_event_from_pkt(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
 
 void print_pkt(gnrc_pktsnip_t *pkt);
 int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr);
 
 void broadcast_upper_layer(msg_t *msg, uint8_t id, uint8_t event);
 void *gnrc_ppp_thread(void *args);
-
+int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args); 
 #ifdef __cplusplus
 }
 #endif

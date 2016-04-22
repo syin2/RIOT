@@ -256,11 +256,13 @@ int handle_term_ack(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 }
 
 
-int fsm_event_from_pkt(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
+int fsm_event_from_pkt(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 {
+	gnrc_pktsnip_t *ppp_hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), cp->prottype);
+	ppp_hdr_t *hdr = (ppp_hdr_t*) ppp_hdr->data;
+
 	int code = ppp_hdr_get_code(hdr);
 	int supported = cp->supported_codes & (1<<(code-1));
-	DEBUG("Supported: %i\n", supported);
 	int type = supported ? code : PPP_UNKNOWN_CODE; 
 
 	int event;
