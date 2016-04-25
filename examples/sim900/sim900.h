@@ -122,7 +122,9 @@ typedef struct sim900_t {
 	uint8_t escape;
 	uint16_t fcs;
 	uint16_t int_fcs;
-
+	
+	uint32_t tx_accm;
+	uint32_t rx_accm;
 } sim900_t;
 
 //static int get_AT(sim900_t*, resp_t*);

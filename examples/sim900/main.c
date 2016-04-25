@@ -315,6 +315,11 @@ void pdp_nosim(sim900_t *dev)
 	}*/
 }
 
+int sim900_set(pppdev_t *dev, uint8_t opt, void *value, size_t value_len)
+{
+	DEBUG("Setting accm from driver. Now implement the rest!\n");
+	return 0;
+}
 int sim900_init(pppdev_t *d)
 {
 	sim900_t *dev = (sim900_t*) d;
@@ -330,6 +335,8 @@ int sim900_init(pppdev_t *d)
 	dev->b_CR = FALSE; //flag for receiving a CR.
 	dev->urc_counter = 0;
 	dev->_stream = 0;
+	dev->rx_accm = 0;
+	dev->tx_accm = 0;
 
 	//mutex_init(&(dev->resp_lock));
 	//mutex_lock(&(dev->resp_lock));
@@ -364,6 +371,7 @@ int main(void)
 	driver.recv = &sim900_recv;
 	driver.driver_ev = &driver_events;
 	driver.init = &sim900_init;
+	driver.set = &sim900_set;
 
     sim900_t dev;
 	dev.netdev.driver = &driver;

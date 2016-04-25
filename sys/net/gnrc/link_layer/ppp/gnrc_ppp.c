@@ -261,44 +261,6 @@ gnrc_pktsnip_t *retrieve_pkt(pppdev_t *dev)
 		return pkt;
 }
 
-int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
-{
-	ppp_cp_t *target = (ppp_cp_t*) protocol;
-	uint8_t event;
-	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	switch(ppp_event)
-	{
-		case PPP_RECV:
-			event = fsm_event_from_pkt(target, pkt);
-			trigger_event(target, event, pkt);
-			/*TODO: Fix this*/
-			gnrc_pktbuf_release(pkt);
-			break;
-		case PPP_LINKUP:
-			DEBUG("Event: PPP_LINKUP\n");
-			/*Set here PPP states...*/
-			trigger_event(target, E_OPEN, NULL);
-			trigger_event(target, E_UP, NULL);
-			break;
-		case PPP_LINKDOWN:
-			/* Just to test, print message when this happens */
-			DEBUG("Some layer finished\n");
-			break;
-		case PPP_TIMEOUT:
-			if(target->restart_counter)
-			{
-				DEBUG("Event: TO+\n");
-				trigger_event(target, E_TOp, NULL);
-			}
-			else
-			{
-				DEBUG("Event: TO-\n");
-				trigger_event(target, E_TOm, NULL);
-			}
-			break;
-	}
-	return 0;
-}
 
 int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 {
@@ -365,23 +327,5 @@ void *gnrc_ppp_thread(void *args)
 				break;
     	}
     }
-}
-
-void broadcast_upper_layer(msg_t *msg, uint8_t id, uint8_t event)
-{
-	DEBUG("Sending msg to upper layer...\n");
-	msg->type = PPPDEV_MSG_TYPE_EVENT;
-	uint8_t target;
-	switch(id)
-	{
-		case ID_LCP:
-			target = 0xFE;
-			break;
-		default:
-			DEBUG("Unrecognized lower layer!\n");
-			return;
-	}
-	msg->content.value = (target<<8) + event;
-	msg_send(msg, thread_getpid());
 }
 

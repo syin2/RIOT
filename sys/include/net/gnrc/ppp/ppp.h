@@ -40,6 +40,9 @@
 extern "C" {
 #endif
 
+#define PPPOPT_ACCM_RX (1)
+#define PPPOPT_ACCM_TX (2)
+
 #define GNRC_PPP_MSG_QUEUE 64
 
 #define PPP_HDLC_ADDRESS (0xFF)
@@ -243,7 +246,7 @@ typedef struct pppdev_driver_t
 	int (*recv)(pppdev_t *dev, char *buf, int len, void *info);
 	void (*driver_ev)(pppdev_t *dev, uint8_t event);
 	int (*init)(pppdev_t *dev);
-
+	int (*set)(pppdev_t *dev, uint8_t opt, void *value, size_t value_len);
 } pppdev_driver_t;
 
 typedef struct pppdev_t
@@ -261,6 +264,7 @@ typedef struct cp_conf_t
 	uint8_t (*is_valid)(ppp_option_t *opt);
 	void (*handle_nak)(struct cp_conf_t *conf, ppp_option_t *opt);
 	uint8_t (*build_nak_opts)(ppp_option_t *opt);
+	void (*set)(ppp_cp_t *t, ppp_option_t *opt, uint8_t peer);
 	struct cp_conf_t *next;
 } cp_conf_t;
 

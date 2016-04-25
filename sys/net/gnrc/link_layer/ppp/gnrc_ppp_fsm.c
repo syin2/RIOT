@@ -575,7 +575,19 @@ int handle_rcr(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 		if(!found)
 			return E_RCRm;
 
-		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);;
+		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
+	}
+
+	/* Valid options... set them before SCA */
+	curr_opt = head;
+	while(curr_opt)
+	{
+		curr_conf = cp->get_conf_by_code(cp, ppp_opt_get_type(curr_opt));
+		if(curr_conf)
+			curr_conf->set(cp, curr_opt, true);
+		else
+			DEBUG("handle_rcr inconsistency in pkt. Shouldn't happen\n");
+		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
 	}
 
 	return E_RCRp;
@@ -608,6 +620,26 @@ int handle_rca(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 	if (pkt_id != cp->cr_sent_identifier || memcmp(cp->cr_sent_opts, opts, pkt_length-sizeof(ppp_hdr_t)))
 	{
 		return -EBADMSG;
+	}
+
+	/*Write options in corresponding devices*/
+	if (has_options)
+	{
+		ppp_option_t *head = (ppp_option_t*) opts;
+		ppp_option_t *curr_opt = head;
+		cp_conf_t *conf;
+		while(curr_opt)
+		{
+			conf = cp->get_conf_by_code(cp, ppp_opt_get_type(curr_opt));
+			if(!conf)
+			{
+				/*Received invalid ACK*/
+				DEBUG("Peer sent inconsistent ACK\n");
+				return -EBADMSG;
+			}
+			conf->set(cp, curr_opt, false);
+			curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
+		}
 	}
 	return E_RCA;
 }
@@ -784,3 +816,63 @@ int fsm_event_from_pkt(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
 	return event;
 }
 
+void broadcast_upper_layer(msg_t *msg, uint8_t id, uint8_t event)
+{
+	DEBUG("Sending msg to upper layer...\n");
+	msg->type = PPPDEV_MSG_TYPE_EVENT;
+	uint8_t target;
+	switch(id)
+	{
+		case ID_LCP:
+			target = 0xFE;
+			break;
+		case ID_IPCP:
+			DEBUG("IPCP done\n");
+			break;
+			return;
+		default:
+			DEBUG("Unrecognized lower layer!\n");
+			return;
+	}
+	msg->content.value = (target<<8) + event;
+	msg_send(msg, thread_getpid());
+}
+
+int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
+{
+	ppp_cp_t *target = (ppp_cp_t*) protocol;
+	uint8_t event;
+	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
+	switch(ppp_event)
+	{
+		case PPP_RECV:
+			event = fsm_event_from_pkt(target, pkt);
+			trigger_event(target, event, pkt);
+			/*TODO: Fix this*/
+			gnrc_pktbuf_release(pkt);
+			break;
+		case PPP_LINKUP:
+			DEBUG("Event: PPP_LINKUP\n");
+			/*Set here PPP states...*/
+			trigger_event(target, E_OPEN, NULL);
+			trigger_event(target, E_UP, NULL);
+			break;
+		case PPP_LINKDOWN:
+			/* Just to test, print message when this happens */
+			DEBUG("Some layer finished\n");
+			break;
+		case PPP_TIMEOUT:
+			if(target->restart_counter)
+			{
+				DEBUG("Event: TO+\n");
+				trigger_event(target, E_TOp, NULL);
+			}
+			else
+			{
+				DEBUG("Event: TO-\n");
+				trigger_event(target, E_TOm, NULL);
+			}
+			break;
+	}
+	return 0;
+}
