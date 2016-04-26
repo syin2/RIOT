@@ -233,8 +233,8 @@ int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev)
 	dev->netdev = netdev;
 	dev->state = PPP_LINK_DEAD;
 
-	lcp_init(dev, (ppp_cp_t*) dev->l_lcp);
-	ipcp_init(dev, (ppp_cp_t*) dev->l_ipcp);
+	lcp_init(dev, (ppp_fsm_t*) dev->l_lcp);
+	ipcp_init(dev, (ppp_fsm_t*) dev->l_ipcp);
 	return 0;
 }
 
@@ -300,8 +300,8 @@ void *gnrc_ppp_thread(void *args)
 {
     //Setup a new sim900 devide
 	gnrc_pppdev_t pppdev;
-	ppp_cp_t lcp;
-	ppp_cp_t ipcp;
+	ppp_fsm_t lcp;
+	ppp_fsm_t ipcp;
 
 	pppdev.l_lcp = (ppp_protocol_t*) &lcp;
 	pppdev.l_ipcp = (ppp_protocol_t*) &ipcp;

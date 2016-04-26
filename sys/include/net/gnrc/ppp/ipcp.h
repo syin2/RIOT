@@ -14,9 +14,9 @@ typedef enum{
 } ipcp_options_t;
 
 struct gnrc_pppdev_t;
-struct ppp_cp_t;
+struct ppp_fsm_t;
 
-int ipcp_init(struct gnrc_pppdev_t *ppp_dev, struct ppp_cp_t *ipcp);
+int ipcp_init(struct gnrc_pppdev_t *ppp_dev, struct ppp_fsm_t *ipcp);
 
 #ifdef __cplusplus
 }

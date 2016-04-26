@@ -200,7 +200,7 @@ static const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 
 
 
-typedef struct ppp_cp_t ppp_cp_t;
+typedef struct ppp_fsm_t ppp_fsm_t;
 typedef struct cp_conf_t cp_conf_t;
 
 typedef struct ppp_protocol_t
@@ -210,7 +210,7 @@ typedef struct ppp_protocol_t
 } ppp_protocol_t;
 
 /* Control Protocol struct*/
-typedef struct ppp_cp_t{
+typedef struct ppp_fsm_t{
 	ppp_protocol_t prot;
 	gnrc_nettype_t prottype;
 	uint16_t supported_codes;
@@ -225,7 +225,6 @@ typedef struct ppp_cp_t{
 
 	/* For Configure Request */
 	uint8_t cr_sent_identifier;
-
 	uint8_t cr_sent_opts[OPT_PAYLOAD_BUF_SIZE];
 	uint16_t cr_sent_size;
 
@@ -233,9 +232,9 @@ typedef struct ppp_cp_t{
 	uint8_t tr_sent_identifier;
 
 	msg_t msg;
-	cp_conf_t* (*get_conf_by_code)(ppp_cp_t *cp, uint8_t code);
+	cp_conf_t* (*get_conf_by_code)(ppp_fsm_t *cp, uint8_t code);
 	cp_conf_t *conf;
-} ppp_cp_t;
+} ppp_fsm_t;
 
 
 typedef struct pppdev_t pppdev_t;
@@ -264,7 +263,7 @@ typedef struct cp_conf_t
 	uint8_t (*is_valid)(ppp_option_t *opt);
 	void (*handle_nak)(struct cp_conf_t *conf, ppp_option_t *opt);
 	uint8_t (*build_nak_opts)(ppp_option_t *opt);
-	void (*set)(ppp_cp_t *t, ppp_option_t *opt, uint8_t peer);
+	void (*set)(ppp_fsm_t *t, ppp_option_t *opt, uint8_t peer);
 	struct cp_conf_t *next;
 } cp_conf_t;
 
@@ -288,29 +287,29 @@ int gnrc_ppp_recv(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt);
 int gnrc_ppp_event_callback(gnrc_pppdev_t *dev, int ppp_event);
 
 /* Implementation of LCP fsm actions */
-void tlu(ppp_cp_t *lcp, void *args);
-void tld(ppp_cp_t *lcp, void *args);
-void tls(ppp_cp_t *lcp, void *args);
-void tlf(ppp_cp_t *lcp, void *args);
-void irc(ppp_cp_t *lcp, void *args);
-void zrc(ppp_cp_t *lcp, void *args);
-void scr(ppp_cp_t *lcp, void *args);
-void sca(ppp_cp_t *lcp, void *args);
-void scn(ppp_cp_t *lcp, void *args);
-void str(ppp_cp_t *lcp, void *args);
-void sta(ppp_cp_t *lcp, void *args);
-void scj(ppp_cp_t *lcp, void *args);
-void ser(ppp_cp_t *lcp, void *args);
+void tlu(ppp_fsm_t *lcp, void *args);
+void tld(ppp_fsm_t *lcp, void *args);
+void tls(ppp_fsm_t *lcp, void *args);
+void tlf(ppp_fsm_t *lcp, void *args);
+void irc(ppp_fsm_t *lcp, void *args);
+void zrc(ppp_fsm_t *lcp, void *args);
+void scr(ppp_fsm_t *lcp, void *args);
+void sca(ppp_fsm_t *lcp, void *args);
+void scn(ppp_fsm_t *lcp, void *args);
+void str(ppp_fsm_t *lcp, void *args);
+void sta(ppp_fsm_t *lcp, void *args);
+void scj(ppp_fsm_t *lcp, void *args);
+void ser(ppp_fsm_t *lcp, void *args);
 
-int cp_init(struct gnrc_pppdev_t *ppp_dev, ppp_cp_t *cp);
-int trigger_event(ppp_cp_t *cp, int event, gnrc_pktsnip_t *pkt);
-int handle_rcr(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
-int handle_rca(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
-int handle_rcn_nak(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
-int handle_rcn_rej(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
+int cp_init(struct gnrc_pppdev_t *ppp_dev, ppp_fsm_t *cp);
+int trigger_event(ppp_fsm_t *cp, int event, gnrc_pktsnip_t *pkt);
+int handle_rcr(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
+int handle_rca(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
+int handle_rcn_nak(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
+int handle_rcn_rej(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 int handle_coderej(ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
-int handle_term_ack(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
-int fsm_event_from_pkt(ppp_cp_t *cp, gnrc_pktsnip_t *pkt);
+int handle_term_ack(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
+int fsm_event_from_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt);
 
 void print_pkt(gnrc_pktsnip_t *hdlc, gnrc_pktsnip_t *ppp, gnrc_pktsnip_t *pkt);
 int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr);

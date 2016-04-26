@@ -34,7 +34,7 @@
 #include <inttypes.h>
 #endif
 
-static cp_conf_t *lcp_get_conf_by_code(ppp_cp_t *cp, uint8_t code)
+static cp_conf_t *lcp_get_conf_by_code(ppp_fsm_t *cp, uint8_t code)
 {
 	switch(code)
 	{
@@ -83,7 +83,7 @@ uint8_t lcp_mru_build_nak_opts(uint8_t *buf)
 }
 
 
-void lcp_mru_set(ppp_cp_t *lcp, ppp_option_t *opt, uint8_t peer)
+void lcp_mru_set(ppp_fsm_t *lcp, ppp_option_t *opt, uint8_t peer)
 {
 	DEBUG("Called LCP MRU set, but still not implemented!\n");
 }
@@ -107,7 +107,7 @@ uint8_t lcp_accm_build_nak_opts(uint8_t *buf)
 	return true;
 }
 
-void lcp_accm_set(ppp_cp_t *lcp, ppp_option_t *opt, uint8_t peer)
+void lcp_accm_set(ppp_fsm_t *lcp, ppp_option_t *opt, uint8_t peer)
 {
 	DEBUG("Setting ACCM\n");
 	if(peer)
@@ -116,7 +116,7 @@ void lcp_accm_set(ppp_cp_t *lcp, ppp_option_t *opt, uint8_t peer)
 		lcp->dev->netdev->driver->set(lcp->dev->netdev, PPPOPT_ACCM_TX, (void*) ppp_opt_get_payload(opt), 4);
 }
 
-int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_cp_t *lcp)
+int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
 {
 	cp_init(ppp_dev, lcp);
 

@@ -24,9 +24,9 @@ typedef enum{
 } lcp_options_t;
 
 struct gnrc_pppdev_t;
-struct ppp_cp_t;
+struct ppp_fsm_t;
 
-int lcp_init(struct gnrc_pppdev_t *ppp_dev, struct ppp_cp_t *lcp);
+int lcp_init(struct gnrc_pppdev_t *ppp_dev, struct ppp_fsm_t *lcp);
 
 #ifdef __cplusplus
 }

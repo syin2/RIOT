@@ -19,14 +19,14 @@
 #include <inttypes.h>
 #endif
 
-void set_timeout(ppp_cp_t *cp, uint32_t time)
+void set_timeout(ppp_fsm_t *cp, uint32_t time)
 {
 	cp->msg.type = PPPDEV_MSG_TYPE_EVENT;
 	cp->msg.content.value = (((ppp_protocol_t*)cp)->id<<8) +PPP_TIMEOUT;
 	xtimer_set_msg(&cp->xtimer, cp->restart_timer, &cp->msg, thread_getpid());
 }
 
-gnrc_pktsnip_t *build_options(ppp_cp_t *cp)
+gnrc_pktsnip_t *build_options(ppp_fsm_t *cp)
 {
 	size_t size=0;
 	cp_conf_t *opt = cp->conf;
@@ -62,7 +62,7 @@ gnrc_pktsnip_t *build_options(ppp_cp_t *cp)
 	return opts;
 }
 
-static uint8_t get_scnpkt_data(ppp_cp_t *cp, gnrc_pktsnip_t *pkt, uint16_t *n)
+static uint8_t get_scnpkt_data(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt, uint16_t *n)
 {
 	ppp_option_t *head = pkt->data;
 	ppp_option_t *curr_opt = head;
@@ -104,7 +104,7 @@ static uint8_t get_scnpkt_data(ppp_cp_t *cp, gnrc_pktsnip_t *pkt, uint16_t *n)
 	return rej_size ? PPP_CONF_REJ : PPP_CONF_NAK;
 }
 
-static void build_nak_pkt(ppp_cp_t *cp, gnrc_pktsnip_t *pkt, uint8_t *buf)
+static void build_nak_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt, uint8_t *buf)
 {
 	ppp_option_t *head = pkt->data;
 	ppp_option_t *curr_opt = head;
@@ -126,7 +126,7 @@ static void build_nak_pkt(ppp_cp_t *cp, gnrc_pktsnip_t *pkt, uint8_t *buf)
 	}
 }
 
-static void build_rej_pkt(ppp_cp_t *cp, gnrc_pktsnip_t *pkt, uint8_t *buf)
+static void build_rej_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt, uint8_t *buf)
 {
 	ppp_option_t *head = pkt->data;
 	ppp_option_t *curr_opt = head;
@@ -254,7 +254,7 @@ static void print_transition(int state, uint8_t event, int next_state)
 	DEBUG("\n");
 }
 /* Call functions depending on function flag*/
-static void _event_action(ppp_cp_t *cp, uint8_t event, gnrc_pktsnip_t *pkt) 
+static void _event_action(ppp_fsm_t *cp, uint8_t event, gnrc_pktsnip_t *pkt) 
 {
 	int flags;
 
@@ -275,7 +275,7 @@ static void _event_action(ppp_cp_t *cp, uint8_t event, gnrc_pktsnip_t *pkt)
 	if(flags & F_SER) ser(cp, (void*) pkt);
 }
 
-int trigger_event(ppp_cp_t *cp, int event, gnrc_pktsnip_t *pkt)
+int trigger_event(ppp_fsm_t *cp, int event, gnrc_pktsnip_t *pkt)
 {
 	if (event < 0)
 	{
@@ -301,7 +301,7 @@ int trigger_event(ppp_cp_t *cp, int event, gnrc_pktsnip_t *pkt)
 	return 0;
 }
 
-void tlu(ppp_cp_t *cp, void *args)
+void tlu(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG("> This layer up (a.k.a Successfully negotiated Link)\n");
@@ -309,21 +309,21 @@ void tlu(ppp_cp_t *cp, void *args)
 	(void) cp;
 }
 
-void tld(ppp_cp_t *cp, void *args)
+void tld(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG("> This layer down\n");
 	(void) cp;
 }
 
-void tls(ppp_cp_t *cp, void *args)
+void tls(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  This layer started\n");
 	(void) cp;
 }
 
-void tlf(ppp_cp_t *cp, void *args)
+void tlf(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  This layer finished\n");
@@ -331,7 +331,7 @@ void tlf(ppp_cp_t *cp, void *args)
 	(void) cp;
 }
 
-void irc(ppp_cp_t *cp, void *args)
+void irc(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Init Restart Counter\n");
@@ -346,7 +346,7 @@ void irc(ppp_cp_t *cp, void *args)
 		cp->restart_counter = PPP_MAX_TERMINATE;
 	}
 }
-void zrc(ppp_cp_t *cp, void *args)
+void zrc(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Zero restart counter\n ");
@@ -356,7 +356,7 @@ void zrc(ppp_cp_t *cp, void *args)
 }
 
 
-void scr(ppp_cp_t *cp, void *args)
+void scr(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Sending Configure Request\n");
@@ -383,7 +383,7 @@ void scr(ppp_cp_t *cp, void *args)
 	set_timeout(cp, cp->restart_timer);
 }
 
-void sca(ppp_cp_t *cp, void *args)
+void sca(ppp_fsm_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
@@ -410,7 +410,7 @@ void sca(ppp_cp_t *cp, void *args)
 	gnrc_ppp_send(cp->dev->netdev, send_pkt);
 }
 
-void scn(ppp_cp_t *cp, void *args)
+void scn(ppp_fsm_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
@@ -441,7 +441,7 @@ void scn(ppp_cp_t *cp, void *args)
 	gnrc_ppp_send(cp->dev->netdev, send_pkt);
 }
 
-void str(ppp_cp_t *cp, void *args)
+void str(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Sending Terminate Request\n");
@@ -457,7 +457,7 @@ void str(ppp_cp_t *cp, void *args)
 #endif
 }
 
-void sta(ppp_cp_t *cp, void *args)
+void sta(ppp_fsm_t *cp, void *args)
 { 
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
@@ -474,7 +474,7 @@ void sta(ppp_cp_t *cp, void *args)
 	send_cp(cp, pkt);
 #endif
 }
-void scj(ppp_cp_t *cp, void *args)
+void scj(ppp_fsm_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
@@ -483,7 +483,7 @@ void scj(ppp_cp_t *cp, void *args)
 	(void) pkt;
 	//send_cp(cp, PPP_CP_CODE_REJ);
 }
-void ser(ppp_cp_t *cp, void *args)
+void ser(ppp_fsm_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
@@ -493,7 +493,7 @@ void ser(ppp_cp_t *cp, void *args)
 	//send_cp(cp,PPP_CP_SER);
 }
 
-int cp_init(gnrc_pppdev_t *ppp_dev, ppp_cp_t *cp)
+int cp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *cp)
 {
 	cp->state = S_INITIAL;
 	cp->cr_sent_identifier = 0;
@@ -501,7 +501,7 @@ int cp_init(gnrc_pppdev_t *ppp_dev, ppp_cp_t *cp)
 	return 0;
 }
 
-static int _opt_is_ack(ppp_cp_t *cp, ppp_option_t *opt)
+static int _opt_is_ack(ppp_fsm_t *cp, ppp_option_t *opt)
 {
 	cp_conf_t *curr_conf=NULL;
 	curr_conf = cp->get_conf_by_code(cp, ppp_opt_get_type(opt));
@@ -522,7 +522,7 @@ int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr)
 	}
 }
 
-int handle_rcr(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
+int handle_rcr(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
 	ppp_hdr_t *ppp_hdr;
 	int has_options = _pkt_get_ppp_header(pkt, &ppp_hdr);
@@ -593,7 +593,7 @@ int handle_rcr(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 	return E_RCRp;
 }
 
-int handle_rca(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
+int handle_rca(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
 	ppp_hdr_t *ppp_hdr;
 	_pkt_get_ppp_header(pkt, &ppp_hdr);
@@ -644,7 +644,7 @@ int handle_rca(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 	return E_RCA;
 }
 
-int handle_rcn_nak(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
+int handle_rcn_nak(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
 	ppp_hdr_t *ppp_hdr;
 	_pkt_get_ppp_header(pkt, &ppp_hdr);
@@ -682,7 +682,7 @@ int handle_rcn_nak(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 	return E_RCN;
 }
 
-int handle_rcn_rej(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
+int handle_rcn_rej(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
 	ppp_hdr_t *ppp_hdr;
 	int has_options = _pkt_get_ppp_header(pkt, &ppp_hdr);
@@ -754,7 +754,7 @@ int handle_coderej(ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 }
 
 
-int handle_term_ack(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
+int handle_term_ack(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
 	ppp_hdr_t *ppp_hdr;
 	_pkt_get_ppp_header(pkt, &ppp_hdr);
@@ -768,7 +768,7 @@ int handle_term_ack(ppp_cp_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 }
 
 
-int fsm_event_from_pkt(ppp_cp_t *cp, gnrc_pktsnip_t *pkt)
+int fsm_event_from_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
 {
 	gnrc_pktsnip_t *ppp_hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), cp->prottype);
 	DEBUG("<<<<<<<<<< RECV:");
@@ -839,7 +839,7 @@ void broadcast_upper_layer(msg_t *msg, uint8_t id, uint8_t event)
 
 int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
-	ppp_cp_t *target = (ppp_cp_t*) protocol;
+	ppp_fsm_t *target = (ppp_fsm_t*) protocol;
 	uint8_t event;
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
 	switch(ppp_event)

@@ -36,7 +36,7 @@
 #endif
 
 
-static cp_conf_t *ipcp_get_conf_by_code(ppp_cp_t *cp, uint8_t code)
+static cp_conf_t *ipcp_get_conf_by_code(ppp_fsm_t *cp, uint8_t code)
 {
 	switch(code)
 	{
@@ -61,12 +61,12 @@ uint8_t ipcp_ipaddress_build_nak_opts(uint8_t *buf)
 {
 	return 0;
 }
-void ipcp_ipaddress_set(ppp_cp_t *ipcp, ppp_option_t *opt, uint8_t peer)
+void ipcp_ipaddress_set(ppp_fsm_t *ipcp, ppp_option_t *opt, uint8_t peer)
 {
 	DEBUG("Please implement ipaddress_set from IPCP\n");
 }
 
-int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_cp_t *ipcp)
+int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *ipcp)
 {
 	cp_init(ppp_dev, ipcp);
 

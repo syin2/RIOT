@@ -28,6 +28,9 @@
 #include "sim900.h"
 #include "net/gnrc/netdev2.h"
 
+#include "shell.h"
+#include "shell_commands.h"
+
 #define PPPINITFCS16    0xffff
 #define PPPGOODFCS16    0xf0b8
 
@@ -37,6 +40,7 @@
 
 #define TEST_PPP (0)
 #define TEST_WRITE (0)
+#define ENABLE_SHELL (0)
 
 
 char thread_stack[THREAD_STACKSIZE_MAIN];	
@@ -400,10 +404,12 @@ int main(void)
 	(void) blinker_thread;
 	(void) pid;
 
-	while(1)
-	{
-		
-	}
+#if ENABLE_SHELL
+	char line_buf[SHELL_DEFAULT_BUFSIZE];
+	shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
+#else
+	while(1){}
+#endif
 
     return 0;
 }
