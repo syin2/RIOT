@@ -71,6 +71,13 @@ void ipcp_ipaddress_set(ppp_fsm_t *ipcp, ppp_option_t *opt, uint8_t peer)
 		((ipcp_t*) ipcp)->local_ip = *((ipv4_addr_t*) ppp_opt_get_payload(opt));
 }
 
+int ppp_ipv4_handler(ppp_protocol_t *prot, uint8_t event, gnrc_pktsnip_t *pkt)
+{
+	DEBUG("Received an IPv4 packet!!\n");
+	/*For now, just drop it*/
+	gnrc_pktbuf_release(pkt);
+	return 0;
+}
 int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *ipcp)
 {
 	cp_init(ppp_dev, ipcp);

@@ -24,10 +24,16 @@ typedef struct ipcp_t
 	cp_conf_t ipcp_opts[IPCP_NUMOPTS];
 } ipcp_t;
 
+typedef struct ppp_ipv4_t
+{
+	ppp_protocol_t prot;
+} ppp_ipv4_t;
+
 struct gnrc_pppdev_t;
 struct ppp_fsm_t;
 
 int ipcp_init(struct gnrc_pppdev_t *ppp_dev, struct ppp_fsm_t *ipcp);
+int ppp_ipv4_handler(ppp_protocol_t *prot, uint8_t event, gnrc_pktsnip_t *pkt);
 
 #ifdef __cplusplus
 }
