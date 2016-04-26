@@ -25,6 +25,7 @@
 #include "net/gnrc/pktbuf.h"
 #include "net/gnrc/nettype.h"
 #include <errno.h>
+#include "net/gnrc/ppp/fsm.h"
 
 #define ENABLE_DEBUG    (1)
 #include "debug.h"

@@ -22,6 +22,7 @@
 #include "net/ppp/hdr.h"
 
 #include "net/gnrc/ppp/opt.h"
+#include "net/gnrc/ppp/fsm.h"
 #include "net/gnrc/pkt.h"
 #include "net/gnrc/pktbuf.h"
 #include "net/gnrc/nettype.h"
