@@ -6,6 +6,7 @@
 #include "net/ppptype.h"
 #include "net/gnrc/ppp/ppp.h"
 #include "net/gnrc/ppp/lcp.h"
+#include "net/gnrc/ppp/ipcp.h"
 #include "net/gnrc/ppp/fsm.h"
 #include "net/hdlc/hdr.h"
 #include "net/ppp/hdr.h"

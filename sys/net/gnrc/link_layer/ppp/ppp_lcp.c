@@ -121,8 +121,7 @@ int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
 {
 	cp_init(ppp_dev, lcp);
 
-	lcp->conf = ppp_dev->lcp_opts;
-
+	lcp->conf = ((lcp_t*) lcp)->lcp_opts;
 
 	lcp->conf[LCP_MRU].type = LCP_OPT_MRU;
 	lcp->conf[LCP_MRU].value = byteorder_htonl(3500);

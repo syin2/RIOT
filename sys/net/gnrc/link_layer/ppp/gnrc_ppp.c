@@ -25,6 +25,7 @@
 #include "net/ppptype.h"
 #include "net/gnrc/ppp/ppp.h"
 #include "net/gnrc/ppp/lcp.h"
+#include "net/gnrc/ppp/ipcp.h"
 #include "net/gnrc/ppp/fsm.h"
 #include "net/hdlc/hdr.h"
 #include "net/ppp/hdr.h"
@@ -301,8 +302,8 @@ void *gnrc_ppp_thread(void *args)
 {
     //Setup a new sim900 devide
 	gnrc_pppdev_t pppdev;
-	ppp_fsm_t lcp;
-	ppp_fsm_t ipcp;
+	lcp_t lcp;
+	ipcp_t ipcp;
 
 	pppdev.l_lcp = (ppp_protocol_t*) &lcp;
 	pppdev.l_ipcp = (ppp_protocol_t*) &ipcp;

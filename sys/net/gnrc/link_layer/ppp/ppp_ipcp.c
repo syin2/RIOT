@@ -71,7 +71,7 @@ int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *ipcp)
 {
 	cp_init(ppp_dev, ipcp);
 
-	ipcp->conf = ppp_dev->ipcp_opts;
+	ipcp->conf = ((ipcp_t*) ipcp)->ipcp_opts;
 	ipcp->conf[IPCP_IPADDRESS].type = 3;
 	ipcp->conf[IPCP_IPADDRESS].value = byteorder_htonl(0);
 	ipcp->conf[IPCP_IPADDRESS].size = 4;

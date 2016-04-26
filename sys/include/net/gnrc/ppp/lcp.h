@@ -1,6 +1,8 @@
 #ifndef PPP_LCP_H_
 #define PPP_LCP_H_
 
+#include "net/gnrc/ppp/fsm.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -22,6 +24,13 @@ typedef enum{
 	LCP_ACCM,
 	LCP_NUMOPTS
 } lcp_options_t;
+
+
+typedef struct lcp_t
+{
+	ppp_fsm_t fsm;
+	cp_conf_t lcp_opts[LCP_NUMOPTS];
+} lcp_t;
 
 struct gnrc_pppdev_t;
 struct ppp_fsm_t;

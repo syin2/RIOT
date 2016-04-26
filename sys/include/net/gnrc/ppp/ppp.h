@@ -32,8 +32,6 @@
 #include "xtimer.h"
 #include "thread.h"
 #include "net/gnrc/ppp/opt.h"
-#include "net/gnrc/ppp/lcp.h"
-#include "net/gnrc/ppp/ipcp.h"
 #include "sys/uio.h"
 
 #ifdef __cplusplus
@@ -127,29 +125,12 @@ typedef struct pppdev_t
 } pppdev_t;
 
 
-typedef struct ppp_fsm_t ppp_fsm_t;
-typedef struct cp_conf_t
-{
-	uint8_t type;
-	network_uint32_t value;
-	size_t size;
-	uint8_t flags;
-
-	uint8_t (*is_valid)(ppp_option_t *opt);
-	void (*handle_nak)(struct cp_conf_t *conf, ppp_option_t *opt);
-	uint8_t (*build_nak_opts)(ppp_option_t *opt);
-	void (*set)(ppp_fsm_t *t, ppp_option_t *opt, uint8_t peer);
-	struct cp_conf_t *next;
-} cp_conf_t;
 
 /* PPP device */
 typedef struct gnrc_pppdev_t{
 	ppp_protocol_t *l_lcp;
 	ppp_protocol_t *l_ipcp;
 	pppdev_t *netdev;
-
-	cp_conf_t lcp_opts[LCP_NUMOPTS];
-	cp_conf_t ipcp_opts[IPCP_NUMOPTS];
 
 	uint8_t state;
 } gnrc_pppdev_t;
