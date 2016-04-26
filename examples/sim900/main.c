@@ -290,7 +290,7 @@ void pdp_netattach(sim900_t *dev)
 	if(dev->at_status &  HAS_ERROR)
 	{
 		//Set timeout
-		at_timeout(dev, 10000000U, &pdp_netattach_timeout);
+		at_timeout(dev, 3000000U, &pdp_netattach_timeout);
 	}
 	else
 	{
