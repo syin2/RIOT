@@ -104,6 +104,11 @@ static void rx_cb(void *arg, uint8_t data)
 				//Escape next character
 				dev->escape = 0x20;
 			}
+			else if (data <= 0x20 && dev->rx_accm & (1<<(31-data)))
+			{
+				DEBUG("Flagged");
+				//Flagged in ACCM. Ignore character.
+			}
 			else
 			{
 				dev->ppp_rx_state = PPP_RX_STARTED;
@@ -167,7 +172,7 @@ int sim900_send(pppdev_t *ppp_dev, const struct iovec *vector, int count)
 		for(int j=0;j<vector[i].iov_len;j++)
 		{
 			c = *(((uint8_t*)vector[i].iov_base)+j);
-			if(c == 0x7e || c == 0x7d || c == 0x03)
+			if(c == 0x7e || c == 0x7d || dev->tx_accm & (1<<(31-c)))
 			{
 				sim900_putchar(dev->uart, (uint8_t) 0x7d);
 				sim900_putchar(dev->uart, (uint8_t) c ^ 0x20);
@@ -318,6 +323,18 @@ void pdp_nosim(sim900_t *dev)
 int sim900_set(pppdev_t *dev, uint8_t opt, void *value, size_t value_len)
 {
 	DEBUG("Setting accm from driver. Now implement the rest!\n");
+	sim900_t *d = (sim900_t*) dev;
+	network_uint32_t *nu32;
+	nu32 = (network_uint32_t*) value;
+	switch(opt)
+	{
+		case PPPOPT_ACCM_RX:
+			d->rx_accm = byteorder_ntohl(*nu32);
+			break;
+		case PPPOPT_ACCM_TX:
+			d->tx_accm = byteorder_ntohl(*nu32);
+			break;
+	}
 	return 0;
 }
 int sim900_init(pppdev_t *d)

@@ -41,6 +41,52 @@
 #define dump_hex 1
 
 
+/* Generate PPP pkt */
+gnrc_pktsnip_t * pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnrc_pktsnip_t *payload)
+{
+	ppp_hdr_t ppp_hdr;
+	ppp_hdr_set_code(&ppp_hdr, code);
+	ppp_hdr_set_id(&ppp_hdr, id);
+
+	int payload_length = payload ? payload->size : 0;
+	ppp_hdr_set_length(&ppp_hdr, payload_length + sizeof(ppp_hdr_t));
+
+	gnrc_pktsnip_t *ppp_pkt = gnrc_pktbuf_add(payload, (void*) &ppp_hdr, sizeof(ppp_hdr_t), pkt_type);
+	return ppp_pkt;
+}
+
+uint8_t mark_ppp_pkt(gnrc_pktsnip_t *pkt)
+{
+	gnrc_pktsnip_t *result = gnrc_pktbuf_mark(pkt, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
+	if (!result) {
+		DEBUG("gnrc_ppp: no space left in packet buffer\n");
+		return 0; /*TODO:Fix right value */	
+	}
+	
+	hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t*) result->data;
+
+	switch(hdlc_hdr_get_protocol(hdlc_hdr))
+	{
+		case PPPTYPE_LCP:
+			return ID_LCP;
+			break;
+		case PPPTYPE_NCP_IPV4:
+			return ID_IPCP;
+			break;
+		default:
+			DEBUG("Unknown PPP protocol");
+	}
+	return 0;
+}
+gnrc_pktsnip_t *retrieve_pkt(pppdev_t *dev)
+{
+		int nbytes;
+		nbytes = dev->driver->recv(dev, NULL, 0, NULL);
+		gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, nbytes, GNRC_NETTYPE_UNDEF);
+		dev->driver->recv(dev, pkt->data, nbytes, NULL);
+		return pkt;
+}
+
 void print_protocol(uint16_t protocol)
 {
 	switch(protocol)
@@ -192,19 +238,6 @@ int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev)
 	return 0;
 }
 
-/* Generate PPP pkt */
-gnrc_pktsnip_t * pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnrc_pktsnip_t *payload)
-{
-	ppp_hdr_t ppp_hdr;
-	ppp_hdr_set_code(&ppp_hdr, code);
-	ppp_hdr_set_id(&ppp_hdr, id);
-
-	int payload_length = payload ? payload->size : 0;
-	ppp_hdr_set_length(&ppp_hdr, payload_length + sizeof(ppp_hdr_t));
-
-	gnrc_pktsnip_t *ppp_pkt = gnrc_pktbuf_add(payload, (void*) &ppp_hdr, sizeof(ppp_hdr_t), pkt_type);
-	return ppp_pkt;
-}
 
 int gnrc_ppp_send(pppdev_t *dev, gnrc_pktsnip_t *pkt)
 {
@@ -227,38 +260,6 @@ int gnrc_ppp_send(pppdev_t *dev, gnrc_pktsnip_t *pkt)
 		res = dev->driver->send(dev, vector, n);
 	}
 	return res;
-}
-
-uint8_t mark_ppp_pkt(gnrc_pktsnip_t *pkt)
-{
-	gnrc_pktsnip_t *result = gnrc_pktbuf_mark(pkt, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
-	if (!result) {
-		DEBUG("gnrc_ppp: no space left in packet buffer\n");
-		return 0; /*TODO:Fix right value */	
-	}
-	
-	hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t*) result->data;
-
-	switch(hdlc_hdr_get_protocol(hdlc_hdr))
-	{
-		case PPPTYPE_LCP:
-			return ID_LCP;
-			break;
-		case PPPTYPE_NCP_IPV4:
-			return ID_IPCP;
-			break;
-		default:
-			DEBUG("Unknown PPP protocol");
-	}
-	return 0;
-}
-gnrc_pktsnip_t *retrieve_pkt(pppdev_t *dev)
-{
-		int nbytes;
-		nbytes = dev->driver->recv(dev, NULL, 0, NULL);
-		gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, nbytes, GNRC_NETTYPE_UNDEF);
-		dev->driver->recv(dev, pkt->data, nbytes, NULL);
-		return pkt;
 }
 
 

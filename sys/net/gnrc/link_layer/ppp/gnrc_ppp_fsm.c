@@ -828,7 +828,6 @@ void broadcast_upper_layer(msg_t *msg, uint8_t id, uint8_t event)
 			break;
 		case ID_IPCP:
 			DEBUG("IPCP done\n");
-			break;
 			return;
 		default:
 			DEBUG("Unrecognized lower layer!\n");
