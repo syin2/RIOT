@@ -65,6 +65,10 @@ uint8_t ipcp_ipaddress_build_nak_opts(uint8_t *buf)
 void ipcp_ipaddress_set(ppp_fsm_t *ipcp, ppp_option_t *opt, uint8_t peer)
 {
 	DEBUG("Please implement ipaddress_set from IPCP\n");
+	if(peer)
+		((ipcp_t*) ipcp)->ip = *((ipv4_addr_t*) ppp_opt_get_payload(opt));
+	else
+		((ipcp_t*) ipcp)->local_ip = *((ipv4_addr_t*) ppp_opt_get_payload(opt));
 }
 
 int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *ipcp)
