@@ -82,7 +82,7 @@ int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_cp_t *ipcp)
 	ipcp->conf[IPCP_IPADDRESS].set = &ipcp_ipaddress_set;
 
 	ipcp->supported_codes = FLAG_CONF_REQ | FLAG_CONF_ACK | FLAG_CONF_NAK | FLAG_CONF_REJ | FLAG_TERM_REQ | FLAG_TERM_ACK | FLAG_CODE_REJ;
-	ipcp->id = ID_IPCP;
+	((ppp_protocol_t*) ipcp)->id = ID_IPCP;
 	ipcp->prottype = GNRC_NETTYPE_IPCP;
 	ipcp->restart_timer = IPCP_RESTART_TIMER;
 	ipcp->get_conf_by_code = &ipcp_get_conf_by_code;

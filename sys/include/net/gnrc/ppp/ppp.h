@@ -206,12 +206,12 @@ typedef struct cp_conf_t cp_conf_t;
 typedef struct ppp_protocol_t
 {
 	int (*handler)(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args);
+	uint8_t id;
 } ppp_protocol_t;
 
 /* Control Protocol struct*/
 typedef struct ppp_cp_t{
 	ppp_protocol_t prot;
-	uint8_t id;
 	gnrc_nettype_t prottype;
 	uint16_t supported_codes;
 	uint8_t state;

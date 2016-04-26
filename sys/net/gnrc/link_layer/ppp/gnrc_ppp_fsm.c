@@ -22,7 +22,7 @@
 void set_timeout(ppp_cp_t *cp, uint32_t time)
 {
 	cp->msg.type = PPPDEV_MSG_TYPE_EVENT;
-	cp->msg.content.value = (cp->id<<8) +PPP_TIMEOUT;
+	cp->msg.content.value = (((ppp_protocol_t*)cp)->id<<8) +PPP_TIMEOUT;
 	xtimer_set_msg(&cp->xtimer, cp->restart_timer, &cp->msg, thread_getpid());
 }
 
@@ -283,7 +283,7 @@ int trigger_event(ppp_cp_t *cp, int event, gnrc_pktsnip_t *pkt)
 	}
 	int next_state;
 	next_state = state_trans[event][cp->state];
-	DEBUG("%i> ", cp->id);
+	DEBUG("%i> ", ((ppp_protocol_t*)cp)->id);
 	print_transition(cp->state, event, next_state);
 
 	/* Keep in same state if there's something wrong (RFC 1661) */
@@ -303,37 +303,37 @@ int trigger_event(ppp_cp_t *cp, int event, gnrc_pktsnip_t *pkt)
 
 void tlu(ppp_cp_t *cp, void *args)
 {
-	DEBUG("%i", cp->id);
+	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG("> This layer up (a.k.a Successfully negotiated Link)\n");
-	broadcast_upper_layer(&cp->msg, cp->id, PPP_LINKUP);
+	broadcast_upper_layer(&cp->msg, ((ppp_protocol_t*) cp)->id, PPP_LINKUP);
 	(void) cp;
 }
 
 void tld(ppp_cp_t *cp, void *args)
 {
-	DEBUG("%i", cp->id);
+	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG("> This layer down\n");
 	(void) cp;
 }
 
 void tls(ppp_cp_t *cp, void *args)
 {
-	DEBUG("%i", cp->id);
+	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  This layer started\n");
 	(void) cp;
 }
 
 void tlf(ppp_cp_t *cp, void *args)
 {
-	DEBUG("%i", cp->id);
+	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  This layer finished\n");
-	broadcast_upper_layer(&cp->msg, cp->id, PPP_LINKDOWN);
+	broadcast_upper_layer(&cp->msg, ((ppp_protocol_t*) cp)->id, PPP_LINKDOWN);
 	(void) cp;
 }
 
 void irc(ppp_cp_t *cp, void *args)
 {
-	DEBUG("%i", cp->id);
+	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Init Restart Counter\n");
 	uint8_t cr = *((int*) args) & F_SCR; 
 
@@ -348,7 +348,7 @@ void irc(ppp_cp_t *cp, void *args)
 }
 void zrc(ppp_cp_t *cp, void *args)
 {
-	DEBUG("%i", cp->id);
+	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Zero restart counter\n ");
 	(void) cp;
 	//cp->restart_counter = 0;
@@ -358,7 +358,7 @@ void zrc(ppp_cp_t *cp, void *args)
 
 void scr(ppp_cp_t *cp, void *args)
 {
-	DEBUG("%i", cp->id);
+	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Sending Configure Request\n");
 
 	/* Decrement configure counter */
@@ -386,7 +386,7 @@ void scr(ppp_cp_t *cp, void *args)
 void sca(ppp_cp_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("%i", cp->id);
+	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Sending Configure Ack\n");
 
 	ppp_hdr_t *recv_ppp_hdr;
@@ -413,7 +413,7 @@ void sca(ppp_cp_t *cp, void *args)
 void scn(ppp_cp_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("%i", cp->id);
+	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Sending Configure Nak/Rej\n");
 
 	gnrc_pktsnip_t *opts;
@@ -443,7 +443,7 @@ void scn(ppp_cp_t *cp, void *args)
 
 void str(ppp_cp_t *cp, void *args)
 {
-	DEBUG("%i", cp->id);
+	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Sending Terminate Request\n");
 	(void) cp;
 #if 0
@@ -460,7 +460,7 @@ void str(ppp_cp_t *cp, void *args)
 void sta(ppp_cp_t *cp, void *args)
 { 
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("%i", cp->id);
+	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Sending Terminate Ack\n");
 	(void) cp;
 	(void) pkt;
@@ -477,7 +477,7 @@ void sta(ppp_cp_t *cp, void *args)
 void scj(ppp_cp_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("%i", cp->id);
+	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Sending Code Rej\n");
 	(void) cp;
 	(void) pkt;
@@ -486,7 +486,7 @@ void scj(ppp_cp_t *cp, void *args)
 void ser(ppp_cp_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("%i", cp->id);
+	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Sending Echo/Discard/Replay\n");
 	(void) cp;
 	(void) pkt;
