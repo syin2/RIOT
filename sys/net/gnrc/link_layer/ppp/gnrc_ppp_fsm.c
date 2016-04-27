@@ -829,8 +829,8 @@ void broadcast_upper_layer(msg_t *msg, uint8_t id, uint8_t event)
 			target = 0xFE;
 			break;
 		case ID_IPCP:
-			DEBUG("IPCP done\n");
-			return;
+			target = ID_IPV4;
+			break;
 		default:
 			DEBUG("Unrecognized lower layer!\n");
 			return;

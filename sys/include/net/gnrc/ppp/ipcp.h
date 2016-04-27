@@ -9,7 +9,6 @@ extern "C" {
 #endif
 
 #define IPCP_RESTART_TIMER (3000000U)
-#define ID_IPCP (2)
 
 typedef enum{
 	IPCP_IPADDRESS,
@@ -33,6 +32,7 @@ struct gnrc_pppdev_t;
 struct ppp_fsm_t;
 
 int ipcp_init(struct gnrc_pppdev_t *ppp_dev, struct ppp_fsm_t *ipcp);
+int ppp_ipv4_init(struct gnrc_pppdev_t *ppp_dev, ppp_ipv4_t *ipcp);
 int ppp_ipv4_handler(ppp_protocol_t *prot, uint8_t event, gnrc_pktsnip_t *pkt);
 
 #ifdef __cplusplus

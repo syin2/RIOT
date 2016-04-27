@@ -64,7 +64,6 @@ uint8_t ipcp_ipaddress_build_nak_opts(uint8_t *buf)
 }
 void ipcp_ipaddress_set(ppp_fsm_t *ipcp, ppp_option_t *opt, uint8_t peer)
 {
-	DEBUG("Please implement ipaddress_set from IPCP\n");
 	if(peer)
 		((ipcp_t*) ipcp)->ip = *((ipv4_addr_t*) ppp_opt_get_payload(opt));
 	else
@@ -99,5 +98,19 @@ int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *ipcp)
 	ipcp->restart_timer = IPCP_RESTART_TIMER;
 	ipcp->get_conf_by_code = &ipcp_get_conf_by_code;
 	ipcp->prot.handler = &fsm_handle_ppp_msg;
+	return 0;
+}
+
+
+int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
+{
+	DEBUG("Handling IPv4!\n");
+	return 0;
+}
+
+
+int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev, ppp_ipv4_t *ipv4)
+{
+	((ppp_protocol_t*) ipv4)->handler = &handle_ipv4;
 	return 0;
 }

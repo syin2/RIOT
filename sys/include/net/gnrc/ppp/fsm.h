@@ -25,7 +25,7 @@ extern "C" {
 #define F_SER (1U<<12)
 
 #define PPP_MAX_TERMINATE (3)
-#define PPP_MAX_CONFIG (3)
+#define PPP_MAX_CONFIG (10)
 
 typedef enum{
 	E_UP,

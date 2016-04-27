@@ -237,6 +237,7 @@ int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev)
 
 	lcp_init(dev, (ppp_fsm_t*) dev->l_lcp);
 	ipcp_init(dev, (ppp_fsm_t*) dev->l_ipcp);
+	ppp_ipv4_init(dev, (ppp_ipv4_t*) dev->l_ipv4);
 	return 0;
 }
 
@@ -267,9 +268,9 @@ int gnrc_ppp_send(pppdev_t *dev, gnrc_pktsnip_t *pkt)
 
 int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 {
-	DEBUG("Receiving a PPP_NETTYPE msg\n");
 	uint8_t target = (ppp_msg & 0xFF00)>>8;
 	uint8_t event = ppp_msg & 0xFF;
+	DEBUG("Receiving a PPP_NETTYPE msg with target %i and event %i\n", target, event);
 	gnrc_pktsnip_t *pkt = NULL;
 	if(event == PPP_RECV)
 	{
@@ -292,6 +293,10 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 		case 0xFE:
 			dev->l_ipcp->handler(dev->l_ipcp, event, pkt);
 			break;
+		case ID_IPV4:
+			DEBUG("Msg: Obtained IP address! \n");
+			DEBUG("Ip address is %i.%i.%i.%i\n",((ipcp_t*)dev->l_ipcp)->ip.u8[0],((ipcp_t*)dev->l_ipcp)->ip.u8[1],((ipcp_t*)dev->l_ipcp)->ip.u8[2],((ipcp_t*)dev->l_ipcp)->ip.u8[3]);	
+			dev->l_ipv4->handler(dev->l_ipv4, event, pkt);
 		default:
 			break;
 	}
@@ -304,9 +309,11 @@ void *gnrc_ppp_thread(void *args)
 	gnrc_pppdev_t pppdev;
 	lcp_t lcp;
 	ipcp_t ipcp;
+	ppp_ipv4_t ppp_ipv4;
 
 	pppdev.l_lcp = (ppp_protocol_t*) &lcp;
 	pppdev.l_ipcp = (ppp_protocol_t*) &ipcp;
+	pppdev.l_ipv4 = (ppp_protocol_t*) &ppp_ipv4;
 
 	gnrc_ppp_init(&pppdev, (pppdev_t*) args);
 

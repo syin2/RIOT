@@ -30,6 +30,7 @@
 
 #include "shell.h"
 #include "shell_commands.h"
+#include "net/ipv4/hdr.h"
 
 #define PPPINITFCS16    0xffff
 #define PPPGOODFCS16    0xf0b8

@@ -82,6 +82,13 @@ extern "C" {
 #define FLAG_TIME_REM (1<<12)
 
 
+#define ID_LCP (1)
+#define ID_IPCP (2)
+#define ID_IPV4 (3)
+#define BROADCAST_LCP (0xff)
+#define BROADCAST_NCP (0xfe)
+
+
 #define GNRC_PPP_MSG_QUEUE_SIZE (20)
 
 #define OPT_PAYLOAD_BUF_SIZE (100)
@@ -130,6 +137,7 @@ typedef struct pppdev_t
 typedef struct gnrc_pppdev_t{
 	ppp_protocol_t *l_lcp;
 	ppp_protocol_t *l_ipcp;
+	ppp_protocol_t *l_ipv4;
 	pppdev_t *netdev;
 
 	uint8_t state;
@@ -141,7 +149,6 @@ gnrc_pktsnip_t *pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnr
 int gnrc_ppp_send(pppdev_t *dev, gnrc_pktsnip_t *pkt);
 int gnrc_ppp_recv(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt);
 int gnrc_ppp_event_callback(gnrc_pppdev_t *dev, int ppp_event);
-
 
 
 void print_pkt(gnrc_pktsnip_t *hdlc, gnrc_pktsnip_t *ppp, gnrc_pktsnip_t *pkt);
