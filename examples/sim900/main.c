@@ -44,8 +44,7 @@
 #define ENABLE_SHELL (0)
 
 
-char thread_stack[THREAD_STACKSIZE_MAIN];	
-char blinker_stack[THREAD_STACKSIZE_MAIN];	
+char thread_stack[2*THREAD_STACKSIZE_MAIN];	
 //Received bytes. Handle states
  /*
  Data could be:
@@ -370,14 +369,7 @@ int sim900_init(pppdev_t *d)
 	send_at_command(dev, "AT+CPIN?\r\n",10, 5, &pdp_nosim);
 	return 0;
 }
-void *blinker(void *args)
-{
-	while(1)
-	{
-		LED_TOGGLE(0);
-		xtimer_usleep(100000);
-	}
-}
+
 int main(void)
 {
 	gnrc_pktbuf_init();
@@ -394,8 +386,6 @@ int main(void)
 	xtimer_init();
 	kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, gnrc_ppp_thread, &dev, "gnrc_ppp");
 
-	kernel_pid_t blinker_thread = thread_create(blinker_stack, sizeof(blinker_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, blinker, &dev, "blinker");
-	(void) blinker_thread;
 	(void) pid;
 
 #if ENABLE_SHELL
