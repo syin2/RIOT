@@ -63,15 +63,16 @@ static void rx_cb(void *arg, uint8_t data)
     msg.type = NETDEV2_MSG_TYPE_EVENT;
 	msg.content.value = MSG_AT_FINISHED;
 
-	dev->_stream += data;
-	dev->at_status |= (dev->_stream == STREAM_OK)*HAS_OK;
-	dev->at_status |= (dev->_stream == STREAM_ERROR)*HAS_ERROR;
-	dev->at_status |= (dev->_stream == STREAM_CONN)*HAS_CONN;
+	dev->_stream |= data;
+
 
 	uint8_t c;
 	switch(dev->state)
 	{
 		case AT_STATE_CMD:
+			dev->at_status |= (dev->_stream == STREAM_OK)*HAS_OK;
+			dev->at_status |= (dev->_stream == STREAM_ERROR)*HAS_ERROR;
+			dev->at_status |= (dev->_stream == STREAM_CONN)*HAS_CONN;
 			dev->_num_esc -= (dev->_stream & 0xFFFF) == STREAM_CR;
 			if(!dev->_num_esc)
 			{
@@ -81,51 +82,43 @@ static void rx_cb(void *arg, uint8_t data)
 			break;
 		case AT_STATE_RX:
 			//If received a flag secuence
-			if(data == 0x7e)
+			switch(data)
 			{
-				if(!dev->ppp_rx_state == PPP_RX_IDLE)
-				{
-					//Finished data
-					msg.content.value = RX_FINISHED;
-					dev->ppp_rx_state = PPP_RX_IDLE;
-					dev->rx_count = dev->int_count;
-					dev->fcs = dev->int_fcs;
-					dev->int_count = 0;
-					dev->int_fcs = PPPINITFCS16;
-					dev->escape = 0;
-					if(dev->fcs == PPPGOODFCS16 && dev->escape == 0)
-					{	
-						msg_send_int(&msg, dev->mac_pid);
-					}
-					else
+				case 0x7e:
+					if(!dev->ppp_rx_state == PPP_RX_IDLE)
 					{
-						//puts("Bad");
+						//Finished data
+						msg.content.value = RX_FINISHED;
+						dev->ppp_rx_state = PPP_RX_IDLE;
+						dev->rx_count = dev->int_count;
+						dev->fcs = dev->int_fcs;
+						dev->int_count = 0;
+						dev->int_fcs = PPPINITFCS16;
+						dev->escape = 0;
+						if(dev->fcs == PPPGOODFCS16 && dev->escape == 0)
+						{	
+							msg_send_int(&msg, dev->mac_pid);
+						}
 					}
-				}
+					break;
+				case 0x7d:
+					dev->ppp_rx_state = PPP_RX_STARTED;
+					//Escape next character
+					dev->escape = 0x20;
+					break;
+				default:
+					if(!(data <= 0x20 && dev->rx_accm & (1<<data)))
+					{
+						dev->ppp_rx_state = PPP_RX_STARTED;
+						//Add XOR'd character
+						c = data ^ dev->escape;
+						//
+						//Checksum
+						dev->int_fcs = fcs16_bit(dev->int_fcs, c);
+						dev->rx_buf[dev->int_count++] = c;
+						dev->escape = 0;
+					}
 			}
-			else if (data == 0x7d) //Escape character
-			{
-				dev->ppp_rx_state = PPP_RX_STARTED;
-				//Escape next character
-				dev->escape = 0x20;
-			}
-			else if (data <= 0x20 && dev->rx_accm & (1<<data))
-			{
-				DEBUG("Flagged");
-				//Flagged in ACCM. Ignore character.
-			}
-			else
-			{
-				dev->ppp_rx_state = PPP_RX_STARTED;
-				//Add XOR'd character
-				c = data ^ dev->escape;
-				//
-				//Checksum
-				dev->int_fcs = fcs16_bit(dev->int_fcs, c);
-				dev->rx_buf[dev->int_count++] = c;
-				dev->escape = 0;
-			}
-			break;
 		default:
 			break;
 
