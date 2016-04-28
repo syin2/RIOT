@@ -237,7 +237,7 @@ int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev)
 
 	lcp_init(dev, (ppp_fsm_t*) dev->l_lcp);
 	ipcp_init(dev, (ppp_fsm_t*) dev->l_ipcp);
-	ppp_ipv4_init(dev, (ppp_ipv4_t*) dev->l_ipv4);
+	ppp_ipv4_init(dev, (ppp_ipv4_t*) dev->l_ipv4, (ipcp_t*) dev->l_ipcp, netdev);
 	return 0;
 }
 
@@ -252,7 +252,24 @@ int gnrc_ppp_send(pppdev_t *dev, gnrc_pktsnip_t *pkt)
 
 	gnrc_pktsnip_t *hdr = gnrc_pktbuf_add(pkt, (void*) &hdlc_hdr, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
 	DEBUG(">>>>>>>>>> SEND:");
-	print_pkt(hdr, pkt, pkt->next);
+
+	/*TODO: De-hardcode this*/
+	if(hdlc_hdr_get_protocol(&hdlc_hdr) == PPPTYPE_IPV4)
+	{
+		DEBUG("HDLC's IPV4: <");
+		for(gnrc_pktsnip_t *p=hdr;p!=NULL;p=p->next)
+		{
+			for(int i=0;i<p->size;i++)
+			{
+				DEBUG("%02x ", *(((uint8_t*) p->data)+i));
+			}
+		}
+		puts("\nDidn't fail\n");
+	}
+	else
+	{
+		print_pkt(hdr, pkt, pkt->next);
+	}
 	/* Get iovec representation */
 	size_t n;
 	int res = -ENOBUFS;
@@ -294,8 +311,6 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 			dev->l_ipcp->handler(dev->l_ipcp, event, pkt);
 			break;
 		case ID_IPV4:
-			DEBUG("Msg: Obtained IP address! \n");
-			DEBUG("Ip address is %i.%i.%i.%i\n",((ipcp_t*)dev->l_ipcp)->ip.u8[0],((ipcp_t*)dev->l_ipcp)->ip.u8[1],((ipcp_t*)dev->l_ipcp)->ip.u8[2],((ipcp_t*)dev->l_ipcp)->ip.u8[3]);	
 			dev->l_ipv4->handler(dev->l_ipv4, event, pkt);
 		default:
 			break;

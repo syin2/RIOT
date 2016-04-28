@@ -26,6 +26,8 @@
 #include "net/gnrc/pkt.h"
 #include "net/gnrc/pktbuf.h"
 #include "net/gnrc/nettype.h"
+#include "net/ipv4/hdr.h"
+#include "net/icmp.h"
 #include <errno.h>
 
 #define ENABLE_DEBUG    (1)
@@ -101,16 +103,95 @@ int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *ipcp)
 	return 0;
 }
 
+/** BEGIN OF TEST SECTION. PLEASE REMOVE LATER **/
+
+static uint16_t checksum(uint8_t *data, size_t chunks)
+{
+	uint32_t acc=0;
+	network_uint16_t u16;
+	for(int i=0;i<chunks;i++)
+	{
+		memcpy(&u16, data+2*i, 2);
+		acc+=byteorder_ntohs(u16);
+		if(acc > 0xffff)
+			acc-=0xffff;
+	}
+	uint16_t ret = acc ^ 0xffff;
+	return ret;
+}
+gnrc_pktsnip_t *gen_icmp_echo(void)
+{
+	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, sizeof(icmp_hdr_t), GNRC_NETTYPE_UNDEF);
+	icmp_hdr_t *hdr = pkt->data;
+
+	hdr->type = 8;
+	hdr->code = 0;
+	hdr->csum = byteorder_htons(0);
+	hdr->id = byteorder_htons(0);
+	hdr->sn = byteorder_htons(10);
+
+	/* Calculate checksum */
+	hdr->csum = byteorder_htons(checksum((uint8_t*) hdr, 4));
+	return pkt;
+}
+gnrc_pktsnip_t *gen_ping_pkt(ipcp_t *ipcp)
+{
+	gnrc_pktsnip_t *echo = gen_icmp_echo();
+	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(echo, NULL, sizeof(ipv4_hdr_t), GNRC_NETTYPE_IPV4);
+
+	ipv4_hdr_t *hdr = pkt->data;	
+	
+	ipv4_addr_t dst;
+	dst.u8[0] = 8;
+	dst.u8[1] = 8;
+	dst.u8[2] = 8;
+	dst.u8[3] = 8;
+
+	ipv4_addr_t src = ipcp->local_ip;
+
+	ipv4_hdr_set_version(hdr);
+	ipv4_hdr_set_ihl(hdr, 5);
+	ipv4_hdr_set_ts(hdr, 0);
+	ipv4_hdr_set_tl(hdr, sizeof(ipv4_hdr_t)+sizeof(icmp_hdr_t));
+	ipv4_hdr_set_id(hdr, 0);
+	ipv4_hdr_set_flags(hdr, 0);
+	ipv4_hdr_set_fo(hdr, 0);
+	ipv4_hdr_set_ttl(hdr, 64);
+	ipv4_hdr_set_protocol(hdr, 1);
+	ipv4_hdr_set_csum(hdr, 0);
+	ipv4_hdr_set_src(hdr, src);
+	ipv4_hdr_set_dst(hdr, dst);
+
+	/*Calculate checkshum*/
+	ipv4_hdr_set_csum(hdr, checksum((uint8_t*) hdr, 10));
+	
+	return pkt;
+}
+
+/** END OF TEST SECTION **/
 
 int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
-	DEBUG("Handling IPv4!\n");
+	ipcp_t *ipcp = ((ppp_ipv4_t*) protocol)->ipcp;
+	pppdev_t *pppdev = ((ppp_ipv4_t*) protocol)->pppdev;
+	DEBUG("Msg: Obtained IP address! \n");
+	DEBUG("Ip address is %i.%i.%i.%i\n",ipcp->ip.u8[0],ipcp->ip.u8[1],ipcp->ip.u8[2],ipcp->ip.u8[3]);	
+	DEBUG("Send an ICMP pkt...\n");
+
+	gnrc_pktsnip_t *pkt = gen_ping_pkt(ipcp);
+	puts("Now send...");
+	for(int i=0;i<10;i++)
+	{
+		gnrc_ppp_send(pppdev, pkt);
+	}
 	return 0;
 }
 
 
-int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev, ppp_ipv4_t *ipv4)
+int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev, ppp_ipv4_t *ipv4, ipcp_t *ipcp, pppdev_t *pppdev)
 {
 	((ppp_protocol_t*) ipv4)->handler = &handle_ipv4;
+	ipv4->ipcp = ipcp;
+	ipv4->pppdev = pppdev;
 	return 0;
 }
