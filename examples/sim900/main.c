@@ -109,7 +109,7 @@ static void rx_cb(void *arg, uint8_t data)
 				//Escape next character
 				dev->escape = 0x20;
 			}
-			else if (data <= 0x20 && dev->rx_accm & (1<<(31-data)))
+			else if (data <= 0x20 && dev->rx_accm & (1<<data))
 			{
 				DEBUG("Flagged");
 				//Flagged in ACCM. Ignore character.
@@ -177,7 +177,7 @@ int sim900_send(pppdev_t *ppp_dev, const struct iovec *vector, int count)
 		for(int j=0;j<vector[i].iov_len;j++)
 		{
 			c = *(((uint8_t*)vector[i].iov_base)+j);
-			if(c == 0x7e || c == 0x7d || dev->tx_accm & (1<<(31-c)))
+			if(c == 0x7e || c == 0x7d || dev->tx_accm & (1<<c))
 			{
 				sim900_putchar(dev->uart, (uint8_t) 0x7d);
 				sim900_putchar(dev->uart, (uint8_t) c ^ 0x20);
