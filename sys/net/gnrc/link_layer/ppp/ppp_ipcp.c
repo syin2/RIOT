@@ -100,6 +100,7 @@ int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *ipcp)
 	ipcp->restart_timer = IPCP_RESTART_TIMER;
 	ipcp->get_conf_by_code = &ipcp_get_conf_by_code;
 	ipcp->prot.handler = &fsm_handle_ppp_msg;
+	ipcp->targets = ((ID_LCP << 8) & 0xffff) | (ID_IPV4 & 0xffff);
 	return 0;
 }
 

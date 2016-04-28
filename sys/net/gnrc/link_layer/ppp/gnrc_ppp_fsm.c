@@ -307,7 +307,7 @@ void tlu(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG("> This layer up (a.k.a Successfully negotiated Link)\n");
-	broadcast_upper_layer(&cp->msg, ((ppp_protocol_t*) cp)->id, PPP_LINKUP);
+	send_fsm_msg(&cp->msg, (cp->targets) & 0xffff, PPP_LINKUP);
 	(void) cp;
 }
 
@@ -329,7 +329,7 @@ void tlf(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  This layer finished\n");
-	broadcast_upper_layer(&cp->msg, ((ppp_protocol_t*) cp)->id, PPP_LINKDOWN);
+	send_fsm_msg(&cp->msg, (cp->targets) & 0xffff, PPP_LINKDOWN);
 	(void) cp;
 }
 
@@ -818,26 +818,6 @@ int fsm_event_from_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
 	return event;
 }
 
-void broadcast_upper_layer(msg_t *msg, uint8_t id, uint8_t event)
-{
-	DEBUG("Sending msg to upper layer...\n");
-	msg->type = PPPDEV_MSG_TYPE_EVENT;
-	uint8_t target;
-	switch(id)
-	{
-		case ID_LCP:
-			target = 0xFE;
-			break;
-		case ID_IPCP:
-			target = ID_IPV4;
-			break;
-		default:
-			DEBUG("Unrecognized lower layer!\n");
-			return;
-	}
-	msg->content.value = (target<<8) + event;
-	msg_send(msg, thread_getpid());
-}
 
 int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
@@ -876,4 +856,11 @@ int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void 
 			break;
 	}
 	return 0;
+}
+void send_fsm_msg(msg_t *msg, uint8_t target, uint8_t event)
+{
+	DEBUG("Sending msg to upper layer...\n");
+	msg->type = PPPDEV_MSG_TYPE_EVENT;
+	msg->content.value = (target<<8) + event;
+	msg_send(msg, thread_getpid());
 }

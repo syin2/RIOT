@@ -133,6 +133,7 @@ typedef struct ppp_fsm_t{
 	msg_t msg;
 	cp_conf_t* (*get_conf_by_code)(ppp_fsm_t *cp, uint8_t code);
 	cp_conf_t *conf;
+	uint16_t targets;
 } ppp_fsm_t;
 
 typedef struct cp_conf_t
@@ -174,6 +175,7 @@ int handle_coderej(ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 int handle_term_ack(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 int fsm_event_from_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt);
 int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args); 
+void send_fsm_msg(msg_t *msg, uint8_t target, uint8_t event);
 
 #ifdef __cplusplus
 }
