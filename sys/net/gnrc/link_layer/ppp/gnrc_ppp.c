@@ -75,6 +75,8 @@ uint8_t mark_ppp_pkt(gnrc_pktsnip_t *pkt)
 		case PPPTYPE_NCP_IPV4:
 			return ID_IPCP;
 			break;
+		case PPPTYPE_IPV4:
+			return ID_IPV4;
 		default:
 			DEBUG("Unknown PPP protocol");
 	}

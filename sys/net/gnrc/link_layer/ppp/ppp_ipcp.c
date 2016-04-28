@@ -174,15 +174,30 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
 	ipcp_t *ipcp = ((ppp_ipv4_t*) protocol)->ipcp;
 	pppdev_t *pppdev = ((ppp_ipv4_t*) protocol)->pppdev;
-	DEBUG("Msg: Obtained IP address! \n");
-	DEBUG("Ip address is %i.%i.%i.%i\n",ipcp->ip.u8[0],ipcp->ip.u8[1],ipcp->ip.u8[2],ipcp->ip.u8[3]);	
-	DEBUG("Send an ICMP pkt...\n");
+	gnrc_pktsnip_t *pkt;
+	gnrc_pktsnip_t *recv_pkt = (gnrc_pktsnip_t*) args;
+	(void) recv_pkt;
 
-	gnrc_pktsnip_t *pkt = gen_ping_pkt(ipcp);
-	puts("Now send...");
-	for(int i=0;i<10;i++)
+	switch(ppp_event)
 	{
-		gnrc_ppp_send(pppdev, pkt);
+		case PPP_LINKUP:
+			DEBUG("Msg: Obtained IP address! \n");
+			DEBUG("Ip address is %i.%i.%i.%i\n",ipcp->ip.u8[0],ipcp->ip.u8[1],ipcp->ip.u8[2],ipcp->ip.u8[3]);	
+			DEBUG("Send an ICMP pkt...\n");
+
+			pkt = gen_ping_pkt(ipcp);
+			puts("Now send...");
+			for(int i=0;i<10;i++)
+			{
+				gnrc_ppp_send(pppdev, pkt);
+			}
+			break;
+		case PPP_RECV:
+			DEBUG("Received IP packet!!\n");
+			break;
+		default:
+			break;
+
 	}
 	return 0;
 }
