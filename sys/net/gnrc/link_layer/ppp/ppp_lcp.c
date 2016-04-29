@@ -117,11 +117,9 @@ void lcp_accm_set(ppp_fsm_t *lcp, ppp_option_t *opt, uint8_t peer)
 		lcp->dev->netdev->driver->set(lcp->dev->netdev, PPPOPT_ACCM_TX, (void*) ppp_opt_get_payload(opt), 4);
 }
 
-int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
+static void lcp_config_init(ppp_fsm_t *lcp)
 {
-	cp_init(ppp_dev, lcp);
-
-	lcp->conf = ((lcp_t*) lcp)->lcp_opts;
+	lcp->conf = LCP_NUMOPTS ? ((lcp_t*) lcp)->lcp_opts : NULL;
 
 	lcp->conf[LCP_MRU].type = LCP_OPT_MRU;
 	lcp->conf[LCP_MRU].value = byteorder_htonl(3500);
@@ -142,7 +140,12 @@ int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
 	lcp->conf[LCP_ACCM].handle_nak = &lcp_accm_handle_nak;
 	lcp->conf[LCP_ACCM].build_nak_opts = &lcp_accm_build_nak_opts;
 	lcp->conf[LCP_ACCM].set = &lcp_accm_set;
+}
 
+int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
+{
+	cp_init(ppp_dev, lcp);
+	lcp_config_init(lcp);
 
 	lcp->supported_codes = FLAG_CONF_REQ | FLAG_CONF_ACK | FLAG_CONF_NAK | FLAG_CONF_REJ | FLAG_TERM_REQ | FLAG_TERM_ACK | FLAG_CODE_REJ | FLAG_ECHO_REQ | FLAG_ECHO_REP | FLAG_DISC_REQ;
 	((ppp_protocol_t*)lcp)->id = ID_LCP;

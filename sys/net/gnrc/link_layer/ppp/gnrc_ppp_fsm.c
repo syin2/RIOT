@@ -627,6 +627,7 @@ int handle_rca(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 		opts = pkt->data;
 	}
 
+	DEBUG("T1: %i\n", pkt_id != cp->cr_sent_identifier);
 	if (pkt_id != cp->cr_sent_identifier || (pkt && memcmp(cp->cr_sent_opts, opts, pkt_length-sizeof(ppp_hdr_t))))
 	{
 		return -EBADMSG;
@@ -764,22 +765,23 @@ static int handle_conf(ppp_fsm_t *cp, int type, gnrc_pktsnip_t *pkt)
 	switch(type)
 	{
 		case PPP_CONF_REQ:
-			event = handle_rcr(cp, pkt);
+			event = handle_rcr(cp, payload);
 			break;
 		case PPP_CONF_ACK:
-			event = handle_rca(cp, hdr, pkt);
+			event = handle_rca(cp, hdr, payload);
 			break;
 		case PPP_CONF_NAK:
-			event = handle_rcn_nak(cp, hdr, pkt);
+			event = handle_rcn_nak(cp, hdr, payload);
 			break;
 		case PPP_CONF_REJ:
-			event = handle_rcn_rej(cp, hdr, pkt);
+			event = handle_rcn_rej(cp, hdr, payload);
 			break;
 		default:
 			DEBUG("Shouldn't be here...\n");
 			return -EBADMSG;
 			break;
 	}
+	DEBUG("Event is: %i\n", event);
 	return event;
 }
 

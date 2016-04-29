@@ -81,11 +81,10 @@ int ppp_ipv4_handler(ppp_protocol_t *prot, uint8_t event, gnrc_pktsnip_t *pkt)
 	gnrc_pktbuf_release(pkt);
 	return 0;
 }
-int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *ipcp)
+static void ipcp_config_init(ppp_fsm_t *ipcp)
 {
-	cp_init(ppp_dev, ipcp);
+	ipcp->conf = IPCP_NUMOPTS ? ((ipcp_t*) ipcp)->ipcp_opts : NULL;
 
-	ipcp->conf = ((ipcp_t*) ipcp)->ipcp_opts;
 	ipcp->conf[IPCP_IPADDRESS].type = 3;
 	ipcp->conf[IPCP_IPADDRESS].value = byteorder_htonl(0);
 	ipcp->conf[IPCP_IPADDRESS].size = 4;
@@ -95,6 +94,12 @@ int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *ipcp)
 	ipcp->conf[IPCP_IPADDRESS].handle_nak = &ipcp_ipaddress_handle_nak;
 	ipcp->conf[IPCP_IPADDRESS].build_nak_opts = &ipcp_ipaddress_build_nak_opts;
 	ipcp->conf[IPCP_IPADDRESS].set = &ipcp_ipaddress_set;
+}
+
+int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *ipcp)
+{
+	cp_init(ppp_dev, ipcp);
+	ipcp_config_init(ipcp);
 
 	ipcp->supported_codes = FLAG_CONF_REQ | FLAG_CONF_ACK | FLAG_CONF_NAK | FLAG_CONF_REJ | FLAG_TERM_REQ | FLAG_TERM_ACK | FLAG_CODE_REJ;
 	((ppp_protocol_t*) ipcp)->id = ID_IPCP;
