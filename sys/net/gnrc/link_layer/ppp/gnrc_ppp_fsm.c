@@ -474,15 +474,39 @@ void scj(ppp_fsm_t *cp, void *args)
 	(void) pkt;
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Sending Code Rej\n");
+	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, PPP_CODE_REJ, cp->cr_sent_identifier++, pkt);
+	gnrc_ppp_send(cp->dev->netdev, send_pkt);
 }
 void ser(ppp_fsm_t *cp, void *args)
 {
-	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
-	DEBUG(">  Sending Echo/Discard/Replay\n");
-	(void) cp;
-	(void) pkt;
-	//send_cp(cp,PPP_CP_SER);
+
+	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
+	gnrc_pktsnip_t *ppp_hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), cp->prottype);
+	ppp_hdr_t *hdr = ppp_hdr->data;
+	
+	gnrc_pktsnip_t *data = NULL;
+	gnrc_pktsnip_t *send_pkt;
+	if(pkt->type == cp->prottype)
+	{
+		data = pkt;
+	}
+
+	uint8_t code = ppp_hdr_get_code(hdr);
+	switch(code)
+	{
+		case PPP_ECHO_REQ:
+			DEBUG(">  Sending Echo Reply\n");
+			send_pkt = pkt_build(cp->prottype, PPP_ECHO_REP, ppp_hdr_get_id(hdr), data);
+			gnrc_ppp_send(cp->dev->netdev, send_pkt);
+			break;
+		case PPP_ECHO_REP:
+			DEBUG(">  Received echo reply. Nothing to do\n");
+			break;
+		case PPP_DISC_REQ:
+			DEBUG(">  Received Discard Request. Nothing to do\n");
+			break;
+	}
 }
 
 int cp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *cp)
@@ -694,10 +718,6 @@ int handle_rcn_rej(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 
 int handle_coderej(ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
-	/* Generate ppp packet from payload */
-	/* Mark ppp headr */
-
-	gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), GNRC_NETTYPE_UNDEF);
 	ppp_hdr_t *rej_hdr = (ppp_hdr_t*) pkt->data;
 
 	uint8_t code = ppp_hdr_get_code(rej_hdr);
