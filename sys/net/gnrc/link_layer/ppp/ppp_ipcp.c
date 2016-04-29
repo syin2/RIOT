@@ -58,6 +58,8 @@ uint8_t ipcp_ipaddress_is_valid(ppp_option_t *opt)
 void ipcp_ipaddress_handle_nak(struct cp_conf_t *conf, ppp_option_t *opt)
 {
 	conf->value = *((network_uint32_t*) ppp_opt_get_payload(opt));
+	if(!(conf->flags & OPT_ENABLED))
+		conf->flags |= OPT_ENABLED;
 }
 
 uint8_t ipcp_ipaddress_build_nak_opts(uint8_t *buf)
