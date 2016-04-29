@@ -19,11 +19,11 @@ CFLAGS += -DDEVELHELP
 QUIET ?= 1
 
 
-#USEMODULE += shell
-USEMODULE += xtimer
-USEMODULE += gnrc_ppp
 USEMODULE += shell
 USEMODULE += shell_commands
+USEMODULE += ps
+USEMODULE += xtimer
+USEMODULE += gnrc_ppp
 
 
 include $(RIOTBASE)/Makefile.include

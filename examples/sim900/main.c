@@ -37,11 +37,10 @@
 
 #define ENABLE_DEBUG    (1)
 #include "debug.h"
-#include "led.h"
 
 #define TEST_PPP (0)
 #define TEST_WRITE (0)
-#define ENABLE_SHELL (0)
+#define ENABLE_SHELL (1)
 
 
 char thread_stack[2*THREAD_STACKSIZE_MAIN];	
