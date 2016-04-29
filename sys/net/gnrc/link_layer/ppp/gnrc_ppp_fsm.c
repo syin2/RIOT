@@ -627,12 +627,7 @@ int handle_rca(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 
 int handle_rcn_nak(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
-	ppp_hdr_t *ppp_hdr;
-	_pkt_get_ppp_header(pkt, &ppp_hdr);
-
-	int has_options = _pkt_get_ppp_header(pkt, &ppp_hdr);
-
-	if(!has_options)
+	if(!pkt)
 	{
 		/* If the packet doesn't have options, it's considered as invalid. */
 		return -EBADMSG;
@@ -645,7 +640,7 @@ int handle_rcn_nak(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 	}
 
 
-	if (ppp_hdr_get_id(ppp_hdr) != cp->cr_sent_identifier)
+	if (ppp_hdr_get_id(hdr) != cp->cr_sent_identifier)
 		return -EBADMSG;
 
 	/*Handle nak for each option*/
@@ -665,26 +660,9 @@ int handle_rcn_nak(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 
 int handle_rcn_rej(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
-	ppp_hdr_t *ppp_hdr;
-	int has_options = _pkt_get_ppp_header(pkt, &ppp_hdr);
-
-	if(!has_options)
+	if(!pkt || ppp_hdr_get_id(hdr) != cp->cr_sent_identifier || ppp_conf_opts_valid(pkt, pkt->size) <= 0 || ppp_hdr_get_length(hdr)-sizeof(ppp_hdr_t) > cp->cr_sent_size)
 		return -EBADMSG;
 
-	if (ppp_hdr_get_id(ppp_hdr) != cp->cr_sent_identifier)
-		return -EBADMSG;
-
-	/* Check if options are valid */
-	if (ppp_conf_opts_valid(pkt, pkt->size) <= 0)
-	{
-		return -EBADMSG;
-	}
-
-	/* Check if opts are subset of sent options */
-	if(ppp_hdr_get_length(ppp_hdr)-sizeof(ppp_hdr_t) > cp->cr_sent_size)
-	{
-		return -EBADMSG;
-	}
 
 	ppp_option_t *head = pkt->data;
 	ppp_option_t *curr_opt = head;
@@ -767,10 +745,10 @@ static int handle_conf(ppp_fsm_t *cp, int type, gnrc_pktsnip_t *pkt)
 			event = handle_rca(cp, hdr, pkt);
 			break;
 		case PPP_CONF_NAK:
-			event = handle_rcn_nak(cp, NULL, pkt);
+			event = handle_rcn_nak(cp, hdr, pkt);
 			break;
 		case PPP_CONF_REJ:
-			event = handle_rcn_rej(cp, NULL, pkt);
+			event = handle_rcn_rej(cp, hdr, pkt);
 			break;
 		default:
 			DEBUG("Shouldn't be here...\n");
