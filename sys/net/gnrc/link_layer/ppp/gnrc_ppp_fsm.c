@@ -476,6 +476,9 @@ void scj(ppp_fsm_t *cp, void *args)
 	(void) pkt;
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Sending Code Rej\n");
+
+	/* Remove hdlc header */
+	gnrc_pktbuf_remove_snip(pkt, pkt->next);
 	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, PPP_CODE_REJ, cp->cr_sent_identifier++, pkt);
 	gnrc_ppp_send(cp->dev->netdev, send_pkt);
 }
@@ -837,7 +840,6 @@ int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void 
 		case PPP_LINKUP:
 			DEBUG("Event: PPP_LINKUP\n");
 			/*Set here PPP states...*/
-			trigger_event(target, E_OPEN, NULL);
 			trigger_event(target, E_UP, NULL);
 			break;
 		case PPP_LINKDOWN:

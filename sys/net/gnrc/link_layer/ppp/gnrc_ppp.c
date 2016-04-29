@@ -283,10 +283,19 @@ int gnrc_ppp_send(pppdev_t *dev, gnrc_pktsnip_t *pkt)
 		struct iovec *vector = (struct iovec*) hdr->data;
 		res = dev->driver->send(dev, vector, n);
 	}
+	gnrc_pktbuf_release(hdr);
 	return res;
 }
 
-
+void send_protocol_reject(lcp_t *lcp, gnrc_pktsnip_t *ppp_pkt)
+{
+	/* Remove hdlc header */
+	network_uint16_t protocol = byteorder_htons(hdlc_hdr_get_protocol(ppp_pkt->next->data));
+	gnrc_pktbuf_remove_snip(ppp_pkt, ppp_pkt->next);
+	gnrc_pktsnip_t *rp = gnrc_pktbuf_add(ppp_pkt, &protocol, 2, GNRC_NETTYPE_UNDEF);
+	gnrc_pktsnip_t *send_pkt = pkt_build(GNRC_NETTYPE_LCP, PPP_PROT_REJ, lcp->pr_id++, rp);
+	gnrc_ppp_send(((ppp_fsm_t*) lcp)->dev->netdev, send_pkt);
+}
 int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 {
 	uint8_t target = (ppp_msg & 0xFF00)>>8;
@@ -299,7 +308,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 		target = mark_ppp_pkt(pkt);
 		if(!target)
 		{
-			DEBUG("Please implement protocol reject!");
+			send_protocol_reject((lcp_t*) dev->l_lcp, pkt);
 			return -EBADMSG;
 		}
 	}

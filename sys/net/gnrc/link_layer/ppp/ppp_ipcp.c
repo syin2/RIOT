@@ -190,6 +190,7 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			puts("Now send...");
 			for(int i=0;i<10;i++)
 			{
+				pkt = gen_ping_pkt(ipcp);
 				gnrc_ppp_send(pppdev, pkt);
 			}
 			break;
