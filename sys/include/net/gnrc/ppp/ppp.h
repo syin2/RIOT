@@ -46,10 +46,6 @@ extern "C" {
 #define PPP_HDLC_ADDRESS (0xFF)
 #define PPP_HDLC_CONTROL (0x03)
 
-#define PPP_LINKUP (0)
-#define PPP_RECV (1)
-#define PPP_TIMEOUT (2)
-#define PPP_LINKDOWN (4)
 
 #define PPP_CONF_REQ (1)
 #define PPP_CONF_ACK (2)
@@ -100,6 +96,16 @@ extern "C" {
 
 /*TODO: Of course, change!*/
 #define PPPDEV_MSG_TYPE_EVENT (100)
+
+typedef enum
+{
+	PPP_LINKUP,
+	PPP_RECV,
+	PPP_TIMEOUT,
+	PPP_LINKDOWN,
+	PPP_UL_STARTED,
+	PPP_UL_FINISHED
+} ppp_dev_event_t;
 
 typedef enum
 {

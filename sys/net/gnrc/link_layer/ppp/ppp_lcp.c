@@ -150,6 +150,6 @@ int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
 	lcp->restart_timer = LCP_RESTART_TIMER;
 	lcp->get_conf_by_code = &lcp_get_conf_by_code;
 	lcp->prot.handler = &fsm_handle_ppp_msg;
-	lcp->targets = BROADCAST_NCP & 0xffff;
+	lcp->targets = ((ID_PPPDEV & 0xffff) << 8) | (BROADCAST_NCP & 0xffff);
 	return 0;
 }

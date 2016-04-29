@@ -315,6 +315,7 @@ void tld(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG("> This layer down\n");
+	send_fsm_msg(&cp->msg, (cp->targets >> 8) & 0xffff, PPP_LINKDOWN);
 	(void) cp;
 }
 
@@ -322,6 +323,7 @@ void tls(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  This layer started\n");
+	send_fsm_msg(&cp->msg, (cp->targets >> 8) & 0xffff, PPP_UL_STARTED);
 	(void) cp;
 }
 
@@ -329,7 +331,7 @@ void tlf(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  This layer finished\n");
-	send_fsm_msg(&cp->msg, (cp->targets) & 0xffff, PPP_LINKDOWN);
+	send_fsm_msg(&cp->msg, (cp->targets) & 0xffff, PPP_UL_FINISHED);
 	(void) cp;
 }
 
@@ -839,8 +841,14 @@ int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void 
 			trigger_event(target, E_UP, NULL);
 			break;
 		case PPP_LINKDOWN:
-			/* Just to test, print message when this happens */
-			DEBUG("Some layer finished\n");
+			DEBUG("Event: PPP_LINKDOWN\n");
+			trigger_event(target, E_DOWN, NULL);
+			break;
+		case PPP_UL_STARTED:
+			if(target->state == S_OPENED)
+				send_fsm_msg(&target->msg, (target->targets) & 0xffff, PPP_LINKUP);
+			break;
+		case PPP_UL_FINISHED:
 			break;
 		case PPP_TIMEOUT:
 			if(target->restart_counter)
@@ -860,7 +868,15 @@ int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void 
 void send_fsm_msg(msg_t *msg, uint8_t target, uint8_t event)
 {
 	DEBUG("Sending msg to upper layer...\n");
-	msg->type = PPPDEV_MSG_TYPE_EVENT;
+	if(target == ID_PPPDEV)
+	{
+		DEBUG("Msg to driver. Don't do anything for now\n");
+		return;
+	}
+	else
+	{
+		msg->type = PPPDEV_MSG_TYPE_EVENT;
+	}
 	msg->content.value = (target<<8) + event;
 	msg_send(msg, thread_getpid());
 }
