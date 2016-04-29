@@ -514,13 +514,10 @@ int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr)
 	}
 }
 
-int handle_rcr(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
+int handle_rcr(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
 {
-	ppp_hdr_t *ppp_hdr;
-	int has_options = _pkt_get_ppp_header(pkt, &ppp_hdr);
-
 	/* If the packet doesn't have options, it's considered as valid. */
-	if(!has_options)
+	if(!pkt)
 	{
 		return E_RCRp;
 	}
@@ -587,16 +584,12 @@ int handle_rcr(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 
 int handle_rca(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
-	ppp_hdr_t *ppp_hdr;
-	_pkt_get_ppp_header(pkt, &ppp_hdr);
+	uint8_t pkt_id = ppp_hdr_get_id(hdr);
+	uint8_t pkt_length = ppp_hdr_get_length(hdr);
 
-	uint8_t pkt_id = ppp_hdr_get_id(ppp_hdr);
-	uint8_t pkt_length = ppp_hdr_get_length(ppp_hdr);
+	void *opts = NULL;
 
-	void *opts;
-
-	int has_options = _pkt_get_ppp_header(pkt, &ppp_hdr);
-	if (has_options)
+	if (pkt)
 	{
 		if (ppp_conf_opts_valid(pkt, pkt->size) <= 0)
 		{
@@ -604,18 +597,14 @@ int handle_rca(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 		}
 		opts = pkt->data;
 	}
-	else
-	{
-		opts = pkt->next->data;
-	}
 
-	if (pkt_id != cp->cr_sent_identifier || memcmp(cp->cr_sent_opts, opts, pkt_length-sizeof(ppp_hdr_t)))
+	if (pkt_id != cp->cr_sent_identifier || (pkt && memcmp(cp->cr_sent_opts, opts, pkt_length-sizeof(ppp_hdr_t))))
 	{
 		return -EBADMSG;
 	}
 
 	/*Write options in corresponding devices*/
-	if (has_options)
+	if (pkt)
 	{
 		ppp_option_t *head = (ppp_option_t*) opts;
 		ppp_option_t *curr_opt = head;
@@ -765,15 +754,17 @@ static int handle_conf(ppp_fsm_t *cp, int type, gnrc_pktsnip_t *pkt)
 	gnrc_pktsnip_t *payload = pkt->type == cp->prottype ? NULL : pkt;
 	print_pkt(ppp_hdr->next, ppp_hdr, payload);
 
+	ppp_hdr_t *hdr = (ppp_hdr_t*) ppp_hdr->data;
+
 	int event;
 
 	switch(type)
 	{
 		case PPP_CONF_REQ:
-			event = handle_rcr(cp, NULL, pkt);
+			event = handle_rcr(cp, pkt);
 			break;
 		case PPP_CONF_ACK:
-			event = handle_rca(cp, NULL, pkt);
+			event = handle_rca(cp, hdr, pkt);
 			break;
 		case PPP_CONF_NAK:
 			event = handle_rcn_nak(cp, NULL, pkt);

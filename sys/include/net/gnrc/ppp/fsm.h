@@ -167,7 +167,7 @@ void ser(ppp_fsm_t *lcp, void *args);
 
 int cp_init(struct gnrc_pppdev_t *ppp_dev, ppp_fsm_t *cp);
 int trigger_event(ppp_fsm_t *cp, int event, gnrc_pktsnip_t *pkt);
-int handle_rcr(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
+int handle_rcr(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt);
 int handle_rca(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 int handle_rcn_nak(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 int handle_rcn_rej(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
