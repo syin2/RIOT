@@ -266,7 +266,6 @@ int gnrc_ppp_send(pppdev_t *dev, gnrc_pktsnip_t *pkt)
 				DEBUG("%02x ", *(((uint8_t*) p->data)+i));
 			}
 		}
-		puts("\nDidn't fail\n");
 	}
 	else
 	{

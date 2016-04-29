@@ -85,6 +85,8 @@ extern "C" {
 #define ID_LCP (1)
 #define ID_IPCP (2)
 #define ID_IPV4 (3)
+#define ID_PPPDEV (0xee)
+
 #define BROADCAST_LCP (0xff)
 #define BROADCAST_NCP (0xfe)
 

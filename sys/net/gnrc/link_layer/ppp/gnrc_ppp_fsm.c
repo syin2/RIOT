@@ -353,8 +353,8 @@ void zrc(ppp_fsm_t *cp, void *args)
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Zero restart counter\n ");
 	(void) cp;
-	//cp->restart_counter = 0;
-	/* Set timer to appropiate value TODO*/
+	cp->restart_counter = 0;
+	set_timeout(cp, cp->restart_timer);
 }
 
 
@@ -448,15 +448,8 @@ void str(ppp_fsm_t *cp, void *args)
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Sending Terminate Request\n");
 	(void) cp;
-#if 0
-	int id = 666; /*TODO*/
-	gnrc_pktsnip_t pkt;
-	pkt->hdr->code = PPP_CP_TERM_REQUEST;
-	pkt->hdr->id = id;
-	pkt->hdr->length = 4;
-	pkt->opts->num_opts = 0;
-	send_cp(cp, pkt);
-#endif
+	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, PPP_TERM_REQ, cp->tr_sent_identifier++, NULL);
+	gnrc_ppp_send(cp->dev->netdev, send_pkt);
 }
 
 void sta(ppp_fsm_t *cp, void *args)
@@ -464,26 +457,23 @@ void sta(ppp_fsm_t *cp, void *args)
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Sending Terminate Ack\n");
-	(void) cp;
-	(void) pkt;
-#if 0
-	int id = 666; /*TODO*/
-	gnrc_pktsnip_t pkt;
-	pkt->hdr->code = PPP_CP_TERM_ACK;
-	pkt->hdr->id = id;
-	pkt->hdr->length = 4;
-	pkt->opts->num_opts = 0;
-	send_cp(cp, pkt);
-#endif
+	gnrc_pktsnip_t *recv_pkt = NULL;
+
+	ppp_hdr_t *recv_ppp_hdr;
+	int has_data = _pkt_get_ppp_header(pkt, &recv_ppp_hdr);
+	if(has_data)
+	{
+		recv_pkt = gnrc_pktbuf_add(NULL, pkt->data, pkt->size, GNRC_NETTYPE_UNDEF);	
+	}
+	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, PPP_TERM_ACK, ppp_hdr_get_id(recv_ppp_hdr), recv_pkt);
+	gnrc_ppp_send(cp->dev->netdev, send_pkt);
 }
 void scj(ppp_fsm_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
+	(void) pkt;
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Sending Code Rej\n");
-	(void) cp;
-	(void) pkt;
-	//send_cp(cp, PPP_CP_CODE_REJ);
 }
 void ser(ppp_fsm_t *cp, void *args)
 {
@@ -756,10 +746,9 @@ int handle_coderej(ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 }
 
 
-int handle_term_ack(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
+int handle_term_ack(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
 {
-	ppp_hdr_t *ppp_hdr;
-	_pkt_get_ppp_header(pkt, &ppp_hdr);
+	ppp_hdr_t *ppp_hdr = pkt->data;
 	
 	int id = ppp_hdr_get_id(ppp_hdr);
 	if(id == cp->tr_sent_identifier)
@@ -770,37 +759,59 @@ int handle_term_ack(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 }
 
 
-int fsm_event_from_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
+static int handle_conf(ppp_fsm_t *cp, int type, gnrc_pktsnip_t *pkt)
 {
 	gnrc_pktsnip_t *ppp_hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), cp->prottype);
-	DEBUG("<<<<<<<<<< RECV:");
 	gnrc_pktsnip_t *payload = pkt->type == cp->prottype ? NULL : pkt;
 	print_pkt(ppp_hdr->next, ppp_hdr, payload);
-	ppp_hdr_t *hdr = (ppp_hdr_t*) ppp_hdr->data;
+
+	int event;
+
+	switch(type)
+	{
+		case PPP_CONF_REQ:
+			event = handle_rcr(cp, NULL, pkt);
+			break;
+		case PPP_CONF_ACK:
+			event = handle_rca(cp, NULL, pkt);
+			break;
+		case PPP_CONF_NAK:
+			event = handle_rcn_nak(cp, NULL, pkt);
+			break;
+		case PPP_CONF_REJ:
+			event = handle_rcn_rej(cp, NULL, pkt);
+			break;
+		default:
+			DEBUG("Shouldn't be here...\n");
+			return -EBADMSG;
+			break;
+	}
+	return event;
+}
+
+int fsm_event_from_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
+{
+	ppp_hdr_t *hdr = (ppp_hdr_t*) pkt->data;
 
 	int code = ppp_hdr_get_code(hdr);
 	int supported = cp->supported_codes & (1<<(code-1));
 	int type = supported ? code : PPP_UNKNOWN_CODE; 
 
 	int event;
+
+	DEBUG("<<<<<<<<<< RECV:");
 	switch(type){
 		case PPP_CONF_REQ:
-			event = handle_rcr(cp, hdr, pkt);
-			break;
 		case PPP_CONF_ACK:
-			event = handle_rca(cp, hdr, pkt);
-			break;
 		case PPP_CONF_NAK:
-			event = handle_rcn_nak(cp, hdr, pkt);
-			break;
 		case PPP_CONF_REJ:
-			event = handle_rcn_rej(cp, hdr, pkt);
+			event = handle_conf(cp, type, pkt);
 			break;
 		case PPP_TERM_REQ:
 			event = E_RTR;
 			break;
 		case PPP_TERM_ACK:
-			event = handle_term_ack(cp, hdr, pkt);
+			event = handle_term_ack(cp, pkt);
 			break;
 		case PPP_CODE_REJ:
 			event = handle_coderej(hdr, pkt);

@@ -172,7 +172,7 @@ int handle_rca(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 int handle_rcn_nak(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 int handle_rcn_rej(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
 int handle_coderej(ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
-int handle_term_ack(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
+int handle_term_ack(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt);
 int fsm_event_from_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt);
 int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args); 
 void send_fsm_msg(msg_t *msg, uint8_t target, uint8_t event);
