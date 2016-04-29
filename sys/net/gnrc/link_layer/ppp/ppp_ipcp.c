@@ -66,7 +66,7 @@ uint8_t ipcp_ipaddress_build_nak_opts(uint8_t *buf)
 }
 void ipcp_ipaddress_set(ppp_fsm_t *ipcp, ppp_option_t *opt, uint8_t peer)
 {
-	if(peer)
+	if(!peer)
 		((ipcp_t*) ipcp)->ip = *((ipv4_addr_t*) ppp_opt_get_payload(opt));
 	else
 		((ipcp_t*) ipcp)->local_ip = *((ipv4_addr_t*) ppp_opt_get_payload(opt));
@@ -148,7 +148,7 @@ gnrc_pktsnip_t *gen_ping_pkt(ipcp_t *ipcp)
 	dst.u8[2] = 8;
 	dst.u8[3] = 8;
 
-	ipv4_addr_t src = ipcp->local_ip;
+	ipv4_addr_t src = ipcp->ip;
 
 	ipv4_hdr_set_version(hdr);
 	ipv4_hdr_set_ihl(hdr, 5);
