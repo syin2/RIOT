@@ -627,7 +627,6 @@ int handle_rca(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 		opts = pkt->data;
 	}
 
-	DEBUG("T1: %i\n", pkt_id != cp->cr_sent_identifier);
 	if (pkt_id != cp->cr_sent_identifier || (pkt && memcmp(cp->cr_sent_opts, opts, pkt_length-sizeof(ppp_hdr_t))))
 	{
 		return -EBADMSG;
@@ -678,11 +677,27 @@ int handle_rcn_nak(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 	ppp_option_t *curr_opt = head;
 
 	cp_conf_t *curr_conf;
+	network_uint32_t value;
 	while(curr_opt)
 	{
 		curr_conf = cp->get_conf_by_code(cp, ppp_opt_get_type(curr_opt));
 		if(curr_conf != NULL)
-			curr_conf->handle_nak(curr_conf, curr_opt);
+		{
+			if(!(curr_conf->flags & OPT_ENABLED))
+			{
+				curr_conf->flags |= OPT_ENABLED;
+			}
+			else if(curr_conf->is_valid(curr_opt))
+			{
+				value = byteorder_htonl(0);
+				memcpy(&value+(4-curr_conf->size), ppp_opt_get_payload(curr_opt), curr_conf->size);
+				curr_conf->value = value;
+			}
+			else
+			{
+				curr_conf->flags &= ~OPT_ENABLED;
+			}
+		}
 		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
 	}
 	return E_RCN;

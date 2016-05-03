@@ -55,13 +55,6 @@ uint8_t ipcp_ipaddress_is_valid(ppp_option_t *opt)
 	return true;
 }
 
-void ipcp_ipaddress_handle_nak(struct cp_conf_t *conf, ppp_option_t *opt)
-{
-	conf->value = *((network_uint32_t*) ppp_opt_get_payload(opt));
-	if(!(conf->flags & OPT_ENABLED))
-		conf->flags |= OPT_ENABLED;
-}
-
 uint8_t ipcp_ipaddress_build_nak_opts(uint8_t *buf)
 {
 	return 0;
@@ -91,7 +84,6 @@ static void ipcp_config_init(ppp_fsm_t *ipcp)
 	ipcp->conf[IPCP_IPADDRESS].flags = OPT_ENABLED;
 	ipcp->conf[IPCP_IPADDRESS].next = NULL;
 	ipcp->conf[IPCP_IPADDRESS].is_valid = &ipcp_ipaddress_is_valid;
-	ipcp->conf[IPCP_IPADDRESS].handle_nak = &ipcp_ipaddress_handle_nak;
 	ipcp->conf[IPCP_IPADDRESS].build_nak_opts = &ipcp_ipaddress_build_nak_opts;
 	ipcp->conf[IPCP_IPADDRESS].set = &ipcp_ipaddress_set;
 }

@@ -144,7 +144,6 @@ typedef struct cp_conf_t
 	uint8_t flags;
 
 	uint8_t (*is_valid)(ppp_option_t *opt);
-	void (*handle_nak)(struct cp_conf_t *conf, ppp_option_t *opt);
 	uint8_t (*build_nak_opts)(ppp_option_t *opt);
 	void (*set)(ppp_fsm_t *t, ppp_option_t *opt, uint8_t peer);
 	struct cp_conf_t *next;

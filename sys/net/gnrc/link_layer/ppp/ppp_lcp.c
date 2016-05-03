@@ -58,16 +58,6 @@ uint8_t lcp_mru_is_valid(ppp_option_t *opt)
 	return true;
 }
 
-void lcp_mru_handle_nak(struct cp_conf_t *conf, ppp_option_t *opt)
-{
-	uint8_t *payload = ppp_opt_get_payload(opt);
-	uint16_t suggested_u16 = ((*payload)<<8) + *(payload+1);
-	if(suggested_u16 <= LCP_MAX_MRU)
-		conf->value = byteorder_htonl(suggested_u16);
-	else
-		conf->flags &= ~OPT_ENABLED;
-}
-
 uint8_t lcp_mru_build_nak_opts(uint8_t *buf)
 {
 	uint8_t len = 4;
@@ -96,12 +86,6 @@ uint8_t lcp_accm_is_valid(ppp_option_t *opt)
 	return true;
 }
 
-void lcp_accm_handle_nak(struct cp_conf_t *conf, ppp_option_t *opt)
-{
-	network_uint32_t *suggested_u32 = (network_uint32_t*) ppp_opt_get_payload(opt);
-	conf->value = *suggested_u32;
-}
-
 uint8_t lcp_accm_build_nak_opts(uint8_t *buf)
 {
 	/* Never called */
@@ -127,7 +111,6 @@ static void lcp_config_init(ppp_fsm_t *lcp)
 	lcp->conf[LCP_MRU].flags = OPT_ENABLED;
 	lcp->conf[LCP_MRU].next = &lcp->conf[LCP_ACCM];
 	lcp->conf[LCP_MRU].is_valid = &lcp_mru_is_valid;
-	lcp->conf[LCP_MRU].handle_nak = &lcp_mru_handle_nak;
 	lcp->conf[LCP_MRU].build_nak_opts = &lcp_mru_build_nak_opts;
 	lcp->conf[LCP_MRU].set = &lcp_mru_set;
 
@@ -137,7 +120,6 @@ static void lcp_config_init(ppp_fsm_t *lcp)
 	lcp->conf[LCP_ACCM].flags = 0;
 	lcp->conf[LCP_ACCM].next = NULL;
 	lcp->conf[LCP_ACCM].is_valid = &lcp_accm_is_valid;
-	lcp->conf[LCP_ACCM].handle_nak = &lcp_accm_handle_nak;
 	lcp->conf[LCP_ACCM].build_nak_opts = &lcp_accm_build_nak_opts;
 	lcp->conf[LCP_ACCM].set = &lcp_accm_set;
 }
