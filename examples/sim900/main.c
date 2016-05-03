@@ -40,7 +40,7 @@
 
 #define TEST_PPP (0)
 #define TEST_WRITE (0)
-#define ENABLE_SHELL (1)
+#define ENABLE_SHELL (0)
 
 
 char thread_stack[2*THREAD_STACKSIZE_MAIN];	

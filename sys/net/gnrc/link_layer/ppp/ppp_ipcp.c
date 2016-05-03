@@ -142,18 +142,22 @@ gnrc_pktsnip_t *gen_icmp_echo(void)
 	hdr->csum = byteorder_htons(checksum((uint8_t*) hdr, 4));
 	return pkt;
 }
-gnrc_pktsnip_t *gen_ping_pkt(ipcp_t *ipcp)
-{
-	gnrc_pktsnip_t *echo = gen_icmp_echo();
-	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(echo, NULL, sizeof(ipv4_hdr_t), GNRC_NETTYPE_IPV4);
 
+gnrc_pktsnip_t *gen_dummy_pkt(void)
+{
+	char dummy_data[] = "test";
+	return gnrc_pktbuf_add(NULL, dummy_data, sizeof(dummy_data), GNRC_NETTYPE_UNDEF);
+}
+gnrc_pktsnip_t *gen_ip_pkt(ipcp_t *ipcp, gnrc_pktsnip_t *payload, uint8_t protocol)
+{
+	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(payload, NULL, sizeof(ipv4_hdr_t), GNRC_NETTYPE_IPV4);
 	ipv4_hdr_t *hdr = pkt->data;	
 	
 	ipv4_addr_t dst;
-	dst.u8[0] = 8;
-	dst.u8[1] = 8;
-	dst.u8[2] = 8;
-	dst.u8[3] = 8;
+	dst.u8[0] = 88;
+	dst.u8[1] = 171;
+	dst.u8[2] = 203;
+	dst.u8[3] = 61;
 
 	ipv4_addr_t src = ipcp->ip;
 
@@ -165,7 +169,7 @@ gnrc_pktsnip_t *gen_ping_pkt(ipcp_t *ipcp)
 	ipv4_hdr_set_flags(hdr, 0);
 	ipv4_hdr_set_fo(hdr, 0);
 	ipv4_hdr_set_ttl(hdr, 64);
-	ipv4_hdr_set_protocol(hdr, 1);
+	ipv4_hdr_set_protocol(hdr, protocol);
 	ipv4_hdr_set_csum(hdr, 0);
 	ipv4_hdr_set_src(hdr, src);
 	ipv4_hdr_set_dst(hdr, dst);
@@ -181,6 +185,8 @@ gnrc_pktsnip_t *gen_ping_pkt(ipcp_t *ipcp)
 int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
 	ipcp_t *ipcp = ((ppp_ipv4_t*) protocol)->ipcp;
+	gnrc_pktsnip_t *echo = gen_icmp_echo();
+	gnrc_pktsnip_t *dummy;
 	pppdev_t *pppdev = ((ppp_ipv4_t*) protocol)->pppdev;
 	gnrc_pktsnip_t *pkt;
 	gnrc_pktsnip_t *recv_pkt = (gnrc_pktsnip_t*) args;
@@ -193,11 +199,18 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			DEBUG("Ip address is %i.%i.%i.%i\n",ipcp->ip.u8[0],ipcp->ip.u8[1],ipcp->ip.u8[2],ipcp->ip.u8[3]);	
 			DEBUG("Send an ICMP pkt...\n");
 
-			pkt = gen_ping_pkt(ipcp);
+			pkt = gen_ip_pkt(ipcp,echo, 1);
 			puts("Now send...");
 			for(int i=0;i<10;i++)
 			{
-				pkt = gen_ping_pkt(ipcp);
+				echo = gen_icmp_echo();
+				pkt = gen_ip_pkt(ipcp,echo, 1);
+				gnrc_ppp_send(pppdev, pkt);
+				dummy = gen_dummy_pkt();
+				pkt = gen_ip_pkt(ipcp,dummy, 41);
+				gnrc_ppp_send(pppdev, pkt);
+				dummy = gen_dummy_pkt();
+				pkt = gen_ip_pkt(ipcp,dummy, 1);
 				gnrc_ppp_send(pppdev, pkt);
 			}
 			break;
