@@ -429,6 +429,7 @@ void *gnrc_ppp_thread(void *args)
 				dispatch_ppp_msg(&pppdev, event);
 				break;
 			case PPPDEV_MSG_TYPE_EVENT:
+				DEBUG("Hello again with event: %i\n", event);
 				d->driver->driver_ev((pppdev_t*) d, event);
 				break;
     	}
