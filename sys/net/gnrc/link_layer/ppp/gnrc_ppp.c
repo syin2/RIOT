@@ -355,6 +355,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 	DEBUG("Receiving a PPP_NETTYPE msg with target %i and event %i\n", target, event);
 	int ppp_state;
 	gnrc_pktsnip_t *pkt = NULL;
+
 	if(event == PPP_RECV)
 	{
 		pkt = retrieve_pkt(dev->netdev);
@@ -401,7 +402,6 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 
 void *gnrc_ppp_thread(void *args)
 {
-    //Setup a new sim900 devide
 	gnrc_pppdev_t pppdev;
 	lcp_t lcp;
 	ipcp_t ipcp;

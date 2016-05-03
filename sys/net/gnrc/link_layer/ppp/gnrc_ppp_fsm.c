@@ -492,7 +492,7 @@ void ser(ppp_fsm_t *cp, void *args)
 	
 	gnrc_pktsnip_t *data = NULL;
 	gnrc_pktsnip_t *send_pkt;
-	if(pkt->type == cp->prottype)
+	if(pkt != ppp_hdr)
 	{
 		data = pkt;
 	}
@@ -886,15 +886,7 @@ int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void 
 void send_fsm_msg(msg_t *msg, uint8_t target, uint8_t event)
 {
 	DEBUG("Sending msg to upper layer...\n");
-	if(target == ID_PPPDEV)
-	{
-		DEBUG("Msg to driver. Don't do anything for now\n");
-		msg->type = PPPDEV_MSG_TYPE_EVENT;
-	}
-	else
-	{
-		msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-	}
+	msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
 	msg->content.value = (target<<8) + event;
 	msg_send(msg, thread_getpid());
 }
