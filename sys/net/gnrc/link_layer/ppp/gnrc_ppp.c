@@ -381,7 +381,6 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 		return -EBADMSG;
 	}
 
-	/*Here we have the target*/
 	switch(target)
 	{
 		case ID_LCP:
@@ -426,10 +425,10 @@ void *gnrc_ppp_thread(void *args)
     	msg_receive(&msg);
 		event = msg.content.value;	
 		switch(msg.type){
-			case PPPDEV_MSG_TYPE_EVENT:
+			case GNRC_PPPDEV_MSG_TYPE_EVENT:
 				dispatch_ppp_msg(&pppdev, event);
 				break;
-			case NETDEV2_MSG_TYPE_EVENT:
+			case PPPDEV_MSG_TYPE_EVENT:
 				d->driver->driver_ev((pppdev_t*) d, event);
 				break;
     	}

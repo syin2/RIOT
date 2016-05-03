@@ -58,7 +58,7 @@ static void rx_cb(void *arg, uint8_t data)
 	
 	sim900_t *dev = (sim900_t*) arg;
     msg_t msg;
-    msg.type = NETDEV2_MSG_TYPE_EVENT;
+    msg.type = PPPDEV_MSG_TYPE_EVENT;
 	msg.content.value = MSG_AT_FINISHED;
 
 	dev->_stream |= data;
@@ -213,7 +213,7 @@ void driver_events(pppdev_t *d, uint8_t event)
 			DEBUG("Welcome to PPP :)\n");
 			/*Trigger LCP up event*/
 			//gnrc_ppp_event_callback(&dev->ppp_dev, 0xFF00+PPP_LINKUP);
-			dev->msg.type = PPPDEV_MSG_TYPE_EVENT;
+			dev->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
 			dev->msg.content.value = 0xFF00+(PPP_LINKUP);
 			msg_send(&dev->msg, dev->mac_pid);
 			break;
@@ -224,7 +224,7 @@ void driver_events(pppdev_t *d, uint8_t event)
 			}
 			else
 			{
-				dev->msg.type = PPPDEV_MSG_TYPE_EVENT;
+				dev->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
 				dev->msg.content.value = 0xFF00+(PPP_RECV);
 				msg_send(&dev->msg, dev->mac_pid);
 			}
@@ -237,7 +237,7 @@ void driver_events(pppdev_t *d, uint8_t event)
 
 void at_timeout(sim900_t *dev, uint32_t ms, void (*cb)(sim900_t *dev))
 {
-	dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
+	dev->msg.type = PPPDEV_MSG_TYPE_EVENT;
 	dev->msg.content.value = MSG_AT_TIMEOUT;
 	dev->_timer_cb = cb;
 	xtimer_set_msg(&dev->xtimer, ms, &dev->msg, dev->mac_pid);
@@ -256,7 +256,7 @@ void check_data_mode(sim900_t *dev)
 		puts("Successfully entered data mode");
 		dev->state = AT_STATE_RX;
 		dev->ppp_rx_state = PPP_RX_IDLE;
-		dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
+		dev->msg.type = PPPDEV_MSG_TYPE_EVENT;
 		dev->msg.content.value = PDP_UP;
 		msg_send(&dev->msg, dev->mac_pid);
 	}

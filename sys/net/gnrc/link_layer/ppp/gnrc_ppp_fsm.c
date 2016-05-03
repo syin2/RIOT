@@ -23,7 +23,7 @@
 
 void set_timeout(ppp_fsm_t *cp, uint32_t time)
 {
-	cp->msg.type = PPPDEV_MSG_TYPE_EVENT;
+	cp->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
 	cp->msg.content.value = (((ppp_protocol_t*)cp)->id<<8) +PPP_TIMEOUT;
 	xtimer_set_msg(&cp->xtimer, cp->restart_timer, &cp->msg, thread_getpid());
 }
@@ -769,7 +769,7 @@ int handle_term_ack(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
 static int handle_conf(ppp_fsm_t *cp, int type, gnrc_pktsnip_t *pkt)
 {
 	gnrc_pktsnip_t *ppp_hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), cp->prottype);
-	gnrc_pktsnip_t *payload = pkt->type == cp->prottype ? NULL : pkt;
+	gnrc_pktsnip_t *payload = ppp_hdr == pkt ? NULL : pkt;
 	print_pkt(ppp_hdr->next, ppp_hdr, payload);
 
 	ppp_hdr_t *hdr = (ppp_hdr_t*) ppp_hdr->data;
@@ -889,11 +889,11 @@ void send_fsm_msg(msg_t *msg, uint8_t target, uint8_t event)
 	if(target == ID_PPPDEV)
 	{
 		DEBUG("Msg to driver. Don't do anything for now\n");
-		return;
+		msg->type = PPPDEV_MSG_TYPE_EVENT;
 	}
 	else
 	{
-		msg->type = PPPDEV_MSG_TYPE_EVENT;
+		msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
 	}
 	msg->content.value = (target<<8) + event;
 	msg_send(msg, thread_getpid());

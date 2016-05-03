@@ -96,6 +96,7 @@ extern "C" {
 
 /*TODO: Of course, change!*/
 #define PPPDEV_MSG_TYPE_EVENT (100)
+#define GNRC_PPPDEV_MSG_TYPE_EVENT (101)
 
 typedef enum
 {
