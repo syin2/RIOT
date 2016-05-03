@@ -560,7 +560,6 @@ int handle_rcr(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
 	ppp_option_t *head = (ppp_option_t*) pkt->data;
 	ppp_option_t *curr_opt = head;
 
-
 	while(curr_opt)
 	{
 		if(!_opt_is_ack(cp, curr_opt))

@@ -303,11 +303,57 @@ void send_protocol_reject(lcp_t *lcp, gnrc_pktsnip_t *ppp_pkt)
 	gnrc_pktsnip_t *send_pkt = pkt_build(GNRC_NETTYPE_LCP, PPP_PROT_REJ, lcp->pr_id++, rp);
 	gnrc_ppp_send(((ppp_fsm_t*) lcp)->dev, send_pkt);
 }
+
+int gnrc_ppp_get_state(gnrc_pppdev_t *dev)
+{
+	ppp_fsm_t *lcp = (ppp_fsm_t*) dev->l_lcp;
+	switch(lcp->state)
+	{
+		case S_INITIAL:
+		case S_STARTING:
+			return PPP_LINK_DEAD;
+			break;
+		case S_CLOSED:
+		case S_STOPPED:
+		case S_CLOSING:
+		case S_STOPPING:
+			return PPP_TERMINATION;
+		case S_REQ_SENT:
+		case S_ACK_RCVD:
+		case S_ACK_SENT:
+			return PPP_LINK_ESTABLISHED;
+		case S_OPENED:
+			return PPP_NETWORK;
+			break;
+		default:
+			break;
+	}
+	DEBUG("gnrc_ppp_get_state: Shouldn't be here!\n");
+	return 0;
+}
+
+uint8_t _pkt_allowed(uint8_t state, uint8_t target)
+{
+	switch(target)
+	{
+		case ID_LCP:
+			return state == PPP_LINK_ESTABLISHED || state == PPP_AUTHENTICATION || state == PPP_NETWORK || state == PPP_TERMINATION;
+		case ID_IPCP:
+		case ID_IPV4:
+			return state == PPP_NETWORK;
+		default:
+			DEBUG("Pkt not allowed in this PPP state. Discard\n"); 
+			break;
+	}
+	return 0;
+}
+
 int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 {
 	uint8_t target = (ppp_msg & 0xFF00)>>8;
 	uint8_t event = ppp_msg & 0xFF;
 	DEBUG("Receiving a PPP_NETTYPE msg with target %i and event %i\n", target, event);
+	int ppp_state;
 	gnrc_pktsnip_t *pkt = NULL;
 	if(event == PPP_RECV)
 	{
@@ -318,7 +364,15 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 			send_protocol_reject((lcp_t*) dev->l_lcp, pkt);
 			return -EBADMSG;
 		}
+		ppp_state = gnrc_ppp_get_state(dev);
+		DEBUG("PPP STATE IS: %i\n", ppp_state);
+		if(!_pkt_allowed(ppp_state, target))
+		{
+			gnrc_pktbuf_release(pkt);
+			return -EBADMSG;
+		}
 	}
+
 	/*Drop packet if exceeds MRU*/
 	if(gnrc_pkt_len(pkt) > ((lcp_t*) dev->l_lcp)->mru)
 	{
@@ -326,6 +380,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 		gnrc_pktbuf_release(pkt);
 		return -EBADMSG;
 	}
+
 	/*Here we have the target*/
 	switch(target)
 	{
