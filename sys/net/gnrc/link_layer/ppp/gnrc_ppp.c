@@ -239,7 +239,7 @@ int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev)
 
 	lcp_init(dev, (ppp_fsm_t*) dev->l_lcp);
 	ipcp_init(dev, (ppp_fsm_t*) dev->l_ipcp);
-	ppp_ipv4_init(dev, (ppp_ipv4_t*) dev->l_ipv4, (ipcp_t*) dev->l_ipcp, netdev);
+	ppp_ipv4_init(dev, (ppp_ipv4_t*) dev->l_ipv4, (ipcp_t*) dev->l_ipcp, dev);
 
 	trigger_event((ppp_fsm_t*) dev->l_lcp, E_OPEN, NULL);
 	trigger_event((ppp_fsm_t*) dev->l_ipcp, E_OPEN, NULL);
@@ -247,7 +247,7 @@ int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev)
 }
 
 
-int gnrc_ppp_send(pppdev_t *dev, gnrc_pktsnip_t *pkt)
+int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 {
 	hdlc_hdr_t hdlc_hdr;
 
@@ -274,6 +274,13 @@ int gnrc_ppp_send(pppdev_t *dev, gnrc_pktsnip_t *pkt)
 	{
 		print_pkt(hdr, pkt, pkt->next);
 	}
+	
+	if(gnrc_pkt_len(hdr) > ((lcp_t*) dev->l_lcp)->peer_mru)
+	{
+		DEBUG("Sending exceeds peer MRU. Dropping packet.\n");
+		gnrc_pktbuf_release(hdr);
+		return -EBADMSG;
+	}
 	/* Get iovec representation */
 	size_t n;
 	int res = -ENOBUFS;
@@ -281,7 +288,7 @@ int gnrc_ppp_send(pppdev_t *dev, gnrc_pktsnip_t *pkt)
 	if (hdr != NULL)
 	{
 		struct iovec *vector = (struct iovec*) hdr->data;
-		res = dev->driver->send(dev, vector, n);
+		res = dev->netdev->driver->send(dev->netdev, vector, n);
 	}
 	gnrc_pktbuf_release(hdr);
 	return res;
@@ -294,7 +301,7 @@ void send_protocol_reject(lcp_t *lcp, gnrc_pktsnip_t *ppp_pkt)
 	gnrc_pktbuf_remove_snip(ppp_pkt, ppp_pkt->next);
 	gnrc_pktsnip_t *rp = gnrc_pktbuf_add(ppp_pkt, &protocol, 2, GNRC_NETTYPE_UNDEF);
 	gnrc_pktsnip_t *send_pkt = pkt_build(GNRC_NETTYPE_LCP, PPP_PROT_REJ, lcp->pr_id++, rp);
-	gnrc_ppp_send(((ppp_fsm_t*) lcp)->dev->netdev, send_pkt);
+	gnrc_ppp_send(((ppp_fsm_t*) lcp)->dev, send_pkt);
 }
 int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 {
@@ -311,6 +318,13 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 			send_protocol_reject((lcp_t*) dev->l_lcp, pkt);
 			return -EBADMSG;
 		}
+	}
+	/*Drop packet if exceeds MRU*/
+	if(gnrc_pkt_len(pkt) > ((lcp_t*) dev->l_lcp)->mru)
+	{
+		DEBUG("gnrc_ppp: Exceeded MRU of device. Dropping packet.\n");
+		gnrc_pktbuf_release(pkt);
+		return -EBADMSG;
 	}
 	/*Here we have the target*/
 	switch(target)

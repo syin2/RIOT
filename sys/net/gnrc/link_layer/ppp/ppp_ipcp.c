@@ -179,7 +179,7 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 	ipcp_t *ipcp = ((ppp_ipv4_t*) protocol)->ipcp;
 	gnrc_pktsnip_t *echo = gen_icmp_echo();
 	gnrc_pktsnip_t *dummy;
-	pppdev_t *pppdev = ((ppp_ipv4_t*) protocol)->pppdev;
+	gnrc_pppdev_t *pppdev = ((ppp_ipv4_t*) protocol)->pppdev;
 	gnrc_pktsnip_t *pkt;
 	gnrc_pktsnip_t *recv_pkt = (gnrc_pktsnip_t*) args;
 	(void) recv_pkt;
@@ -217,7 +217,7 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 }
 
 
-int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev, ppp_ipv4_t *ipv4, ipcp_t *ipcp, pppdev_t *pppdev)
+int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev, ppp_ipv4_t *ipv4, ipcp_t *ipcp, gnrc_pppdev_t *pppdev)
 {
 	((ppp_protocol_t*) ipv4)->handler = &handle_ipv4;
 	ipv4->ipcp = ipcp;

@@ -77,6 +77,14 @@ uint8_t lcp_mru_build_nak_opts(uint8_t *buf)
 void lcp_mru_set(ppp_fsm_t *lcp, ppp_option_t *opt, uint8_t peer)
 {
 	DEBUG("Called LCP MRU set, but still not implemented!\n");
+	if(peer)
+	{
+		((lcp_t*) lcp)->peer_mru = byteorder_ntohs(*((network_uint16_t*) ppp_opt_get_payload(opt)));
+	}
+	else
+	{
+		((lcp_t*) lcp)->mru = byteorder_ntohs(*((network_uint16_t*) ppp_opt_get_payload(opt)));
+	}
 }
 
 
@@ -137,5 +145,7 @@ int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
 	lcp->get_conf_by_code = &lcp_get_conf_by_code;
 	lcp->prot.handler = &fsm_handle_ppp_msg;
 	lcp->targets = ((ID_PPPDEV & 0xffff) << 8) | (BROADCAST_NCP & 0xffff);
+	((lcp_t*) lcp)->mru = 1500;
+	((lcp_t*) lcp)->peer_mru = 1500;
 	return 0;
 }

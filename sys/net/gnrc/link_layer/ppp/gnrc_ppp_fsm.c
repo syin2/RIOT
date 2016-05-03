@@ -383,7 +383,7 @@ void scr(ppp_fsm_t *cp, void *args)
 	
 
 	/*Send packet*/
-	gnrc_ppp_send(cp->dev->netdev, pkt);
+	gnrc_ppp_send(cp->dev, pkt);
 	set_timeout(cp, cp->restart_timer);
 }
 
@@ -411,7 +411,7 @@ void sca(ppp_fsm_t *cp, void *args)
 	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, PPP_CONF_ACK, ppp_hdr_get_id(recv_ppp_hdr),opts);
 	
 	/*Send packet*/
-	gnrc_ppp_send(cp->dev->netdev, send_pkt);
+	gnrc_ppp_send(cp->dev, send_pkt);
 }
 
 void scn(ppp_fsm_t *cp, void *args)
@@ -442,7 +442,7 @@ void scn(ppp_fsm_t *cp, void *args)
 
 	ppp_hdr_t *recv_ppp_hdr = (ppp_hdr_t*) pkt->next->data;
 	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, type, ppp_hdr_get_id(recv_ppp_hdr),opts);
-	gnrc_ppp_send(cp->dev->netdev, send_pkt);
+	gnrc_ppp_send(cp->dev, send_pkt);
 }
 
 void str(ppp_fsm_t *cp, void *args)
@@ -451,7 +451,7 @@ void str(ppp_fsm_t *cp, void *args)
 	DEBUG(">  Sending Terminate Request\n");
 	(void) cp;
 	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, PPP_TERM_REQ, cp->tr_sent_identifier++, NULL);
-	gnrc_ppp_send(cp->dev->netdev, send_pkt);
+	gnrc_ppp_send(cp->dev, send_pkt);
 }
 
 void sta(ppp_fsm_t *cp, void *args)
@@ -468,7 +468,7 @@ void sta(ppp_fsm_t *cp, void *args)
 		recv_pkt = gnrc_pktbuf_add(NULL, pkt->data, pkt->size, GNRC_NETTYPE_UNDEF);	
 	}
 	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, PPP_TERM_ACK, ppp_hdr_get_id(recv_ppp_hdr), recv_pkt);
-	gnrc_ppp_send(cp->dev->netdev, send_pkt);
+	gnrc_ppp_send(cp->dev, send_pkt);
 }
 void scj(ppp_fsm_t *cp, void *args)
 {
@@ -480,7 +480,7 @@ void scj(ppp_fsm_t *cp, void *args)
 	/* Remove hdlc header */
 	gnrc_pktbuf_remove_snip(pkt, pkt->next);
 	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, PPP_CODE_REJ, cp->cr_sent_identifier++, pkt);
-	gnrc_ppp_send(cp->dev->netdev, send_pkt);
+	gnrc_ppp_send(cp->dev, send_pkt);
 }
 void ser(ppp_fsm_t *cp, void *args)
 {
@@ -503,7 +503,7 @@ void ser(ppp_fsm_t *cp, void *args)
 		case PPP_ECHO_REQ:
 			DEBUG(">  Sending Echo Reply\n");
 			send_pkt = pkt_build(cp->prottype, PPP_ECHO_REP, ppp_hdr_get_id(hdr), data);
-			gnrc_ppp_send(cp->dev->netdev, send_pkt);
+			gnrc_ppp_send(cp->dev, send_pkt);
 			break;
 		case PPP_ECHO_REP:
 			DEBUG(">  Received echo reply. Nothing to do\n");

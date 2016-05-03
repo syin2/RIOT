@@ -30,6 +30,8 @@ typedef struct lcp_t
 	ppp_fsm_t fsm;
 	cp_conf_t lcp_opts[LCP_NUMOPTS];
 	uint8_t pr_id;
+	uint16_t peer_mru;
+	uint16_t mru;
 } lcp_t;
 
 struct gnrc_pppdev_t;
