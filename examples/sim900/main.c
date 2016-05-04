@@ -133,9 +133,17 @@ int send_at_command(sim900_t *dev, char *cmd, size_t size, uint8_t ne, void (*cb
 	dev->state = AT_STATE_CMD;
 	dev->_num_esc = ne;
 	dev->at_status = 0;
-	uart_write(dev->uart, (uint8_t*) cmd, size); 
 	dev->_cb = cb;
+	uart_write(dev->uart, (uint8_t*) cmd, size); 
 	return 0;
+}
+void _reset_at_status(sim900_t *dev)
+{
+	dev->state = AT_STATE_IDLE;
+}
+void _remove_timer(sim900_t *dev)
+{
+	xtimer_remove(&dev->xtimer);
 }
 
 void sim900_putchar(uart_t uart, uint8_t c)
@@ -317,21 +325,30 @@ void pdp_nosim(sim900_t *dev)
 	}*/
 }
 
-void check_device_status(sim900_t *dev)
+void cpin(sim900_t *dev)
 {
 	send_at_command(dev, "AT+CPIN?\r\n",10, 5, &pdp_nosim);
 }
 
 void hang_out(sim900_t *dev)
 {
+	_remove_timer(dev);
 	DEBUG("Hanging\n");
-	send_at_command(dev, "ATH0\r\n", 5, 2, &check_device_status);
+	send_at_command(dev, "ATH0\r\n", 5, 2, &cpin);
+}
+void check_device_status(sim900_t *dev)
+{
+	/*Send AT*/
+	_reset_at_status(dev);
+	DEBUG("Checking device status\n");
+	send_at_command(dev, "AT\r\n", 4, 3, &hang_out);
+	at_timeout(dev, 5000000, &check_device_status);
 }
 void dial_up(sim900_t *dev)
 {
 	/*Exit data mode*/
 	uart_write(dev->uart, (uint8_t*) "+++", 3);
-	at_timeout(dev, 1000000, &hang_out);
+	at_timeout(dev, 1000000, &check_device_status);
 }
 
 int sim900_set(pppdev_t *dev, uint8_t opt, void *value, size_t value_len)
