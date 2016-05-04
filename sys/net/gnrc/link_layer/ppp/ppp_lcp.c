@@ -133,6 +133,11 @@ static void lcp_config_init(ppp_fsm_t *lcp)
 }
 
 
+int lcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
+{
+	return fsm_handle_ppp_msg(protocol, ppp_event, args);
+}
+
 int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
 {
 	cp_init(ppp_dev, lcp);
@@ -144,7 +149,7 @@ int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
 	lcp->prottype = GNRC_NETTYPE_LCP;
 	lcp->restart_timer = LCP_RESTART_TIMER;
 	lcp->get_conf_by_code = &lcp_get_conf_by_code;
-	lcp->prot.handler = &fsm_handle_ppp_msg;
+	lcp->prot.handler = &lcp_handler;
 	lcp->targets = ((ID_PPPDEV & 0xffff) << 8) | (BROADCAST_NCP & 0xffff);
 	((lcp_t*) lcp)->mru = 1500;
 	((lcp_t*) lcp)->peer_mru = 1500;
