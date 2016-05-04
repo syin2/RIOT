@@ -63,7 +63,6 @@ static void rx_cb(void *arg, uint8_t data)
 
 	dev->_stream |= data;
 
-
 	uint8_t c;
 	switch(dev->state)
 	{
@@ -229,6 +228,8 @@ void driver_events(pppdev_t *d, uint8_t event)
 				msg_send(&dev->msg, dev->mac_pid);
 			}
 			break;
+		case 255:
+			break;
 		default:
 			DEBUG("Unrecognized driver msg\n");
 			break;
@@ -316,6 +317,23 @@ void pdp_nosim(sim900_t *dev)
 	}*/
 }
 
+void check_device_status(sim900_t *dev)
+{
+	send_at_command(dev, "AT+CPIN?\r\n",10, 5, &pdp_nosim);
+}
+
+void hang_out(sim900_t *dev)
+{
+	DEBUG("Hanging\n");
+	send_at_command(dev, "ATH0\r\n", 5, 2, &check_device_status);
+}
+void dial_up(sim900_t *dev)
+{
+	/*Exit data mode*/
+	uart_write(dev->uart, (uint8_t*) "+++", 3);
+	at_timeout(dev, 1000000, &hang_out);
+}
+
 int sim900_set(pppdev_t *dev, uint8_t opt, void *value, size_t value_len)
 {
 	DEBUG("Setting accm from driver. Now implement the rest!\n");
@@ -365,7 +383,7 @@ int sim900_init(pppdev_t *d)
     //Initiate response buffer
 	dev->pdp_state = PDP_NOTSIM;
 	/*Start sending an AT command */
-	send_at_command(dev, "AT+CPIN?\r\n",10, 5, &pdp_nosim);
+	dial_up((sim900_t*) dev);
 	return 0;
 }
 
