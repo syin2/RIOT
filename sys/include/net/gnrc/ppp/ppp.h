@@ -98,6 +98,8 @@ extern "C" {
 #define PPPDEV_MSG_TYPE_EVENT (100)
 #define GNRC_PPPDEV_MSG_TYPE_EVENT (101)
 
+#define PPPDEV_LINK_DOWN_EVENT (10)
+
 typedef enum
 {
 	PPP_LINKUP,
@@ -105,7 +107,7 @@ typedef enum
 	PPP_TIMEOUT,
 	PPP_LINKDOWN,
 	PPP_UL_STARTED,
-	PPP_UL_FINISHED
+	PPP_UL_FINISHED,
 } ppp_dev_event_t;
 
 typedef enum

@@ -67,7 +67,8 @@ uint8_t mark_ppp_pkt(gnrc_pktsnip_t *pkt)
 	
 	hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t*) result->data;
 
-	switch(hdlc_hdr_get_protocol(hdlc_hdr))
+	uint16_t protocol = hdlc_hdr_get_protocol(hdlc_hdr);
+	switch(protocol)
 	{
 		case PPPTYPE_LCP:
 			return ID_LCP;
@@ -78,7 +79,7 @@ uint8_t mark_ppp_pkt(gnrc_pktsnip_t *pkt)
 		case PPPTYPE_IPV4:
 			return ID_IPV4;
 		default:
-			DEBUG("Unknown PPP protocol");
+			DEBUG("Unknown PPP protocol: %i\n", protocol);
 	}
 	return 0;
 }
@@ -196,7 +197,7 @@ void print_pkt(gnrc_pktsnip_t *hdlc_hdr, gnrc_pktsnip_t *ppp_hdr, gnrc_pktsnip_t
 	uint8_t code = ppp_hdr_get_code(ppp);
 	print_ppp_code(code);
 	DEBUG(",ID:%i,SIZE:%i,", ppp_hdr_get_id(ppp), ppp_hdr_get_length(ppp));
-	if(code >= PPP_CONF_REQ && code <= PPP_CODE_REJ)
+	if(code >= PPP_CONF_REQ && code <= PPP_CONF_REJ)
 	{
 		print_opts(payload);
 	}
@@ -209,7 +210,6 @@ void print_pkt(gnrc_pktsnip_t *hdlc_hdr, gnrc_pktsnip_t *ppp_hdr, gnrc_pktsnip_t
 		}
 	}
 	DEBUG("] ");
-
 	int i;
 	DEBUG("HEX: <");
 	for(i=0;i<4;i++)
@@ -429,7 +429,6 @@ void *gnrc_ppp_thread(void *args)
 				dispatch_ppp_msg(&pppdev, event);
 				break;
 			case PPPDEV_MSG_TYPE_EVENT:
-				DEBUG("Hello again with event: %i\n", event);
 				d->driver->driver_ev((pppdev_t*) d, event);
 				break;
     	}

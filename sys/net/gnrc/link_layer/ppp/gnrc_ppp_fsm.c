@@ -25,9 +25,18 @@ void set_timeout(ppp_fsm_t *cp, uint32_t time)
 {
 	cp->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
 	cp->msg.content.value = (((ppp_protocol_t*)cp)->id<<8) +PPP_TIMEOUT;
+	xtimer_remove(&cp->xtimer);
 	xtimer_set_msg(&cp->xtimer, cp->restart_timer, &cp->msg, thread_getpid());
 }
 
+void _reset_cp_conf(cp_conf_t *conf)
+{
+	while(conf)
+	{
+		conf->value = conf->default_value;
+		conf = conf->next;
+	}
+}
 gnrc_pktsnip_t *build_options(ppp_fsm_t *cp)
 {
 	size_t size=0;
@@ -298,14 +307,18 @@ int trigger_event(ppp_fsm_t *cp, int event, gnrc_pktsnip_t *pkt)
 		DEBUG("Received illegal transition!\n");
 	}
 	/*Check if next state doesn't have a running timer*/
+	DEBUG("CP state: %i\n", cp->state);
 	if (cp->state < S_CLOSING || cp->state == S_OPENED)
+	{
 		xtimer_remove(&cp->xtimer);
+	}
 	return 0;
 }
 
 void tlu(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
+	_reset_cp_conf(cp->conf);
 	DEBUG("> This layer up (a.k.a Successfully negotiated Link)\n");
 	send_fsm_msg(&cp->msg, (cp->targets) & 0xffff, PPP_LINKUP);
 	(void) cp;
@@ -315,7 +328,8 @@ void tld(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG("> This layer down\n");
-	send_fsm_msg(&cp->msg, (cp->targets >> 8) & 0xffff, PPP_LINKDOWN);
+	_reset_cp_conf(cp->conf);
+	send_fsm_msg(&cp->msg, (cp->targets) & 0xffff, PPP_LINKDOWN);
 	(void) cp;
 }
 
@@ -323,6 +337,7 @@ void tls(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  This layer started\n");
+	_reset_cp_conf(cp->conf);
 	send_fsm_msg(&cp->msg, (cp->targets >> 8) & 0xffff, PPP_UL_STARTED);
 	(void) cp;
 }
@@ -331,7 +346,8 @@ void tlf(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  This layer finished\n");
-	send_fsm_msg(&cp->msg, (cp->targets) & 0xffff, PPP_UL_FINISHED);
+	puts("I will fail");
+	send_fsm_msg(&cp->msg, (cp->targets >> 8) & 0xffff, PPP_UL_FINISHED);
 	(void) cp;
 }
 
@@ -473,13 +489,11 @@ void sta(ppp_fsm_t *cp, void *args)
 void scj(ppp_fsm_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	(void) pkt;
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Sending Code Rej\n");
 
-	/* Remove hdlc header */
-	gnrc_pktbuf_remove_snip(pkt, pkt->next);
-	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, PPP_CODE_REJ, cp->cr_sent_identifier++, pkt);
+	gnrc_pktsnip_t *payload = gnrc_pktbuf_add(NULL, pkt->data, pkt->size, cp->prottype);
+	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, PPP_CODE_REJ, cp->cr_sent_identifier++, payload);
 	gnrc_ppp_send(cp->dev, send_pkt);
 }
 void ser(ppp_fsm_t *cp, void *args)
@@ -890,7 +904,7 @@ void send_fsm_msg(msg_t *msg, uint8_t target, uint8_t event)
 	{
 		DEBUG("I'm here\n");
 		msg->type = PPPDEV_MSG_TYPE_EVENT;
-		msg->content.value = 1000;
+		msg->content.value = PPPDEV_LINK_DOWN_EVENT;
 	}
 	else
 	{

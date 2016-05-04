@@ -128,6 +128,7 @@ int send_at_command(sim900_t *dev, char *cmd, size_t size, uint8_t ne, void (*cb
 {
 	if(dev->state == AT_STATE_CMD)
 	{
+		DEBUG("AT device busy\n");
 		return -EBUSY;
 	}
 	dev->state = AT_STATE_CMD;
@@ -202,46 +203,6 @@ void test_sending(sim900_t *dev)
 	vector.iov_base = &pkt;
 	vector.iov_len = 8;
 	sim900_send((pppdev_t*) dev, &vector, 1);
-}
-
-void driver_events(pppdev_t *d, uint8_t event)
-{
-	sim900_t *dev = (sim900_t*) d;
-	/*Driver event*/
-	switch(event)
-	{
-		case MSG_AT_FINISHED:
-			dev->_cb(dev);
-			break;
-		case MSG_AT_TIMEOUT:
-			dev->_timer_cb(dev);
-			break;
-		case PDP_UP:
-			DEBUG("Welcome to PPP :)\n");
-			/*Trigger LCP up event*/
-			//gnrc_ppp_event_callback(&dev->ppp_dev, 0xFF00+PPP_LINKUP);
-			dev->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-			dev->msg.content.value = 0xFF00+(PPP_LINKUP);
-			msg_send(&dev->msg, dev->mac_pid);
-			break;
-		case RX_FINISHED:
-			if(dev->rx_count < 4)
-			{
-				DEBUG("Frame too short!");
-			}
-			else
-			{
-				dev->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-				dev->msg.content.value = 0xFF00+(PPP_RECV);
-				msg_send(&dev->msg, dev->mac_pid);
-			}
-			break;
-		case 255:
-			break;
-		default:
-			DEBUG("Unrecognized driver msg\n");
-			break;
-	}
 }
 
 void at_timeout(sim900_t *dev, uint32_t ms, void (*cb)(sim900_t *dev))
@@ -386,8 +347,6 @@ int sim900_init(pppdev_t *d)
 	dev->rx_accm = 0;
 	dev->tx_accm = 0;
 
-	//mutex_init(&(dev->resp_lock));
-	//mutex_lock(&(dev->resp_lock));
 	/* initialize UART */
 	uint8_t res;
     res = uart_init(dev->uart, 9600, rx_cb, dev);
@@ -402,6 +361,51 @@ int sim900_init(pppdev_t *d)
 	/*Start sending an AT command */
 	dial_up((sim900_t*) dev);
 	return 0;
+}
+
+void driver_events(pppdev_t *d, uint8_t event)
+{
+	sim900_t *dev = (sim900_t*) d;
+	/*Driver event*/
+	switch(event)
+	{
+		case MSG_AT_FINISHED:
+			dev->_cb(dev);
+			break;
+		case MSG_AT_TIMEOUT:
+			dev->_timer_cb(dev);
+			break;
+		case PDP_UP:
+			DEBUG("Welcome to PPP :)\n");
+			/*Trigger LCP up event*/
+			//gnrc_ppp_event_callback(&dev->ppp_dev, 0xFF00+PPP_LINKUP);
+			dev->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
+			dev->msg.content.value = 0xFF00+(PPP_LINKUP);
+			msg_send(&dev->msg, dev->mac_pid);
+			break;
+		case RX_FINISHED:
+			if(dev->rx_count < 4)
+			{
+				DEBUG("Frame too short!");
+			}
+			else
+			{
+				dev->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
+				dev->msg.content.value = 0xFF00+(PPP_RECV);
+				msg_send(&dev->msg, dev->mac_pid);
+			}
+			break;
+		case PPPDEV_LINK_DOWN_EVENT:
+			dev->state = AT_STATE_IDLE;
+				dev->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
+				dev->msg.content.value = 0xFF00+(PPP_LINKDOWN);
+				msg_send(&dev->msg, dev->mac_pid);
+			at_timeout(dev, 5000000, &dial_up);
+			break;
+		default:
+			DEBUG("Unrecognized driver msg\n");
+			break;
+	}
 }
 
 int main(void)

@@ -79,7 +79,7 @@ static void ipcp_config_init(ppp_fsm_t *ipcp)
 	ipcp->conf = IPCP_NUMOPTS ? ((ipcp_t*) ipcp)->ipcp_opts : NULL;
 
 	ipcp->conf[IPCP_IPADDRESS].type = 3;
-	ipcp->conf[IPCP_IPADDRESS].value = byteorder_htonl(0);
+	ipcp->conf[IPCP_IPADDRESS].default_value = byteorder_htonl(0);
 	ipcp->conf[IPCP_IPADDRESS].size = 4;
 	ipcp->conf[IPCP_IPADDRESS].flags = OPT_ENABLED;
 	ipcp->conf[IPCP_IPADDRESS].next = NULL;

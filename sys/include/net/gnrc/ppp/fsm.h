@@ -140,6 +140,7 @@ typedef struct cp_conf_t
 {
 	uint8_t type;
 	network_uint32_t value;
+	network_uint32_t default_value;
 	size_t size;
 	uint8_t flags;
 

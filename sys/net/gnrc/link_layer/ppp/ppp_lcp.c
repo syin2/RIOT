@@ -114,16 +114,16 @@ static void lcp_config_init(ppp_fsm_t *lcp)
 	lcp->conf = LCP_NUMOPTS ? ((lcp_t*) lcp)->lcp_opts : NULL;
 
 	lcp->conf[LCP_MRU].type = LCP_OPT_MRU;
-	lcp->conf[LCP_MRU].value = byteorder_htonl(3500);
+	lcp->conf[LCP_MRU].default_value = byteorder_htonl(3500);
 	lcp->conf[LCP_MRU].size = 2;
-	lcp->conf[LCP_MRU].flags = OPT_ENABLED;
+	lcp->conf[LCP_MRU].flags = 0;
 	lcp->conf[LCP_MRU].next = &lcp->conf[LCP_ACCM];
 	lcp->conf[LCP_MRU].is_valid = &lcp_mru_is_valid;
 	lcp->conf[LCP_MRU].build_nak_opts = &lcp_mru_build_nak_opts;
 	lcp->conf[LCP_MRU].set = &lcp_mru_set;
 
 	lcp->conf[LCP_ACCM].type = LCP_OPT_ACCM;
-	lcp->conf[LCP_ACCM].value = byteorder_htonl(0xFFFFFFFF);
+	lcp->conf[LCP_ACCM].default_value = byteorder_htonl(0xFFFFFFFF);
 	lcp->conf[LCP_ACCM].size = 4;
 	lcp->conf[LCP_ACCM].flags = 0;
 	lcp->conf[LCP_ACCM].next = NULL;
