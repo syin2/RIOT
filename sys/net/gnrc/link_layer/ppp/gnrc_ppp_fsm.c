@@ -852,7 +852,6 @@ int fsm_event_from_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
 	return event;
 }
 
-
 int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
 	ppp_fsm_t *target = (ppp_fsm_t*) protocol;

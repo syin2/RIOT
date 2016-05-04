@@ -378,7 +378,6 @@ void driver_events(pppdev_t *d, uint8_t event)
 		case PDP_UP:
 			DEBUG("Welcome to PPP :)\n");
 			/*Trigger LCP up event*/
-			//gnrc_ppp_event_callback(&dev->ppp_dev, 0xFF00+PPP_LINKUP);
 			dev->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
 			dev->msg.content.value = 0xFF00+(PPP_LINKUP);
 			msg_send(&dev->msg, dev->mac_pid);
@@ -397,9 +396,9 @@ void driver_events(pppdev_t *d, uint8_t event)
 			break;
 		case PPPDEV_LINK_DOWN_EVENT:
 			dev->state = AT_STATE_IDLE;
-				dev->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-				dev->msg.content.value = 0xFF00+(PPP_LINKDOWN);
-				msg_send(&dev->msg, dev->mac_pid);
+			dev->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
+			dev->msg.content.value = 0xFF00+(PPP_LINKDOWN);
+			msg_send(&dev->msg, dev->mac_pid);
 			at_timeout(dev, 5000000, &dial_up);
 			break;
 		default:

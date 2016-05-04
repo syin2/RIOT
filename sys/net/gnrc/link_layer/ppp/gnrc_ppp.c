@@ -386,7 +386,6 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 	switch(target)
 	{
 		case ID_LCP:
-		case 0xFF:
 			dev->l_lcp->handler(dev->l_lcp, event, pkt);
 			break;
 		case ID_IPCP:
@@ -397,6 +396,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 			dev->l_ipv4->handler(dev->l_ipv4, event, pkt);
 			break;
 		case ID_PPPDEV:
+		case 0xFF:
 			dev->l_dcp->handler(dev->l_dcp, event, NULL);
 			break;
 		default:
