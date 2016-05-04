@@ -237,6 +237,7 @@ int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev)
 	dev->netdev = netdev;
 	dev->state = PPP_LINK_DEAD;
 
+	dcp_init(dev, (ppp_protocol_t*) dev->l_dcp);
 	lcp_init(dev, (ppp_fsm_t*) dev->l_lcp);
 	ipcp_init(dev, (ppp_fsm_t*) dev->l_ipcp);
 	ppp_ipv4_init(dev, (ppp_ipv4_t*) dev->l_ipv4, (ipcp_t*) dev->l_ipcp, dev);
@@ -394,7 +395,12 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 			break;
 		case ID_IPV4:
 			dev->l_ipv4->handler(dev->l_ipv4, event, pkt);
+			break;
+		case ID_PPPDEV:
+			dev->l_dcp->handler(dev->l_dcp, event, NULL);
+			break;
 		default:
+			DEBUG("Unrecognized target\n");
 			break;
 	}
 	return 0;
@@ -403,10 +409,12 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 void *gnrc_ppp_thread(void *args)
 {
 	gnrc_pppdev_t pppdev;
+	dcp_t dcp;
 	lcp_t lcp;
 	ipcp_t ipcp;
 	ppp_ipv4_t ppp_ipv4;
 
+	pppdev.l_dcp = (ppp_protocol_t*) &dcp;
 	pppdev.l_lcp = (ppp_protocol_t*) &lcp;
 	pppdev.l_ipcp = (ppp_protocol_t*) &ipcp;
 	pppdev.l_ipv4 = (ppp_protocol_t*) &ppp_ipv4;

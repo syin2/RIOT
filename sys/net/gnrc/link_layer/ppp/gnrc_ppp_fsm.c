@@ -307,7 +307,6 @@ int trigger_event(ppp_fsm_t *cp, int event, gnrc_pktsnip_t *pkt)
 		DEBUG("Received illegal transition!\n");
 	}
 	/*Check if next state doesn't have a running timer*/
-	DEBUG("CP state: %i\n", cp->state);
 	if (cp->state < S_CLOSING || cp->state == S_OPENED)
 	{
 		xtimer_remove(&cp->xtimer);
@@ -900,16 +899,7 @@ int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void 
 void send_fsm_msg(msg_t *msg, uint8_t target, uint8_t event)
 {
 	DEBUG("Sending msg to upper layer...\n");
-	if(target == ID_PPPDEV)
-	{
-		DEBUG("I'm here\n");
-		msg->type = PPPDEV_MSG_TYPE_EVENT;
-		msg->content.value = PPPDEV_LINK_DOWN_EVENT;
-	}
-	else
-	{
-		msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-		msg->content.value = (target<<8) + event;
-	}
+	msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
+	msg->content.value = (target<<8) + event;
 	msg_send(msg, thread_getpid());
 }
