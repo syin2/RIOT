@@ -135,7 +135,19 @@ static void lcp_config_init(ppp_fsm_t *lcp)
 
 int lcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
-	return fsm_handle_ppp_msg(protocol, ppp_event, args);
+	ppp_fsm_t *lcp = (ppp_fsm_t*) protocol;
+	if(ppp_event == PPP_MONITOR)
+	{
+		/*Send Echo Request*/
+		DEBUG("Sending echo request");
+		gnrc_pktsnip_t *pkt = pkt_build(GNRC_NETTYPE_LCP, PPP_ECHO_REQ, lcp->cr_sent_identifier++, NULL);
+		gnrc_ppp_send(lcp->dev, pkt);
+		return 0;
+	}
+	else
+	{
+		return fsm_handle_ppp_msg(protocol, ppp_event, args);
+	}
 }
 
 int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)

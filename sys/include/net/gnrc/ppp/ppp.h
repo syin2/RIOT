@@ -100,6 +100,8 @@ extern "C" {
 
 #define PPPDEV_LINK_DOWN_EVENT (10)
 
+#define DCP_MONITOR_INIT_DELAY (15000000)
+
 typedef enum
 {
 	PPP_LINKUP,
@@ -108,6 +110,7 @@ typedef enum
 	PPP_LINKDOWN,
 	PPP_UL_STARTED,
 	PPP_UL_FINISHED,
+	PPP_MONITOR
 } ppp_dev_event_t;
 
 typedef enum
@@ -142,12 +145,6 @@ typedef struct pppdev_t
 } pppdev_t;
 
 
-typedef struct dcp_t
-{
-	ppp_protocol_t prot;
-	msg_t msg;
-} dcp_t;
-
 /* PPP device */
 typedef struct gnrc_pppdev_t{
 	ppp_protocol_t *l_dcp;
@@ -158,6 +155,16 @@ typedef struct gnrc_pppdev_t{
 
 	uint8_t state;
 } gnrc_pppdev_t;
+
+typedef struct dcp_t
+{
+	ppp_protocol_t prot;
+	msg_t msg;
+	msg_t timer_msg;
+	xtimer_t xtimer;
+	int sent_id;
+	gnrc_pppdev_t *pppdev; 
+} dcp_t;
 
 
 int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev);

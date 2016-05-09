@@ -525,6 +525,8 @@ void ser(ppp_fsm_t *cp, void *args)
 			DEBUG(">  Received Discard Request. Nothing to do\n");
 			break;
 	}
+	/*Send PPP_MONITOR to upper layer*/
+	send_fsm_msg(&cp->msg, (cp->targets >> 8) & 0xffff, PPP_MONITOR);
 }
 
 int cp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *cp)

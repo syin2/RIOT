@@ -204,9 +204,12 @@ void print_pkt(gnrc_pktsnip_t *hdlc_hdr, gnrc_pktsnip_t *ppp_hdr, gnrc_pktsnip_t
 	else
 	{
 		DEBUG("DATA:<");
-		for(int i=0;i<payload->size;i++)
+		if(payload)
 		{
-			DEBUG(" %02x ", (int)*(((uint8_t*)payload->data)+i));
+			for(int i=0;i<payload->size;i++)
+			{
+				DEBUG(" %02x ", (int)*(((uint8_t*)payload->data)+i));
+			}
 		}
 	}
 	DEBUG("] ");
@@ -276,6 +279,7 @@ int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 		print_pkt(hdr, pkt, pkt->next);
 	}
 	
+	DEBUG("Hdr: %p\n", dev);
 	if(gnrc_pkt_len(hdr) > ((lcp_t*) dev->l_lcp)->peer_mru)
 	{
 		DEBUG("Sending exceeds peer MRU. Dropping packet.\n");
