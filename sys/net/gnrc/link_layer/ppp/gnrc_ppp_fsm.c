@@ -525,8 +525,8 @@ void ser(ppp_fsm_t *cp, void *args)
 			DEBUG(">  Received Discard Request. Nothing to do\n");
 			break;
 	}
-	/*Send PPP_MONITOR to upper layer*/
-	send_fsm_msg(&cp->msg, (cp->targets >> 8) & 0xffff, PPP_MONITOR);
+	/*Send PPP_LINK_ALIVE to upper layer*/
+	send_fsm_msg(&cp->msg, (cp->targets >> 8) & 0xffff, PPP_LINK_ALIVE);
 }
 
 int cp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *cp)
@@ -879,8 +879,6 @@ int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void 
 		case PPP_UL_STARTED:
 			if(target->state == S_OPENED)
 				send_fsm_msg(&target->msg, (target->targets) & 0xffff, PPP_LINKUP);
-			break;
-		case PPP_UL_FINISHED:
 			break;
 		case PPP_TIMEOUT:
 			if(target->restart_counter)

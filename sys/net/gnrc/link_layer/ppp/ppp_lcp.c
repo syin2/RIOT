@@ -144,6 +144,11 @@ int lcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 		gnrc_ppp_send(lcp->dev, pkt);
 		return 0;
 	}
+	else if(ppp_event == PPP_UL_FINISHED)
+	{
+		send_fsm_msg(&lcp->msg, (lcp->targets >> 8) & 0xffff, PPP_UL_FINISHED);
+		return 0;
+	}
 	else
 	{
 		return fsm_handle_ppp_msg(protocol, ppp_event, args);

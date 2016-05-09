@@ -101,6 +101,8 @@ extern "C" {
 #define PPPDEV_LINK_DOWN_EVENT (10)
 
 #define DCP_MONITOR_INIT_DELAY (15000000)
+#define DCP_MONITOR_TIMEOUT (10000000)
+#define DCP_DEAD_COUNTER (5)
 
 typedef enum
 {
@@ -110,7 +112,8 @@ typedef enum
 	PPP_LINKDOWN,
 	PPP_UL_STARTED,
 	PPP_UL_FINISHED,
-	PPP_MONITOR
+	PPP_MONITOR,
+	PPP_LINK_ALIVE
 } ppp_dev_event_t;
 
 typedef enum
@@ -163,6 +166,7 @@ typedef struct dcp_t
 	msg_t timer_msg;
 	xtimer_t xtimer;
 	int sent_id;
+	uint8_t dead_counter;
 	gnrc_pppdev_t *pppdev; 
 } dcp_t;
 
