@@ -341,6 +341,9 @@ int sim900_set(pppdev_t *dev, uint8_t opt, void *value, size_t value_len)
 		case PPPOPT_ACCM_TX:
 			d->tx_accm = byteorder_ntohl(*nu32);
 			break;
+		case PPPOPT_APN_NAME:
+			DEBUG("Setting APN\n");
+			break;
 	}
 	return 0;
 }

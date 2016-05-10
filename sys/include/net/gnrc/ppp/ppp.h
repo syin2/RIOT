@@ -40,6 +40,7 @@ extern "C" {
 
 #define PPPOPT_ACCM_RX (1)
 #define PPPOPT_ACCM_TX (2)
+#define PPPOPT_APN_NAME (3)
 
 #define GNRC_PPP_MSG_QUEUE 64
 
@@ -192,6 +193,7 @@ void gnrc_ppp_link_up(msg_t *msg, kernel_pid_t pid);
 void gnrc_ppp_link_down(msg_t *msg, kernel_pid_t pid);
 void gnrc_ppp_dispatch_pkt(msg_t *msg, kernel_pid_t pid);
 void gnrc_ppp_dial_up(pppdev_t *dev);
+void gnrc_ppp_set_opt(gnrc_pppdev_t *dev, uint8_t opt, void *value, size_t value_len);
 
 #ifdef __cplusplus
 }

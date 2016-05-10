@@ -473,3 +473,27 @@ void gnrc_ppp_dial_up(pppdev_t *dev)
 {
 	dev->driver->dial_up(dev);
 }
+
+uint8_t _opt_is_pppdev(uint8_t opt)
+{
+	switch(opt)
+	{
+		case PPPOPT_ACCM_RX:
+		case PPPOPT_ACCM_TX:
+		case PPPOPT_APN_NAME:
+			return true;
+		default:
+			return false;
+	}
+}
+void gnrc_ppp_set_opt(gnrc_pppdev_t *dev, uint8_t opt, void *value, size_t value_len)
+{
+	if(_opt_is_pppdev(opt))
+	{
+		dev->netdev->driver->set(dev->netdev, opt, value, value_len);
+	}
+	else
+	{
+		DEBUG("No options from gnrc_ppp yet!\n");
+	}
+}
