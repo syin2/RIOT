@@ -447,3 +447,19 @@ void *gnrc_ppp_thread(void *args)
     }
 }
 
+void gnrc_ppp_trigger_event(msg_t *msg, kernel_pid_t pid, uint8_t target, uint8_t event)
+{
+	msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
+	msg->content.value = (target<<8)|(event & 0xffff);
+	msg_send(msg, pid);
+}
+
+void gnrc_ppp_link_up(msg_t *msg, kernel_pid_t pid)
+{
+	gnrc_ppp_trigger_event(msg, pid, 0xFF, PPP_LINKUP);
+}
+
+void gnrc_ppp_link_down(msg_t *msg, kernel_pid_t pid)
+{
+	gnrc_ppp_trigger_event(msg, pid, 0xFF, PPP_LINKDOWN);
+}

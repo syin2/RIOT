@@ -287,7 +287,6 @@ void dial_up(sim900_t *dev)
 
 int sim900_set(pppdev_t *dev, uint8_t opt, void *value, size_t value_len)
 {
-	DEBUG("Setting accm from driver. Now implement the rest!\n");
 	sim900_t *d = (sim900_t*) dev;
 	network_uint32_t *nu32;
 	nu32 = (network_uint32_t*) value;
@@ -301,6 +300,7 @@ int sim900_set(pppdev_t *dev, uint8_t opt, void *value, size_t value_len)
 	}
 	return 0;
 }
+
 int sim900_init(pppdev_t *d)
 {
 	sim900_t *dev = (sim900_t*) d;
@@ -347,10 +347,7 @@ void driver_events(pppdev_t *d, uint8_t event)
 			break;
 		case PDP_UP:
 			DEBUG("Welcome to PPP :)\n");
-			/*Trigger LCP up event*/
-			dev->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-			dev->msg.content.value = 0xFF00+(PPP_LINKUP);
-			msg_send(&dev->msg, dev->mac_pid);
+			gnrc_ppp_link_up(&dev->msg, dev->mac_pid);
 			break;
 		case RX_FINISHED:
 			if(dev->rx_count < 4) {
@@ -364,9 +361,7 @@ void driver_events(pppdev_t *d, uint8_t event)
 			break;
 		case PPPDEV_LINK_DOWN_EVENT:
 			dev->state = AT_STATE_IDLE;
-			dev->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-			dev->msg.content.value = 0xFF00+(PPP_LINKDOWN);
-			msg_send(&dev->msg, dev->mac_pid);
+			gnrc_ppp_link_down(&dev->msg, dev->mac_pid);
 			at_timeout(dev, 5000000, &dial_up);
 			break;
 		default:
@@ -406,6 +401,7 @@ int main(void)
 	sim900_params_t params;
 	params.uart = 1;
 	sim900_setup(&dev, &params);
+
 	xtimer_init();
 	kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, gnrc_ppp_thread, &dev, "gnrc_ppp");
 
