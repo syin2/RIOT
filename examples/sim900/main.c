@@ -43,13 +43,34 @@
 #define ENABLE_SHELL (0)
 
 
+#define STREAM_CR (0x0D0A)
+#define STREAM_OK (0x0D0A4F4B)
+#define STREAM_ERROR (0x4552524F)
+#define STREAM_CONN (0x434F4E4E)
+
+#define HAS_OK (1)
+#define HAS_ERROR (2)
+#define HAS_CONN (4)
+
+#define MSG_AT_FINISHED (0)
+#define MSG_AT_TIMEOUT (1)
+#define PDP_UP (2)
+#define RX_FINISHED (3)
+
 char thread_stack[2*THREAD_STACKSIZE_MAIN];	
+
+void pdp_netattach_timeout(sim900_t *dev);
+void pdp_netattach(sim900_t *dev);
+void pdp_check_netattach(sim900_t *dev);
+
+static inline void _reset_at_status(sim900_t *dev)
+{
+	dev->state = AT_STATE_IDLE;
+}
 
 static inline void _isr_at_command(sim900_t *dev, char data)
 {
 	msg_t msg;
-    msg.type = PPPDEV_MSG_TYPE_EVENT;
-	msg.content.value = MSG_AT_FINISHED;
 
 	dev->_stream |= data;
 	dev->at_status |= (dev->_stream == STREAM_OK)*HAS_OK;
@@ -58,7 +79,9 @@ static inline void _isr_at_command(sim900_t *dev, char data)
 	dev->_num_esc -= (dev->_stream & 0xFFFF) == STREAM_CR;
 
 	if(!dev->_num_esc) {
-		dev->state = AT_STATE_IDLE;
+		_reset_at_status(dev);
+		msg.type = PPPDEV_MSG_TYPE_EVENT;
+		msg.content.value = MSG_AT_FINISHED;
 		msg_send_int(&msg, dev->mac_pid);
 	}
 
@@ -76,13 +99,12 @@ static inline void _isr_rx(sim900_t *dev, char data)
 				msg.content.value = RX_FINISHED;
 				dev->ppp_rx_state = PPP_RX_IDLE;
 				dev->rx_count = dev->int_count;
-				dev->fcs = dev->int_fcs;
 				dev->int_count = 0;
-				dev->int_fcs = PPPINITFCS16;
 				dev->escape = 0;
-				if(dev->fcs == PPPGOODFCS16 && dev->escape == 0 && dev->rx_count >= 4) {	
+				if(dev->int_fcs == PPPGOODFCS16 && dev->escape == 0 && dev->rx_count >= 4) {	
 					msg_send_int(&msg, dev->mac_pid);
 				}
+				dev->int_fcs = PPPINITFCS16;
 			}
 			break;
 		case 0x7d:
@@ -136,10 +158,6 @@ int send_at_command(sim900_t *dev, char *cmd, size_t size, uint8_t ne, void (*cb
 	return 0;
 }
 
-void _reset_at_status(sim900_t *dev)
-{
-	dev->state = AT_STATE_IDLE;
-}
 
 void _remove_timer(sim900_t *dev)
 {
@@ -292,11 +310,7 @@ int sim900_init(pppdev_t *d)
 	dev->rx_count = 0;
 	dev->int_count = 0;
 	dev->int_fcs = PPPINITFCS16;
-	memset(dev->resp_buf,'\0',SIM900_MAX_RESP_SIZE);
-    memset(dev->tx_buf,'\0',SIM900_MAX_CMD_SIZE);
-	dev->resp_count = 0;
 	dev->_num_esc = 0; //Count of escape strings;
-	dev->urc_counter = 0;
 	dev->_stream = 0;
 	dev->rx_accm = 0;
 	dev->tx_accm = 0;
