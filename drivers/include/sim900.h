@@ -1,11 +1,10 @@
-
 #ifndef SIM900_H
 #define SIM900_H
 
 #include "mutex.h"
 #include "thread.h"
 #include "xtimer.h"
-#include "net/netdev2.h"
+
 #include "net/gnrc.h"
 #include "net/gnrc/ppp/ppp.h"
 #include "net/hdlc/fcs.h"

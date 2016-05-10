@@ -1,6 +1,7 @@
 #include "sim900.h"
 
 char thread_stack[2*THREAD_STACKSIZE_MAIN];	
+
 int main(void)
 {
 	gnrc_pktbuf_init();
@@ -15,7 +16,6 @@ int main(void)
 	kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, gnrc_ppp_thread, &dev, "gnrc_ppp");
 
 	(void) pid;
-
 
 	xtimer_usleep(1000000);
 	gnrc_netapi_opt_t apn;

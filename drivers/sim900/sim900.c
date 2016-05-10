@@ -20,28 +20,14 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
-#include <sys/uio.h>
 
-#include "periph/uart.h"
-#include "board.h"
 #include "sim900.h"
-#include "net/gnrc/netdev2.h"
-
-#include "shell.h"
-#include "shell_commands.h"
-#include "net/ipv4/hdr.h"
 
 #define PPPINITFCS16    0xffff
 #define PPPGOODFCS16    0xf0b8
 
 #define ENABLE_DEBUG    (1)
 #include "debug.h"
-
-#define TEST_PPP (0)
-#define TEST_WRITE (0)
-#define ENABLE_SHELL (0)
-
 
 #define STREAM_CR (0x0D0A)
 #define STREAM_OK (0x0D0A4F4B)
