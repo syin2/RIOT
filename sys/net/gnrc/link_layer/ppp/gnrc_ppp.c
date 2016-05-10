@@ -442,6 +442,7 @@ void *gnrc_ppp_thread(void *args)
 
 	gnrc_ppp_init(&pppdev, (pppdev_t*) args);
 
+	gnrc_netif_add(thread_getpid());
 	pppdev_t *d = pppdev.netdev;
     d->driver->init(d);
 
