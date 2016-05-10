@@ -430,8 +430,9 @@ void *gnrc_ppp_thread(void *args)
 
 	msg_t msg_queue[GNRC_PPP_MSG_QUEUE];;
 	msg_init_queue(msg_queue, GNRC_PPP_MSG_QUEUE);
-	msg_t msg;
-	int event;
+	msg_t msg, msg_reply;
+	int event, res;
+	gnrc_netapi_opt_t *opt;
     while(1)
     {
     	msg_receive(&msg);
@@ -443,6 +444,15 @@ void *gnrc_ppp_thread(void *args)
 			case PPPDEV_MSG_TYPE_EVENT:
 				d->driver->driver_ev((pppdev_t*) d, event);
 				break;
+			case GNRC_NETAPI_MSG_TYPE_SET:
+				opt = (gnrc_netapi_opt_t*) msg.content.ptr;
+				res = d->driver->set(d, opt->opt, opt->data, opt->data_len);
+				reply.type = GNRC_NETTYPE_MSG_TYPE_ACK;
+				reply.content.value = (uint32_t) res;
+				msg_reply(&msg, &reply);
+				break;
+			default:
+				DEBUG("Received an unknown thread msg\n");
     	}
     }
 }
