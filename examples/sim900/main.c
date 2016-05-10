@@ -44,90 +44,81 @@
 
 
 char thread_stack[2*THREAD_STACKSIZE_MAIN];	
-//Received bytes. Handle states
- /*
- Data could be:
- - Response of AT command
- - URC
- - Rx
- */
 
-static void rx_cb(void *arg, uint8_t data)
+static inline void _isr_at_command(sim900_t *dev, char data)
 {
-	//UART device that sent data.
-	
-	sim900_t *dev = (sim900_t*) arg;
-    msg_t msg;
+	msg_t msg;
     msg.type = PPPDEV_MSG_TYPE_EVENT;
 	msg.content.value = MSG_AT_FINISHED;
 
 	dev->_stream |= data;
+	dev->at_status |= (dev->_stream == STREAM_OK)*HAS_OK;
+	dev->at_status |= (dev->_stream == STREAM_ERROR)*HAS_ERROR;
+	dev->at_status |= (dev->_stream == STREAM_CONN)*HAS_CONN;
+	dev->_num_esc -= (dev->_stream & 0xFFFF) == STREAM_CR;
 
+	if(!dev->_num_esc) {
+		dev->state = AT_STATE_IDLE;
+		msg_send_int(&msg, dev->mac_pid);
+	}
+
+	dev->_stream = (dev->_stream << 8);
+}
+
+static inline void _isr_rx(sim900_t *dev, char data)
+{
+    msg_t msg;
+    msg.type = PPPDEV_MSG_TYPE_EVENT;
 	uint8_t c;
-	switch(dev->state)
-	{
-		case AT_STATE_CMD:
-			dev->at_status |= (dev->_stream == STREAM_OK)*HAS_OK;
-			dev->at_status |= (dev->_stream == STREAM_ERROR)*HAS_ERROR;
-			dev->at_status |= (dev->_stream == STREAM_CONN)*HAS_CONN;
-			dev->_num_esc -= (dev->_stream & 0xFFFF) == STREAM_CR;
-			if(!dev->_num_esc)
-			{
-				dev->state = AT_STATE_IDLE;
-				msg_send_int(&msg, dev->mac_pid);
+	switch(data) {
+		case 0x7e:
+			if(!dev->ppp_rx_state == PPP_RX_IDLE) {
+				msg.content.value = RX_FINISHED;
+				dev->ppp_rx_state = PPP_RX_IDLE;
+				dev->rx_count = dev->int_count;
+				dev->fcs = dev->int_fcs;
+				dev->int_count = 0;
+				dev->int_fcs = PPPINITFCS16;
+				dev->escape = 0;
+				if(dev->fcs == PPPGOODFCS16 && dev->escape == 0) {	
+					msg_send_int(&msg, dev->mac_pid);
+				}
 			}
+			break;
+		case 0x7d:
+			dev->ppp_rx_state = PPP_RX_STARTED;
+			dev->escape = 0x20;
+			break;
+		default:
+			if(!(data <= 0x20 && dev->rx_accm & (1<<data))) {
+				dev->ppp_rx_state = PPP_RX_STARTED;
+				c = data ^ dev->escape;
+				dev->int_fcs = fcs16_bit(dev->int_fcs, c);
+				dev->rx_buf[dev->int_count++] = c;
+				dev->escape = 0;
+			}
+	}
+}
+static void rx_cb(void *arg, uint8_t data)
+{
+	sim900_t *dev = (sim900_t*) arg;
+
+	switch(dev->state) {
+		case AT_STATE_CMD:
+			_isr_at_command(dev, data);
 			break;
 		case AT_STATE_RX:
-			//If received a flag secuence
-			switch(data)
-			{
-				case 0x7e:
-					if(!dev->ppp_rx_state == PPP_RX_IDLE)
-					{
-						//Finished data
-						msg.content.value = RX_FINISHED;
-						dev->ppp_rx_state = PPP_RX_IDLE;
-						dev->rx_count = dev->int_count;
-						dev->fcs = dev->int_fcs;
-						dev->int_count = 0;
-						dev->int_fcs = PPPINITFCS16;
-						dev->escape = 0;
-						if(dev->fcs == PPPGOODFCS16 && dev->escape == 0)
-						{	
-							msg_send_int(&msg, dev->mac_pid);
-						}
-					}
-					break;
-				case 0x7d:
-					dev->ppp_rx_state = PPP_RX_STARTED;
-					//Escape next character
-					dev->escape = 0x20;
-					break;
-				default:
-					if(!(data <= 0x20 && dev->rx_accm & (1<<data)))
-					{
-						dev->ppp_rx_state = PPP_RX_STARTED;
-						//Add XOR'd character
-						c = data ^ dev->escape;
-						//
-						//Checksum
-						dev->int_fcs = fcs16_bit(dev->int_fcs, c);
-						dev->rx_buf[dev->int_count++] = c;
-						dev->escape = 0;
-					}
-			}
+			_isr_rx(dev, data);
+			break;
 		default:
 			break;
-
 	}
-	dev->_stream = (dev->_stream << 8);
 }
 
 
 int send_at_command(sim900_t *dev, char *cmd, size_t size, uint8_t ne, void (*cb)(sim900_t *dev))
 {
-	if(dev->state == AT_STATE_CMD)
-	{
+	if(dev->state == AT_STATE_CMD) {
 		DEBUG("AT device busy\n");
 		return -EBUSY;
 	}
@@ -150,7 +141,6 @@ void _remove_timer(sim900_t *dev)
 void sim900_putchar(uart_t uart, uint8_t c)
 {
 	uint8_t *p = &c;
-	//puts("Called");
 	uart_write(uart, p, 1);
 }
 
@@ -158,8 +148,7 @@ int sim900_recv(pppdev_t *ppp_dev, char *buf, int len, void *info)
 {
 	sim900_t *dev = (sim900_t*) ppp_dev;
 	int payload_length = dev->rx_count-2;
-	if(buf)
-	{
+	if(buf) {
 		memcpy(buf, dev->rx_buf, payload_length);
 	}
 	return payload_length;
@@ -171,10 +160,8 @@ int sim900_send(pppdev_t *ppp_dev, const struct iovec *vector, int count)
 	/* Send flag */
 	sim900_putchar(dev->uart, (uint8_t) 0x7e);
 	uint8_t c;
-	for(int i=0;i<count;i++)
-	{
-		for(int j=0;j<vector[i].iov_len;j++)
-		{
+	for(int i=0;i<count;i++) {
+		for(int j=0;j<vector[i].iov_len;j++) {
 			c = *(((uint8_t*)vector[i].iov_base)+j);
 			if(c == 0x7e || c == 0x7d || dev->tx_accm & (1<<c))
 			{
@@ -196,6 +183,7 @@ int sim900_send(pppdev_t *ppp_dev, const struct iovec *vector, int count)
 	return 0;
 }
 
+/*
 void test_sending(sim900_t *dev)
 {
 	uint8_t pkt[] = {0xff, 0x03, 0xc0, 0x21, 0x01,0x01,0x00,0x04};
@@ -204,6 +192,7 @@ void test_sending(sim900_t *dev)
 	vector.iov_len = 8;
 	sim900_send((pppdev_t*) dev, &vector, 1);
 }
+*/
 
 void at_timeout(sim900_t *dev, uint32_t ms, void (*cb)(sim900_t *dev))
 {
@@ -221,8 +210,7 @@ void pdp_netattach_timeout(sim900_t *dev)
 
 void check_data_mode(sim900_t *dev)
 {
-	if(dev->at_status & HAS_CONN)
-	{
+	if(dev->at_status & HAS_CONN) {
 		puts("Successfully entered data mode");
 		dev->state = AT_STATE_RX;
 		dev->ppp_rx_state = PPP_RX_IDLE;
@@ -230,8 +218,7 @@ void check_data_mode(sim900_t *dev)
 		dev->msg.content.value = PDP_UP;
 		msg_send(&dev->msg, dev->mac_pid);
 	}
-	else
-	{
+	else {
 		puts("Failed to enter data mode");
 	}
 }
@@ -249,13 +236,10 @@ void pdp_activate(sim900_t *dev)
 
 void pdp_netattach(sim900_t *dev)
 {
-	if(dev->at_status &  HAS_ERROR)
-	{
-		//Set timeout
+	if(dev->at_status &  HAS_ERROR) {
 		at_timeout(dev, 3000000U, &pdp_netattach_timeout);
 	}
-	else
-	{
+	else {
 		puts("Network attach!.");
 		send_at_command(dev, "AT+CGDCONT=1,\"IP\",\"mmsbouygtel.com\"\r\n", 37, 3, &pdp_enter_data_mode);
 	}
@@ -265,25 +249,15 @@ void pdp_netattach(sim900_t *dev)
 
 void pdp_context_attach(sim900_t *dev)
 {
-	if(dev->at_status & HAS_OK)
-	{
+	if(dev->at_status & HAS_OK) {
 		puts("PDP attached!");
 	}
 }
 
 void pdp_nosim(sim900_t *dev)
 {
-	//if(dev->at_status & HAS_OK)
-	//{
-		//Switch to next state
-		//dev->pdp_state = PDP_NETATTACH;
-		puts("Sim working! :)");
-		send_at_command(dev, "AT+CGATT=1\r\n", 12, 3, &pdp_netattach);
-/*	}
-	else
-	{
-		puts("Error unlocking SIM");
-	}*/
+	puts("Sim working! :)");
+	send_at_command(dev, "AT+CGATT=1\r\n", 12, 3, &pdp_netattach);
 }
 
 void cpin(sim900_t *dev)
@@ -299,7 +273,6 @@ void hang_out(sim900_t *dev)
 }
 void check_device_status(sim900_t *dev)
 {
-	/*Send AT*/
 	_reset_at_status(dev);
 	DEBUG("Checking device status\n");
 	send_at_command(dev, "AT\r\n", 4, 3, &hang_out);
@@ -318,8 +291,7 @@ int sim900_set(pppdev_t *dev, uint8_t opt, void *value, size_t value_len)
 	sim900_t *d = (sim900_t*) dev;
 	network_uint32_t *nu32;
 	nu32 = (network_uint32_t*) value;
-	switch(opt)
-	{
+	switch(opt) {
 		case PPPOPT_ACCM_RX:
 			d->rx_accm = byteorder_ntohl(*nu32);
 			break;
@@ -333,7 +305,6 @@ int sim900_init(pppdev_t *d)
 {
 	sim900_t *dev = (sim900_t*) d;
 
-	dev->uart = (uart_t) 1;
 	dev->rx_count = 0;
 	dev->int_count = 0;
 	dev->int_fcs = PPPINITFCS16;
@@ -367,8 +338,7 @@ void driver_events(pppdev_t *d, uint8_t event)
 {
 	sim900_t *dev = (sim900_t*) d;
 	/*Driver event*/
-	switch(event)
-	{
+	switch(event) {
 		case MSG_AT_FINISHED:
 			dev->_cb(dev);
 			break;
@@ -383,12 +353,10 @@ void driver_events(pppdev_t *d, uint8_t event)
 			msg_send(&dev->msg, dev->mac_pid);
 			break;
 		case RX_FINISHED:
-			if(dev->rx_count < 4)
-			{
+			if(dev->rx_count < 4) {
 				DEBUG("Frame too short!");
 			}
-			else
-			{
+			else {
 				dev->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
 				dev->msg.content.value = 0xFF00+(PPP_RECV);
 				msg_send(&dev->msg, dev->mac_pid);
@@ -407,19 +375,37 @@ void driver_events(pppdev_t *d, uint8_t event)
 	}
 }
 
+
+int sim900_get(pppdev_t *dev, uint8_t opt, void *value, size_t max_lem)
+{
+	return 0;
+}
+
+const static pppdev_driver_t pppdev_driver_sim900 = 
+{
+	.send = sim900_send,
+	.recv = sim900_recv,
+	.driver_ev = driver_events,
+	.init = sim900_init,
+	.set = sim900_set,
+	.get = sim900_get
+};
+
+void sim900_setup(sim900_t *dev, const sim900_params_t *params)
+{
+	dev->netdev.driver = &pppdev_driver_sim900;
+	dev->uart = (uart_t) params->uart;
+}
+
 int main(void)
 {
 	gnrc_pktbuf_init();
-	pppdev_driver_t driver;
-	driver.send = &sim900_send;
-	driver.recv = &sim900_recv;
-	driver.driver_ev = &driver_events;
-	driver.init = &sim900_init;
-	driver.set = &sim900_set;
 
     sim900_t dev;
-	dev.netdev.driver = &driver;
 
+	sim900_params_t params;
+	params.uart = 1;
+	sim900_setup(&dev, &params);
 	xtimer_init();
 	kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, gnrc_ppp_thread, &dev, "gnrc_ppp");
 

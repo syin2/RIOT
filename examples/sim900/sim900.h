@@ -127,6 +127,11 @@ typedef struct sim900_t {
 	uint32_t rx_accm;
 } sim900_t;
 
+typedef struct sim900_params_t
+{
+	uart_t uart;
+} sim900_params_t;
+
 //static int get_AT(sim900_t*, resp_t*);
 void pdp_netattach_timeout(sim900_t *dev);
 void pdp_netattach(sim900_t *dev);

@@ -140,11 +140,12 @@ typedef struct pppdev_driver_t
 	void (*driver_ev)(pppdev_t *dev, uint8_t event);
 	int (*init)(pppdev_t *dev);
 	int (*set)(pppdev_t *dev, uint8_t opt, void *value, size_t value_len);
+	int (*get)(pppdev_t *dev, uint8_t opt, void *value, size_t max_lem);
 } pppdev_driver_t;
 
 typedef struct pppdev_t
 {
-	pppdev_driver_t *driver;
+	const pppdev_driver_t *driver;
 } pppdev_t;
 
 
