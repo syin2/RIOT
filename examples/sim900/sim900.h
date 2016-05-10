@@ -46,7 +46,7 @@ typedef struct sim900_t {
 	uint16_t rx_count; /**< number of bytes received from device */
 	uint16_t int_count; /**< same as rx_count, but as a temporal variable in interrupt context */
 	dev_state_t state; /**< state of device */
-	mutex_t resp_lock;
+	mutex_t out_mutex; /**< mutex for locking thread on write ops */
 	kernel_pid_t mac_pid; /**< PID of thread */
 	uint8_t _num_esc; /**< number of of escape strings in current AT command */
 	uint32_t _stream; /**< stream containing last 4 received AT characters */

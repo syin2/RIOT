@@ -57,6 +57,15 @@
 #define PDP_UP (2)
 #define RX_FINISHED (3)
 
+#define HDLC_FLAG_CHAR (0x7e)
+#define HDLC_ESCAPE_CHAR (0x7d)
+#define HDLC_SIX_CMPL (0x20)
+
+#define SIM900_TIMEOUT_DEV_ALIVE (5000000U)
+#define SIM900_TIMEOUT_NETATTACH (3000000U)
+#define SIM900_DATAMODE_DELAY (1000000U)
+#define SIM900_LINKDOWN_DELAY (1000000U)
+
 char thread_stack[2*THREAD_STACKSIZE_MAIN];	
 
 void pdp_netattach_timeout(sim900_t *dev);
@@ -72,12 +81,14 @@ static inline void _isr_at_command(sim900_t *dev, char data)
 {
 	msg_t msg;
 
+	/* Detect stream of characters and add flag to at_status*/
 	dev->_stream |= data;
 	dev->at_status |= (dev->_stream == STREAM_OK)*HAS_OK;
 	dev->at_status |= (dev->_stream == STREAM_ERROR)*HAS_ERROR;
 	dev->at_status |= (dev->_stream == STREAM_CONN)*HAS_CONN;
 	dev->_num_esc -= (dev->_stream & 0xFFFF) == STREAM_CR;
 
+	/* if the AT command finished, send msg to driver */
 	if(!dev->_num_esc) {
 		_reset_at_status(dev);
 		msg.type = PPPDEV_MSG_TYPE_EVENT;
@@ -88,43 +99,63 @@ static inline void _isr_at_command(sim900_t *dev, char data)
 	dev->_stream = (dev->_stream << 8);
 }
 
-static inline void _isr_rx(sim900_t *dev, char data)
+static inline void _rx_ready(sim900_t *dev)
 {
     msg_t msg;
     msg.type = PPPDEV_MSG_TYPE_EVENT;
+	msg.content.value = RX_FINISHED;
+
+	dev->ppp_rx_state = PPP_RX_IDLE;
+	dev->rx_count = dev->int_count;
+	dev->int_count = 0;
+	dev->escape = 0;
+
+	/* if PPP pkt is sane, send to thread */
+	if(dev->int_fcs == PPPGOODFCS16 && dev->escape == 0 && dev->rx_count >= 4) {	
+		msg_send_int(&msg, dev->mac_pid);
+	}
+
+	dev->int_fcs = PPPINITFCS16;
+}
+
+static inline void _rx_escape_next(sim900_t *dev)
+{
+	dev->ppp_rx_state = PPP_RX_STARTED;
+	dev->escape = HDLC_SIX_CMPL;
+}
+
+static inline void _write_rx_char(sim900_t *dev, uint8_t data)
+{
 	uint8_t c;
+	if(!(data <= HDLC_SIX_CMPL && dev->rx_accm & (1<<data))) {
+		dev->ppp_rx_state = PPP_RX_STARTED;
+		c = data ^ dev->escape;
+		dev->int_fcs = fcs16_bit(dev->int_fcs, c);
+		dev->rx_buf[dev->int_count++] = c;
+		dev->escape = 0;
+	}
+}
+
+static inline void _isr_rx(sim900_t *dev, char data)
+{
 	switch(data) {
-		case 0x7e:
+		case HDLC_FLAG_CHAR:
 			if(!dev->ppp_rx_state == PPP_RX_IDLE) {
-				msg.content.value = RX_FINISHED;
-				dev->ppp_rx_state = PPP_RX_IDLE;
-				dev->rx_count = dev->int_count;
-				dev->int_count = 0;
-				dev->escape = 0;
-				if(dev->int_fcs == PPPGOODFCS16 && dev->escape == 0 && dev->rx_count >= 4) {	
-					msg_send_int(&msg, dev->mac_pid);
-				}
-				dev->int_fcs = PPPINITFCS16;
+				_rx_ready(dev);
 			}
 			break;
-		case 0x7d:
-			dev->ppp_rx_state = PPP_RX_STARTED;
-			dev->escape = 0x20;
+		case HDLC_ESCAPE_CHAR:
+			_rx_escape_next(dev);
 			break;
 		default:
-			if(!(data <= 0x20 && dev->rx_accm & (1<<data))) {
-				dev->ppp_rx_state = PPP_RX_STARTED;
-				c = data ^ dev->escape;
-				dev->int_fcs = fcs16_bit(dev->int_fcs, c);
-				dev->rx_buf[dev->int_count++] = c;
-				dev->escape = 0;
-			}
+			_write_rx_char(dev, data);
 	}
 }
 static void rx_cb(void *arg, uint8_t data)
 {
 	sim900_t *dev = (sim900_t*) arg;
 
+	/* if state is in Command mode or Data Mode */
 	switch(dev->state) {
 		case AT_STATE_CMD:
 			_isr_at_command(dev, data);
@@ -151,10 +182,12 @@ int send_at_command(sim900_t *dev, char *cmd, size_t size, uint8_t ne, void (*cb
 		return -EBUSY;
 	}
 	dev->state = AT_STATE_CMD;
+	mutex_lock(&dev->out_mutex);
 	dev->_num_esc = ne;
 	dev->at_status = 0;
 	dev->_cb = cb;
 	uart_write(dev->uart, (uint8_t*) cmd, size); 
+	mutex_unlock(&dev->out_mutex);
 	return 0;
 }
 
@@ -174,6 +207,8 @@ int sim900_recv(pppdev_t *ppp_dev, char *buf, int len, void *info)
 {
 	sim900_t *dev = (sim900_t*) ppp_dev;
 	int payload_length = dev->rx_count-2;
+
+	/* if buf given, copy rx buf to buf */
 	if(buf) {
 		memcpy(buf, dev->rx_buf, payload_length);
 	}
@@ -184,16 +219,19 @@ int sim900_send(pppdev_t *ppp_dev, const struct iovec *vector, int count)
 {
 	sim900_t *dev = (sim900_t*) ppp_dev;
 	uint16_t fcs = PPPINITFCS16;
+
+	mutex_lock(&dev->out_mutex);
 	/* Send flag */
-	sim900_putchar(dev->uart, (uint8_t) 0x7e);
+	sim900_putchar(dev->uart, (uint8_t) HDLC_FLAG_CHAR);
 	uint8_t c;
 	for(int i=0;i<count;i++) {
 		for(int j=0;j<vector[i].iov_len;j++) {
 			c = *(((uint8_t*)vector[i].iov_base)+j);
-			if(c == 0x7e || c == 0x7d || dev->tx_accm & (1<<c))
+			/* if flag, escape character or current char in ACCM, add escape character plus XOR HDLC_SIX_CMPL*/
+			if(c == HDLC_FLAG_CHAR || c == HDLC_ESCAPE_CHAR || dev->tx_accm & (1<<c))
 			{
-				sim900_putchar(dev->uart, (uint8_t) 0x7d);
-				sim900_putchar(dev->uart, (uint8_t) c ^ 0x20);
+				sim900_putchar(dev->uart, (uint8_t) HDLC_ESCAPE_CHAR);
+				sim900_putchar(dev->uart, (uint8_t) c ^ HDLC_SIX_CMPL);
 			}
 			else
 			{
@@ -202,11 +240,16 @@ int sim900_send(pppdev_t *ppp_dev, const struct iovec *vector, int count)
 			fcs = fcs16_bit(fcs, c);
 		}
 	}
-	/*Write checksum and flag*/
+
+	/* Write checksum */
 	fcs ^= 0xffff;
 	sim900_putchar(dev->uart, (uint8_t) fcs & 0x00ff);
 	sim900_putchar(dev->uart, (uint8_t) (fcs >> 8) & 0x00ff);
-	sim900_putchar(dev->uart, (uint8_t) 0x7e);
+
+	/* Write closing flag */
+	sim900_putchar(dev->uart, (uint8_t) HDLC_FLAG_CHAR);
+
+	mutex_unlock(&dev->out_mutex);
 	return 0;
 }
 
@@ -234,26 +277,22 @@ void check_data_mode(sim900_t *dev)
 	}
 	else {
 		puts("Failed to enter data mode");
+
+		/* Force dial-up again */
 		_send_driver_event(&dev->msg, PPPDEV_LINK_DOWN_EVENT);
 	}
 }
 
 void pdp_enter_data_mode(sim900_t *dev)
 {
-	puts("Entering data mode");
 	send_at_command(dev, "ATD*99***1#\r\n", 13, 3, &check_data_mode);
-}
-
-void pdp_activate(sim900_t *dev)
-{
-	send_at_command(dev, "AT+CGACT=1,1\r\n",14,3, &pdp_enter_data_mode);
 }
 
 void pdp_check_netattach(sim900_t *dev)
 {
 	if(dev->at_status &  HAS_ERROR) {
 		puts("Still don't get network attach... let's try again");
-		at_timeout(dev, 3000000U, &pdp_netattach);
+		at_timeout(dev, SIM900_TIMEOUT_NETATTACH, &pdp_netattach);
 	}
 	else {
 		puts("Network attach!.");
@@ -261,30 +300,28 @@ void pdp_check_netattach(sim900_t *dev)
 	}
 }
 
-void pdp_cgatt(sim900_t *dev)
-{
-	puts("Sim working! :)");
-	pdp_netattach(dev);
-}
-
 void hang_out(sim900_t *dev)
 {
 	_remove_timer(dev);
-	DEBUG("Hanging\n");
-	send_at_command(dev, "ATH0\r\n", 5, 2, &pdp_cgatt);
+
+	/* Hang out current call, for not getting errors calling *99# */
+	send_at_command(dev, "ATH0\r\n", 5, 2, &pdp_netattach);
 }
 void check_device_status(sim900_t *dev)
 {
+	/*If AT has response, hang_out will be called */
 	_reset_at_status(dev);
-	DEBUG("Checking device status\n");
 	send_at_command(dev, "AT\r\n", 4, 3, &hang_out);
-	at_timeout(dev, 5000000, &check_device_status);
+
+	/* if not, call this function again with given timeout */
+	at_timeout(dev, SIM900_TIMEOUT_DEV_ALIVE, &check_device_status);
 }
+
 void dial_up(sim900_t *dev)
 {
-	/*Exit data mode*/
+	/*Exit data mode and call check_device_status*/
 	uart_write(dev->uart, (uint8_t*) "+++", 3);
-	at_timeout(dev, 1000000, &check_device_status);
+	at_timeout(dev, SIM900_DATAMODE_DELAY, &check_device_status);
 }
 
 int sim900_set(pppdev_t *dev, uint8_t opt, void *value, size_t value_len)
@@ -306,26 +343,24 @@ int sim900_set(pppdev_t *dev, uint8_t opt, void *value, size_t value_len)
 int sim900_init(pppdev_t *d)
 {
 	sim900_t *dev = (sim900_t*) d;
-
 	dev->rx_count = 0;
 	dev->int_count = 0;
 	dev->int_fcs = PPPINITFCS16;
-	dev->_num_esc = 0; //Count of escape strings;
+	dev->_num_esc = 0; 
 	dev->_stream = 0;
 	dev->rx_accm = 0;
 	dev->tx_accm = 0;
+    dev->mac_pid = thread_getpid();
 
-	/* initialize UART */
+	/* Initialize UART */
 	uint8_t res;
     res = uart_init(dev->uart, 9600, rx_cb, dev);
     if (res < 0) {
         return 1;
     }
-    //Set current thread to mac_pid
-    dev->mac_pid = thread_getpid();
-    xtimer_usleep(100);
 
-	/*Start sending an AT command */
+	/*Start dial up */
+    xtimer_usleep(100);
 	dial_up((sim900_t*) dev);
 	return 0;
 }
@@ -350,7 +385,7 @@ void driver_events(pppdev_t *d, uint8_t event)
 			break;
 		case PPPDEV_LINK_DOWN_EVENT:
 			_reset_at_status(dev);
-			at_timeout(dev, 5000000, &dial_up);
+			at_timeout(dev, SIM900_LINKDOWN_DELAY, &dial_up);
 			break;
 		default:
 			DEBUG("Unrecognized driver msg\n");
@@ -377,6 +412,7 @@ void sim900_setup(sim900_t *dev, const sim900_params_t *params)
 {
 	dev->netdev.driver = &pppdev_driver_sim900;
 	dev->uart = (uart_t) params->uart;
+	mutex_init(&dev->out_mutex);
 }
 
 int main(void)
