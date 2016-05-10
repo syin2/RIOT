@@ -293,6 +293,14 @@ void pdp_enter_data_mode(sim900_t *dev)
 	send_at_command(dev, "ATD*99***1#\r\n", 13, 3, &check_data_mode);
 }
 
+void set_apn(sim900_t *dev)
+{
+	uint8_t command[22+SIM900_APN_SIZE];
+	memcpy(command, "AT+CGDCONT=1,\"IP\",\"", 19);
+	memcpy(command+19, dev->apn, dev->apn_len);
+	memcpy(command+dev->apn_len+19, "\"\r\n", 3);
+	send_at_command(dev, (char*) command, 22+dev->apn_len, 3, &pdp_enter_data_mode);
+}
 void pdp_check_netattach(sim900_t *dev)
 {
 	if(dev->at_status &  HAS_ERROR) {
@@ -301,7 +309,7 @@ void pdp_check_netattach(sim900_t *dev)
 	}
 	else {
 		puts("Network attach!.");
-		send_at_command(dev, "AT+CGDCONT=1,\"IP\",\"mmsbouygtel.com\"\r\n", 37, 3, &pdp_enter_data_mode);
+		set_apn(dev);
 	}
 }
 
@@ -342,7 +350,12 @@ int sim900_set(pppdev_t *dev, uint8_t opt, void *value, size_t value_len)
 			d->tx_accm = byteorder_ntohl(*nu32);
 			break;
 		case PPPOPT_APN_NAME:
-			DEBUG("Setting APN\n");
+			if(value_len > SIM900_APN_SIZE)
+			{
+				return -1;
+			}
+			memcpy(d->apn, value, value_len);
+			d->apn_len = value_len;
 			break;
 	}
 	return 0;
@@ -359,6 +372,7 @@ int sim900_init(pppdev_t *d)
 	dev->rx_accm = 0;
 	dev->tx_accm = 0;
     dev->mac_pid = thread_getpid();
+	memset(dev->apn, 0, SIM900_APN_SIZE);
 
 	/* Initialize UART */
 	uint8_t res;
@@ -367,6 +381,7 @@ int sim900_init(pppdev_t *d)
         return 1;
     }
 
+	
 	/*Start dial up */
     xtimer_usleep(100);
 	return 0;
@@ -453,8 +468,8 @@ int main(void)
 	xtimer_usleep(1000000);
 	gnrc_netapi_opt_t apn;
 	apn.opt = NETOPT_APN_NAME;
-	apn.data = NULL;
-	apn.data_len = 0;
+	apn.data = "mmsbouygtel.com";
+	apn.data_len = sizeof("mmsbouygtel.com")-1;
 	msg_t msg, reply;
 	msg.type = GNRC_NETAPI_MSG_TYPE_SET;
 	msg.content.ptr = (void*) &apn;

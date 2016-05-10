@@ -15,6 +15,7 @@ extern "C" {
 
 #define SIM900_MAX_RESP_SIZE (100U)
 #define SIM900_MAX_CMD_SIZE (100U)
+#define SIM900_APN_SIZE (40U)
 
 
 /**
@@ -60,6 +61,8 @@ typedef struct sim900_t {
 	uint16_t int_fcs; /**< fcs holder */
 	uint32_t tx_accm; /**< Async Control Character Map for transmission */
 	uint32_t rx_accm; /**< Async Control Character Map for reception */
+	uint8_t apn[SIM900_APN_SIZE]; /**< stores APN name */
+	uint8_t apn_len; /**< stores APN name */
 } sim900_t;
 
 /**
