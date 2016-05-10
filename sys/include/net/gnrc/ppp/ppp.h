@@ -140,7 +140,9 @@ typedef struct pppdev_driver_t
 	void (*driver_ev)(pppdev_t *dev, uint8_t event);
 	int (*init)(pppdev_t *dev);
 	int (*set)(pppdev_t *dev, uint8_t opt, void *value, size_t value_len);
-	int (*get)(pppdev_t *dev, uint8_t opt, void *value, size_t max_lem);
+	int (*get)(pppdev_t *dev, uint8_t opt, void *value, size_t max_len);
+	int (*dial_up)(pppdev_t *dev);
+	int (*link_down)(pppdev_t *dev);
 } pppdev_driver_t;
 
 typedef struct pppdev_t
@@ -189,6 +191,7 @@ int dcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *dcp);
 void gnrc_ppp_link_up(msg_t *msg, kernel_pid_t pid);
 void gnrc_ppp_link_down(msg_t *msg, kernel_pid_t pid);
 void gnrc_ppp_dispatch_pkt(msg_t *msg, kernel_pid_t pid);
+void gnrc_ppp_dial_up(pppdev_t *dev);
 
 #ifdef __cplusplus
 }

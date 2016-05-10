@@ -468,3 +468,8 @@ void gnrc_ppp_dispatch_pkt(msg_t *msg, kernel_pid_t pid)
 {
 	gnrc_ppp_trigger_event(msg, pid, 0xFF, PPP_RECV);
 }
+
+void gnrc_ppp_dial_up(pppdev_t *dev)
+{
+	dev->driver->dial_up(dev);
+}
