@@ -15,11 +15,6 @@ extern "C" {
 
 #define SIM900_MAX_RESP_SIZE (100U)
 #define SIM900_MAX_CMD_SIZE (100U)
-#define SIM900_URC_SIZE (16U)
-
-
-#define AT_STATUS_OK (1)
-#define AT_STATUS_ERROR (2)
 
 #define STREAM_CR (0x0D0A)
 #define STREAM_OK (0x0D0A4F4B)
@@ -30,29 +25,11 @@ extern "C" {
 #define HAS_ERROR (2)
 #define HAS_CONN (4)
 
-
-#define RX_CTRL (1)
-#define RX_FLAG (2)
-
-#define SIM900_MSG_QUEUE 64 
-
 #define MSG_AT_FINISHED (0)
 #define MSG_AT_TIMEOUT (1)
 #define PDP_UP (2)
 #define RX_FINISHED (3)
 
-#ifndef TRUE
-#define TRUE 1
-#endif
-
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-typedef enum {
-	SIM900_INT_STATE_IP_INITIAL,
-	SIM900_INT_STATE_PDP_DEACT
-} sim900_rx_state_t;
 
 typedef enum {
 	AT_STATE_IDLE,
@@ -65,26 +42,6 @@ typedef enum{
 	PPP_RX_IDLE
 } ppp_rx_state_t;
 
-typedef enum {
-	PDP_NOTSIM,
-	PDP_IDLE,
-	PDP_NETATTACH,
-	PDP_ACT,
-} pdp_state_t;
-
-
-typedef struct resp_t{
-	uint8_t status;			/**< status of AT command */
-    uint8_t data[100];        /**< returned data from the AT command */
-    uint8_t data_len;       /**< number ob bytes written to @p data */
-    uint8_t raw[100];
-    //uint8_t raw[256];
-} resp_t;
-
-typedef struct raw_t{
-	uint8_t data[256];
-	uint8_t data_len;
-} raw_t;
 
 typedef struct sim900_t {
 	pppdev_t netdev;
@@ -102,7 +59,6 @@ typedef struct sim900_t {
 	uint8_t prev_state;
 	uint8_t pin[4];
 	kernel_pid_t mac_pid;
-	pdp_state_t pdp_state;
 
 	char _c; //Received character;
 	uint8_t _num_esc; //Count of escape strings;

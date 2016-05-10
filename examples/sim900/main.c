@@ -296,7 +296,6 @@ int sim900_init(pppdev_t *d)
     memset(dev->tx_buf,'\0',SIM900_MAX_CMD_SIZE);
 	dev->resp_count = 0;
 	dev->_num_esc = 0; //Count of escape strings;
-	dev->b_CR = FALSE; //flag for receiving a CR.
 	dev->urc_counter = 0;
 	dev->_stream = 0;
 	dev->rx_accm = 0;
@@ -311,8 +310,7 @@ int sim900_init(pppdev_t *d)
     //Set current thread to mac_pid
     dev->mac_pid = thread_getpid();
     xtimer_usleep(100);
-    //Initiate response buffer
-	dev->pdp_state = PDP_NOTSIM;
+
 	/*Start sending an AT command */
 	dial_up((sim900_t*) dev);
 	return 0;
@@ -334,12 +332,10 @@ void driver_events(pppdev_t *d, uint8_t event)
 			gnrc_ppp_link_up(&dev->msg, dev->mac_pid);
 			break;
 		case RX_FINISHED:
-			dev->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-			dev->msg.content.value = 0xFF00+(PPP_RECV);
-			msg_send(&dev->msg, dev->mac_pid);
+			gnrc_ppp_dispatch_pkt(&dev->msg, dev->mac_pid);
 			break;
 		case PPPDEV_LINK_DOWN_EVENT:
-			dev->state = AT_STATE_IDLE;
+			_reset_at_status(dev);
 			at_timeout(dev, 5000000, &dial_up);
 			break;
 		default:

@@ -188,6 +188,7 @@ int dcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *dcp);
 
 void gnrc_ppp_link_up(msg_t *msg, kernel_pid_t pid);
 void gnrc_ppp_link_down(msg_t *msg, kernel_pid_t pid);
+void gnrc_ppp_dispatch_pkt(msg_t *msg, kernel_pid_t pid);
 
 #ifdef __cplusplus
 }

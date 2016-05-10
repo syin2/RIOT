@@ -463,3 +463,8 @@ void gnrc_ppp_link_down(msg_t *msg, kernel_pid_t pid)
 {
 	gnrc_ppp_trigger_event(msg, pid, 0xFF, PPP_LINKDOWN);
 }
+
+void gnrc_ppp_dispatch_pkt(msg_t *msg, kernel_pid_t pid)
+{
+	gnrc_ppp_trigger_event(msg, pid, 0xFF, PPP_RECV);
+}
