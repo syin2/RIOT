@@ -369,7 +369,6 @@ int sim900_init(pppdev_t *d)
 
 	/*Start dial up */
     xtimer_usleep(100);
-	gnrc_ppp_dial_up(d);
 	return 0;
 }
 
@@ -449,6 +448,19 @@ int main(void)
 	kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, gnrc_ppp_thread, &dev, "gnrc_ppp");
 
 	(void) pid;
+
+
+	xtimer_usleep(1000000);
+	gnrc_netapi_opt_t apn;
+	apn.opt = NETOPT_APN_NAME;
+	apn.data = NULL;
+	apn.data_len = 0;
+	msg_t msg, reply;
+	msg.type = GNRC_NETAPI_MSG_TYPE_SET;
+	msg.content.ptr = (void*) &apn;
+	msg_send_receive(&msg, &reply, dev.mac_pid);
+
+	gnrc_ppp_dial_up(&msg, dev.mac_pid);
 
 #if ENABLE_SHELL
 	char line_buf[SHELL_DEFAULT_BUFSIZE];

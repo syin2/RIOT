@@ -207,6 +207,11 @@ typedef enum {
      */
     NETOPT_STATS,
 
+	NETOPT_APN_NAME,
+	NETOPT_APN_USER,
+	NETOPT_APN_PASSWORD,
+	NETOPT_ACCM,
+
     /* add more options if needed */
 
     /**

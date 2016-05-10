@@ -410,6 +410,23 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 	return 0;
 }
 
+
+int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value_len)
+{
+	switch(opt)
+	{
+		case NETOPT_APN_NAME:
+			DEBUG("Setting APN!\n");
+			dev->netdev->driver->set(dev->netdev, PPPOPT_APN_NAME, value, value_len);
+			break;
+		default:
+			DEBUG("No options from gnrc_ppp yet!\n");
+			break;
+	}
+	return 0;
+}
+
+
 void *gnrc_ppp_thread(void *args)
 {
 	gnrc_pppdev_t pppdev;
@@ -430,7 +447,7 @@ void *gnrc_ppp_thread(void *args)
 
 	msg_t msg_queue[GNRC_PPP_MSG_QUEUE];;
 	msg_init_queue(msg_queue, GNRC_PPP_MSG_QUEUE);
-	msg_t msg, msg_reply;
+	msg_t msg, reply;
 	int event, res;
 	gnrc_netapi_opt_t *opt;
     while(1)
@@ -445,9 +462,10 @@ void *gnrc_ppp_thread(void *args)
 				d->driver->driver_ev((pppdev_t*) d, event);
 				break;
 			case GNRC_NETAPI_MSG_TYPE_SET:
+				DEBUG("\n\n\n :) \n\n\n");
 				opt = (gnrc_netapi_opt_t*) msg.content.ptr;
-				res = d->driver->set(d, opt->opt, opt->data, opt->data_len);
-				reply.type = GNRC_NETTYPE_MSG_TYPE_ACK;
+				res = gnrc_ppp_set_opt(&pppdev, opt->opt, opt->data, opt->data_len);
+				reply.type = GNRC_NETAPI_MSG_TYPE_ACK;
 				reply.content.value = (uint32_t) res;
 				msg_reply(&msg, &reply);
 				break;
@@ -479,31 +497,8 @@ void gnrc_ppp_dispatch_pkt(msg_t *msg, kernel_pid_t pid)
 	gnrc_ppp_trigger_event(msg, pid, 0xFF, PPP_RECV);
 }
 
-void gnrc_ppp_dial_up(pppdev_t *dev)
+void gnrc_ppp_dial_up(msg_t *msg, kernel_pid_t pid)
 {
-	dev->driver->dial_up(dev);
+	gnrc_ppp_trigger_event(msg, pid, ID_PPPDEV, PPP_DIALUP);
 }
 
-uint8_t _opt_is_pppdev(uint8_t opt)
-{
-	switch(opt)
-	{
-		case PPPOPT_ACCM_RX:
-		case PPPOPT_ACCM_TX:
-		case PPPOPT_APN_NAME:
-			return true;
-		default:
-			return false;
-	}
-}
-void gnrc_ppp_set_opt(gnrc_pppdev_t *dev, uint8_t opt, void *value, size_t value_len)
-{
-	if(_opt_is_pppdev(opt))
-	{
-		dev->netdev->driver->set(dev->netdev, opt, value, value_len);
-	}
-	else
-	{
-		DEBUG("No options from gnrc_ppp yet!\n");
-	}
-}

@@ -61,6 +61,9 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			DEBUG("Received ECHO request! Link working! :)\n");
 			dcp->dead_counter = DCP_DEAD_COUNTER;
 			break;
+		case PPP_DIALUP:
+			DEBUG("Dialing device driver\n");
+			pppdev->driver->dial_up(pppdev);
 		default:
 			break;
 	}

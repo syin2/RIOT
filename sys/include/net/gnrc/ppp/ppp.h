@@ -114,7 +114,8 @@ typedef enum
 	PPP_UL_STARTED,
 	PPP_UL_FINISHED,
 	PPP_MONITOR,
-	PPP_LINK_ALIVE
+	PPP_LINK_ALIVE,
+	PPP_DIALUP
 } ppp_dev_event_t;
 
 typedef enum
@@ -192,8 +193,8 @@ int dcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *dcp);
 void gnrc_ppp_link_up(msg_t *msg, kernel_pid_t pid);
 void gnrc_ppp_link_down(msg_t *msg, kernel_pid_t pid);
 void gnrc_ppp_dispatch_pkt(msg_t *msg, kernel_pid_t pid);
-void gnrc_ppp_dial_up(pppdev_t *dev);
-void gnrc_ppp_set_opt(gnrc_pppdev_t *dev, uint8_t opt, void *value, size_t value_len);
+void gnrc_ppp_dial_up(msg_t *msg, kernel_pid_t pid);
+int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value_len);
 
 #ifdef __cplusplus
 }
