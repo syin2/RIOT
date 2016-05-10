@@ -1,3 +1,3 @@
-MODULE = isl29020
+MODULE = sim900
 
 include $(RIOTBASE)/Makefile.base
