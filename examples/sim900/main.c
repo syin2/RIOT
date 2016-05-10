@@ -80,7 +80,7 @@ static inline void _isr_rx(sim900_t *dev, char data)
 				dev->int_count = 0;
 				dev->int_fcs = PPPINITFCS16;
 				dev->escape = 0;
-				if(dev->fcs == PPPGOODFCS16 && dev->escape == 0) {	
+				if(dev->fcs == PPPGOODFCS16 && dev->escape == 0 && dev->rx_count >= 4) {	
 					msg_send_int(&msg, dev->mac_pid);
 				}
 			}
@@ -115,6 +115,12 @@ static void rx_cb(void *arg, uint8_t data)
 	}
 }
 
+void _send_driver_event(msg_t *msg, uint8_t driver_event)
+{
+	msg->type = PPPDEV_MSG_TYPE_EVENT;
+	msg->content.value = driver_event;
+	msg_send(msg, thread_getpid());
+}
 
 int send_at_command(sim900_t *dev, char *cmd, size_t size, uint8_t ne, void (*cb)(sim900_t *dev))
 {
@@ -129,10 +135,12 @@ int send_at_command(sim900_t *dev, char *cmd, size_t size, uint8_t ne, void (*cb
 	uart_write(dev->uart, (uint8_t*) cmd, size); 
 	return 0;
 }
+
 void _reset_at_status(sim900_t *dev)
 {
 	dev->state = AT_STATE_IDLE;
 }
+
 void _remove_timer(sim900_t *dev)
 {
 	xtimer_remove(&dev->xtimer);
@@ -153,6 +161,7 @@ int sim900_recv(pppdev_t *ppp_dev, char *buf, int len, void *info)
 	}
 	return payload_length;
 }
+
 int sim900_send(pppdev_t *ppp_dev, const struct iovec *vector, int count)
 {
 	sim900_t *dev = (sim900_t*) ppp_dev;
@@ -183,16 +192,6 @@ int sim900_send(pppdev_t *ppp_dev, const struct iovec *vector, int count)
 	return 0;
 }
 
-/*
-void test_sending(sim900_t *dev)
-{
-	uint8_t pkt[] = {0xff, 0x03, 0xc0, 0x21, 0x01,0x01,0x00,0x04};
-	struct iovec vector;
-	vector.iov_base = &pkt;
-	vector.iov_len = 8;
-	sim900_send((pppdev_t*) dev, &vector, 1);
-}
-*/
 
 void at_timeout(sim900_t *dev, uint32_t ms, void (*cb)(sim900_t *dev))
 {
@@ -213,15 +212,11 @@ void check_data_mode(sim900_t *dev)
 		puts("Successfully entered data mode");
 		dev->state = AT_STATE_RX;
 		dev->ppp_rx_state = PPP_RX_IDLE;
-		dev->msg.type = PPPDEV_MSG_TYPE_EVENT;
-		dev->msg.content.value = PDP_UP;
-		msg_send(&dev->msg, dev->mac_pid);
+		_send_driver_event(&dev->msg, PDP_UP);
 	}
 	else {
 		puts("Failed to enter data mode");
-		dev->msg.type = PPPDEV_MSG_TYPE_EVENT;
-		dev->msg.content.value = PPPDEV_LINK_DOWN_EVENT;
-		msg_send(&dev->msg, dev->mac_pid);
+		_send_driver_event(&dev->msg, PPPDEV_LINK_DOWN_EVENT);
 	}
 }
 
@@ -335,19 +330,13 @@ void driver_events(pppdev_t *d, uint8_t event)
 			dev->_timer_cb(dev);
 			break;
 		case PDP_UP:
-			DEBUG("Welcome to PPP :)\n");
 			gnrc_ppp_link_down(&dev->msg, dev->mac_pid);
 			gnrc_ppp_link_up(&dev->msg, dev->mac_pid);
 			break;
 		case RX_FINISHED:
-			if(dev->rx_count < 4) {
-				DEBUG("Frame too short!");
-			}
-			else {
-				dev->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-				dev->msg.content.value = 0xFF00+(PPP_RECV);
-				msg_send(&dev->msg, dev->mac_pid);
-			}
+			dev->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
+			dev->msg.content.value = 0xFF00+(PPP_RECV);
+			msg_send(&dev->msg, dev->mac_pid);
 			break;
 		case PPPDEV_LINK_DOWN_EVENT:
 			dev->state = AT_STATE_IDLE;
@@ -358,7 +347,6 @@ void driver_events(pppdev_t *d, uint8_t event)
 			break;
 	}
 }
-
 
 int sim900_get(pppdev_t *dev, uint8_t opt, void *value, size_t max_lem)
 {
