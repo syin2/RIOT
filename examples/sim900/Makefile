@@ -24,6 +24,7 @@ USEMODULE += shell_commands
 USEMODULE += ps
 USEMODULE += xtimer
 USEMODULE += gnrc_ppp
+USEMODULE += sim900
 
 
 include $(RIOTBASE)/Makefile.include

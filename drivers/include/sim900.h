@@ -9,6 +9,7 @@
 #include "net/gnrc.h"
 #include "net/gnrc/ppp/ppp.h"
 #include "net/hdlc/fcs.h"
+#include "periph/uart.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,6 +74,14 @@ typedef struct sim900_params_t
 {
 	uart_t uart; /**< UART port of device */
 } sim900_params_t;
+
+/**
+ * @brief   Ready the device for initialization through it's pppdev interface
+ *
+ * @param[in] dev           device descriptor
+ * @param[in] params        peripheral configuration to use
+ */
+void sim900_setup(sim900_t *dev, const sim900_params_t *params);
 
 
 #ifdef __cplusplus
