@@ -52,10 +52,10 @@
 #define HAS_ERROR (2)
 #define HAS_CONN (4)
 
-#define MSG_AT_FINISHED (0)
-#define MSG_AT_TIMEOUT (1)
-#define PDP_UP (2)
-#define RX_FINISHED (3)
+#define MSG_AT_FINISHED (1)
+#define MSG_AT_TIMEOUT (2)
+#define PDP_UP (3)
+#define RX_FINISHED (4)
 
 #define HDLC_FLAG_CHAR (0x7e)
 #define HDLC_ESCAPE_CHAR (0x7d)
@@ -182,7 +182,10 @@ int send_at_command(sim900_t *dev, char *cmd, size_t size, uint8_t ne, void (*cb
 		return -EBUSY;
 	}
 	dev->state = AT_STATE_CMD;
+
+	/* Lock thread in order to prevent multiple writes */
 	mutex_lock(&dev->out_mutex);
+
 	dev->_num_esc = ne;
 	dev->at_status = 0;
 	dev->_cb = cb;
@@ -220,8 +223,10 @@ int sim900_send(pppdev_t *ppp_dev, const struct iovec *vector, int count)
 	sim900_t *dev = (sim900_t*) ppp_dev;
 	uint16_t fcs = PPPINITFCS16;
 
+	/* Lock thread in order to prevent multiple writes */
 	mutex_lock(&dev->out_mutex);
-	/* Send flag */
+
+	/* Send opening flag */
 	sim900_putchar(dev->uart, (uint8_t) HDLC_FLAG_CHAR);
 	uint8_t c;
 	for(int i=0;i<count;i++) {
@@ -361,7 +366,7 @@ int sim900_init(pppdev_t *d)
 
 	/*Start dial up */
     xtimer_usleep(100);
-	dial_up((sim900_t*) dev);
+	gnrc_ppp_dial_up(d);
 	return 0;
 }
 
@@ -383,10 +388,6 @@ void driver_events(pppdev_t *d, uint8_t event)
 		case RX_FINISHED:
 			gnrc_ppp_dispatch_pkt(&dev->msg, dev->mac_pid);
 			break;
-		case PPPDEV_LINK_DOWN_EVENT:
-			_reset_at_status(dev);
-			at_timeout(dev, SIM900_LINKDOWN_DELAY, &dial_up);
-			break;
 		default:
 			DEBUG("Unrecognized driver msg\n");
 			break;
@@ -398,6 +399,20 @@ int sim900_get(pppdev_t *dev, uint8_t opt, void *value, size_t max_lem)
 	return 0;
 }
 
+int sim900_dialup(pppdev_t *dev)
+{
+	dial_up((sim900_t*) dev);
+	return 0;
+}
+
+int link_down(pppdev_t *dev)
+{
+	sim900_t *d = (sim900_t*) dev;
+	_reset_at_status(d);
+	at_timeout(d, SIM900_LINKDOWN_DELAY, &dial_up);
+	return 0;
+}
+
 const static pppdev_driver_t pppdev_driver_sim900 = 
 {
 	.send = sim900_send,
@@ -405,7 +420,9 @@ const static pppdev_driver_t pppdev_driver_sim900 =
 	.driver_ev = driver_events,
 	.init = sim900_init,
 	.set = sim900_set,
-	.get = sim900_get
+	.get = sim900_get,
+	.dial_up = sim900_dialup,
+	.link_down = link_down
 };
 
 void sim900_setup(sim900_t *dev, const sim900_params_t *params)

@@ -6,6 +6,7 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 	msg_t *timer_msg = &((dcp_t*) protocol)->timer_msg;
 	xtimer_t *xtimer = &((dcp_t*) protocol)->xtimer;
 	dcp_t *dcp = (dcp_t*) protocol;
+	pppdev_t *pppdev = dcp->pppdev->netdev;
 	DEBUG("In DCP handler\n");
 	switch(ppp_event)
 	{
@@ -14,11 +15,10 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			break;
 		case PPP_UL_FINISHED:
 			DEBUG("Driver: PPP_UL_FINISHED\n");
-			msg->type = PPPDEV_MSG_TYPE_EVENT;
-			msg->content.value = PPPDEV_LINK_DOWN_EVENT;
-			msg_send(msg, thread_getpid());
 			/*Remove timer*/
 			xtimer_remove(xtimer);
+
+			pppdev->driver->link_down(pppdev);
 			break;
 		case PPP_LINKUP:
 			DEBUG("Driver: PPP_LINKUP\n");
