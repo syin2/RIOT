@@ -202,10 +202,9 @@ void at_timeout(sim900_t *dev, uint32_t ms, void (*cb)(sim900_t *dev))
 	xtimer_set_msg(&dev->xtimer, ms, &dev->msg, dev->mac_pid);
 }
 
-void pdp_netattach_timeout(sim900_t *dev)
+void pdp_netattach(sim900_t *dev)
 {
-	puts("Still don't get network attach... let's try again");
-	send_at_command(dev, "AT+CGATT=1\r\n", 12, 3, &pdp_netattach);
+	send_at_command(dev, "AT+CGATT=1\r\n", 12, 3, &pdp_check_netattach);
 }
 
 void check_data_mode(sim900_t *dev)
@@ -220,6 +219,9 @@ void check_data_mode(sim900_t *dev)
 	}
 	else {
 		puts("Failed to enter data mode");
+		dev->msg.type = PPPDEV_MSG_TYPE_EVENT;
+		dev->msg.content.value = PPPDEV_LINK_DOWN_EVENT;
+		msg_send(&dev->msg, dev->mac_pid);
 	}
 }
 
@@ -234,10 +236,11 @@ void pdp_activate(sim900_t *dev)
 	send_at_command(dev, "AT+CGACT=1,1\r\n",14,3, &pdp_enter_data_mode);
 }
 
-void pdp_netattach(sim900_t *dev)
+void pdp_check_netattach(sim900_t *dev)
 {
 	if(dev->at_status &  HAS_ERROR) {
-		at_timeout(dev, 3000000U, &pdp_netattach_timeout);
+		puts("Still don't get network attach... let's try again");
+		at_timeout(dev, 3000000U, &pdp_netattach);
 	}
 	else {
 		puts("Network attach!.");
@@ -245,31 +248,17 @@ void pdp_netattach(sim900_t *dev)
 	}
 }
 
-
-
-void pdp_context_attach(sim900_t *dev)
-{
-	if(dev->at_status & HAS_OK) {
-		puts("PDP attached!");
-	}
-}
-
-void pdp_nosim(sim900_t *dev)
+void pdp_cgatt(sim900_t *dev)
 {
 	puts("Sim working! :)");
-	send_at_command(dev, "AT+CGATT=1\r\n", 12, 3, &pdp_netattach);
-}
-
-void cpin(sim900_t *dev)
-{
-	send_at_command(dev, "AT+CPIN?\r\n",10, 5, &pdp_nosim);
+	pdp_netattach(dev);
 }
 
 void hang_out(sim900_t *dev)
 {
 	_remove_timer(dev);
 	DEBUG("Hanging\n");
-	send_at_command(dev, "ATH0\r\n", 5, 2, &cpin);
+	send_at_command(dev, "ATH0\r\n", 5, 2, &pdp_cgatt);
 }
 void check_device_status(sim900_t *dev)
 {
@@ -347,6 +336,7 @@ void driver_events(pppdev_t *d, uint8_t event)
 			break;
 		case PDP_UP:
 			DEBUG("Welcome to PPP :)\n");
+			gnrc_ppp_link_down(&dev->msg, dev->mac_pid);
 			gnrc_ppp_link_up(&dev->msg, dev->mac_pid);
 			break;
 		case RX_FINISHED:
@@ -361,7 +351,6 @@ void driver_events(pppdev_t *d, uint8_t event)
 			break;
 		case PPPDEV_LINK_DOWN_EVENT:
 			dev->state = AT_STATE_IDLE;
-			gnrc_ppp_link_down(&dev->msg, dev->mac_pid);
 			at_timeout(dev, 5000000, &dial_up);
 			break;
 		default:

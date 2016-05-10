@@ -135,6 +135,7 @@ typedef struct sim900_params_t
 //static int get_AT(sim900_t*, resp_t*);
 void pdp_netattach_timeout(sim900_t *dev);
 void pdp_netattach(sim900_t *dev);
+void pdp_check_netattach(sim900_t *dev);
 #ifdef __cplusplus
 }
 #endif
