@@ -227,7 +227,9 @@ int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev, ppp_ipv4_t *ipv4, ipcp_t *ipcp, gnrc_p
 
 int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 {
-	DEBUG("Received IPv6 packet from upper layer\n");
+	DEBUG("Received IPv6 packet from upper layer. (Not yet really)\n");
+	DEBUG("For now, just drop packet\n");
+	gnrc_pktbuf_release(pkt);
 	return 0;
 }
 

@@ -465,6 +465,11 @@ void *_gnrc_ppp_thread(void *args)
 				reply.content.value = (uint32_t) res;
 				msg_reply(&msg, &reply);
 				break;
+            case GNRC_NETAPI_MSG_TYPE_SND:
+                DEBUG("gnrc_pppdev: GNRC_NETAPI_MSG_TYPE_SND received\n");
+                gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t *)msg.content.ptr;
+                ppp_ipv4_send(pppdev, pkt);
+                break;
 			default:
 				DEBUG("Received an unknown thread msg\n");
     	}

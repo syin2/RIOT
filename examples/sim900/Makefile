@@ -27,6 +27,7 @@ USEMODULE += gnrc_ppp
 USEMODULE += sim900
 USEMODULE += gnrc_netdev_default
 USEMODULE += auto_init_gnrc_netif
+#USEMODULE += gnrc_ipv6_default
 
 
 include $(RIOTBASE)/Makefile.include
