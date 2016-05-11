@@ -32,7 +32,7 @@
 #include <errno.h>
 #include <string.h>
 
-#define ENABLE_DEBUG    (1)
+#define ENABLE_DEBUG    (0)
 #include "debug.h"
 
 #if ENABLE_DEBUG
@@ -92,6 +92,7 @@ gnrc_pktsnip_t *retrieve_pkt(pppdev_t *dev)
 		return pkt;
 }
 
+#if ENABLE_DEBUG
 void print_protocol(uint16_t protocol)
 {
 	switch(protocol)
@@ -186,8 +187,10 @@ void print_opts(gnrc_pktsnip_t *payload)
 	}
 	DEBUG(">");
 }
+#endif
 void print_pkt(gnrc_pktsnip_t *hdlc_hdr, gnrc_pktsnip_t *ppp_hdr, gnrc_pktsnip_t *payload)
 {
+#if ENABLE_DEBUG
 	hdlc_hdr_t *hdlc = (hdlc_hdr_t*) hdlc_hdr->data;
 	DEBUG("[");
 	print_protocol(hdlc_hdr_get_protocol(hdlc));
@@ -233,6 +236,7 @@ void print_pkt(gnrc_pktsnip_t *hdlc_hdr, gnrc_pktsnip_t *ppp_hdr, gnrc_pktsnip_t
 		}
 	}
 	DEBUG(">\n");
+#endif
 }
 
 int gnrc_ppp_setup(gnrc_pppdev_t *dev, pppdev_t *netdev)
