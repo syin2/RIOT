@@ -22,7 +22,7 @@
 #include "sim900.h"
 #include "periph/uart.h"
 
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG (1)
 #include "debug.h"
 
 /**
@@ -35,29 +35,14 @@
 /**
  * @brief   Stacks for the MAC layer threads
  */
-static char _pppdev_stack[MAC_STACKSIZE];
-static gnrc_pppdev_t _gnrc_sim900;
+//static char _pppdev_stack[SIM900_STACKSIZE];
+//static gnrc_pppdev_t _gnrc_sim900;
 
-static uint8_t _inbuf[2048];
+//static uint8_t _inbuf[2048];
 
 void auto_init_sim900(void)
 {
     DEBUG("auto_init_sim900(): initializing device...\n");
-
-    /* setup netdev2 device */
-    ethos_params_t p;
-    p.uart      = ETHOS_UART;
-    p.baudrate  = ETHOS_BAUDRATE;
-    p.buf       = _inbuf;
-    p.bufsize   = sizeof(_inbuf);
-    ethos_setup(&ethos, &p);
-
-    /* initialize netdev2<->gnrc adapter state */
-    gnrc_netdev2_eth_init(&_gnrc_ethos, (netdev2_t*)&ethos);
-
-    /* start gnrc netdev2 thread */
-    gnrc_netdev2_init(_netdev2_eth_stack, MAC_STACKSIZE,
-            MAC_PRIO, "gnrc_ethos", &_gnrc_ethos);
 }
 
 #else

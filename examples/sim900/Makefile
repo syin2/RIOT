@@ -25,6 +25,7 @@ USEMODULE += ps
 USEMODULE += xtimer
 USEMODULE += gnrc_ppp
 USEMODULE += sim900
+USEMODULE += auto_init_gnrc_netif
 
 
 include $(RIOTBASE)/Makefile.include
