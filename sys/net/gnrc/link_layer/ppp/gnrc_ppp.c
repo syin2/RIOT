@@ -494,3 +494,22 @@ void gnrc_ppp_dial_up(msg_t *msg, kernel_pid_t pid)
 	gnrc_ppp_trigger_event(msg, pid, ID_PPPDEV, PPP_DIALUP);
 }
 
+kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,
+                        const char *name, gnrc_pppdev_t *gnrc_pppdev)
+{
+    kernel_pid_t res;
+
+    /* check if given netdev device is defined and the driver is set */
+    if (gnrc_pppdev == NULL || gnrc_pppdev->netdev == NULL) {
+        return -ENODEV;
+    }
+
+    /* create new gnrc_pppdev thread */
+    res = thread_create(stack, stacksize, priority, THREAD_CREATE_STACKTEST,
+                         _gnrc_ppp_thread, (void *)gnrc_pppdev, name);
+    if (res <= 0) {
+        return -EINVAL;
+    }
+
+    return res;
+}
