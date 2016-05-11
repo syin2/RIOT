@@ -13,16 +13,11 @@ int main(void)
 	kernel_pid_t netifs[GNRC_NETIF_NUMOF];
 
 	DEBUG("Number of interfaces: %i\n", gnrc_netif_get(netifs));
-	gnrc_netapi_opt_t apn;
-	apn.opt = NETOPT_APN_NAME;
-	apn.data = "mmsbouygtel.com";
-	apn.data_len = sizeof("mmsbouygtel.com")-1;
-	msg_t msg, reply;
-	msg.type = GNRC_NETAPI_MSG_TYPE_SET;
-	msg.content.ptr = (void*) &apn;
 
-	msg_send_receive(&msg, &reply, netifs[1]);
+	char apn[] ="mmsbouygtel.com";
+	gnrc_netapi_set(netifs[1], NETOPT_APN_NAME, 0, apn, sizeof(apn)-1);
 
+	msg_t msg;
 	gnrc_ppp_dial_up(&msg, netifs[1]);
 
 #if ENABLE_SHELL
