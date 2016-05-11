@@ -2,7 +2,10 @@
 #define ENABLE_DEBUG (1)
 #include "debug.h"
 
-char thread_stack[2*THREAD_STACKSIZE_MAIN];	
+#include "shell.h"
+#include "shell_commands.h"
+
+#define ENABLE_SHELL (1)
 
 int main(void)
 {
@@ -20,8 +23,20 @@ int main(void)
 
 	//(void) pid;
 
-	xtimer_usleep(1000000);
 	DEBUG("Here we go!\n");
+	kernel_pid_t netifs[GNRC_NETIF_NUMOF];
+	DEBUG("Number of interfaces: %i\n", gnrc_netif_get(netifs));
+	gnrc_netapi_opt_t apn;
+	apn.opt = NETOPT_APN_NAME;
+	apn.data = "mmsbouygtel.com";
+	apn.data_len = sizeof("mmsbouygtel.com")-1;
+	msg_t msg, reply;
+	msg.type = GNRC_NETAPI_MSG_TYPE_SET;
+	msg.content.ptr = (void*) &apn;
+
+	msg_send_receive(&msg, &reply, netifs[0]);
+
+	gnrc_ppp_dial_up(&msg, netifs[0]);
 
 #if ENABLE_SHELL
 	char line_buf[SHELL_DEFAULT_BUFSIZE];

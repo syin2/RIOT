@@ -27,7 +27,7 @@
 #include <errno.h>
 #include "net/gnrc/ppp/fsm.h"
 
-#define ENABLE_DEBUG    (1)
+#define ENABLE_DEBUG    (0)
 #include "debug.h"
 
 #if ENABLE_DEBUG
