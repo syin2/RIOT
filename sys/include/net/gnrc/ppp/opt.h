@@ -5,8 +5,6 @@
 #include <string.h>
 #include "net/gnrc/pkt.h"
 #include "net/gnrc/pktbuf.h"
-#define ENABLE_DEBUG    (1)
-#include "debug.h"
 
 #if ENABLE_DEBUG
 /* For PRIu16 etc. */
