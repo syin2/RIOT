@@ -430,14 +430,11 @@ int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
 }
 
 
-void *gnrc_ppp_thread(void *args)
+void *_gnrc_ppp_thread(void *args)
 {
-	gnrc_pppdev_t pppdev;
-
-	gnrc_ppp_init(&pppdev, (pppdev_t*) args);
-
+	gnrc_pppdev_t *pppdev = (gnrc_pppdev_t*) args;
 	gnrc_netif_add(thread_getpid());
-	pppdev_t *d = pppdev.netdev;
+	pppdev_t *d = pppdev->netdev;
     d->driver->init(d);
 
 	msg_t msg_queue[GNRC_PPP_MSG_QUEUE];;
@@ -451,7 +448,7 @@ void *gnrc_ppp_thread(void *args)
 		event = msg.content.value;	
 		switch(msg.type){
 			case GNRC_PPPDEV_MSG_TYPE_EVENT:
-				dispatch_ppp_msg(&pppdev, event);
+				dispatch_ppp_msg(pppdev, event);
 				break;
 			case PPPDEV_MSG_TYPE_EVENT:
 				d->driver->driver_ev((pppdev_t*) d, event);
@@ -459,7 +456,7 @@ void *gnrc_ppp_thread(void *args)
 			case GNRC_NETAPI_MSG_TYPE_SET:
 				DEBUG("\n\n\n :) \n\n\n");
 				opt = (gnrc_netapi_opt_t*) msg.content.ptr;
-				res = gnrc_ppp_set_opt(&pppdev, opt->opt, opt->data, opt->data_len);
+				res = gnrc_ppp_set_opt(pppdev, opt->opt, opt->data, opt->data_len);
 				reply.type = GNRC_NETAPI_MSG_TYPE_ACK;
 				reply.content.value = (uint32_t) res;
 				msg_reply(&msg, &reply);

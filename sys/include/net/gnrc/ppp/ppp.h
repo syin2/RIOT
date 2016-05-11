@@ -183,7 +183,7 @@ int gnrc_ppp_event_callback(gnrc_pppdev_t *dev, int ppp_event);
 void print_pkt(gnrc_pktsnip_t *hdlc, gnrc_pktsnip_t *ppp, gnrc_pktsnip_t *pkt);
 int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr);
 
-void *gnrc_ppp_thread(void *args);
+void *_gnrc_ppp_thread(void *args);
 int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args); 
 int dcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *dcp);
 
