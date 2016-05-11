@@ -235,7 +235,7 @@ void print_pkt(gnrc_pktsnip_t *hdlc_hdr, gnrc_pktsnip_t *ppp_hdr, gnrc_pktsnip_t
 	DEBUG(">\n");
 }
 
-int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev)
+int gnrc_ppp_setup(gnrc_pppdev_t *dev, pppdev_t *netdev)
 {
 	dev->netdev = netdev;
 	dev->state = PPP_LINK_DEAD;

@@ -15,7 +15,7 @@ int main(void)
 	xtimer_init();
 
 	gnrc_pppdev_t pppdev;
-	gnrc_ppp_init(&pppdev, (pppdev_t*) &dev);
+	gnrc_ppp_setup(&pppdev, (pppdev_t*) &dev);
 
 	kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN-1, THREAD_CREATE_STACKTEST*2, _gnrc_ppp_thread, &pppdev, "gnrc_ppp");
 

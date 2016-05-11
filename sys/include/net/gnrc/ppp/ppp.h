@@ -173,7 +173,7 @@ typedef struct gnrc_pppdev_t{
 
 
 
-int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev);
+int gnrc_ppp_setup(gnrc_pppdev_t *dev, pppdev_t *netdev);
 gnrc_pktsnip_t *pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnrc_pktsnip_t *payload);
 int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt);
 int gnrc_ppp_recv(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt);
