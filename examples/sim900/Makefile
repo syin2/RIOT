@@ -18,6 +18,7 @@ CFLAGS += -DDEVELHELP
 # Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
 
+GNRC_NETIF_NUMOF := 2
 
 USEMODULE += shell
 USEMODULE += shell_commands
