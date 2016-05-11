@@ -32,7 +32,7 @@
 #include <errno.h>
 #include <string.h>
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG    (1)
 #include "debug.h"
 
 #if ENABLE_DEBUG
@@ -418,24 +418,39 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 }
 
 
+int gnrc_ppp_get_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value_len)
+{
+	int res;
+	switch(opt)
+	{
+		default:
+			res = -ENOTSUP;
+			break;
+	}
+	return res;
+}
+
 int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value_len)
 {
+	int res;
 	switch(opt)
 	{
 		case NETOPT_APN_NAME:
 			DEBUG("Setting APN!\n");
-			dev->netdev->driver->set(dev->netdev, PPPOPT_APN_NAME, value, value_len);
+			res = dev->netdev->driver->set(dev->netdev, PPPOPT_APN_NAME, value, value_len);
 			break;
 		default:
 			DEBUG("No options from gnrc_ppp yet!\n");
+			res = -ENOTSUP;
 			break;
 	}
-	return 0;
+	return res;
 }
 
 
 void *_gnrc_ppp_thread(void *args)
 {
+	DEBUG("gnrc_ppp_trhead started\n");
 	gnrc_pppdev_t *pppdev = (gnrc_pppdev_t*) args;
 	gnrc_netif_add(thread_getpid());
 	pppdev_t *d = pppdev->netdev;
@@ -458,9 +473,15 @@ void *_gnrc_ppp_thread(void *args)
 				d->driver->driver_ev((pppdev_t*) d, event);
 				break;
 			case GNRC_NETAPI_MSG_TYPE_SET:
-				DEBUG("\n\n\n :) \n\n\n");
 				opt = (gnrc_netapi_opt_t*) msg.content.ptr;
 				res = gnrc_ppp_set_opt(pppdev, opt->opt, opt->data, opt->data_len);
+				reply.type = GNRC_NETAPI_MSG_TYPE_ACK;
+				reply.content.value = (uint32_t) res;
+				msg_reply(&msg, &reply);
+				break;
+			case GNRC_NETAPI_MSG_TYPE_GET:
+				opt = (gnrc_netapi_opt_t*) msg.content.ptr;
+				res = gnrc_ppp_get_opt(pppdev, opt->opt, opt->data, opt->data_len);
 				reply.type = GNRC_NETAPI_MSG_TYPE_ACK;
 				reply.content.value = (uint32_t) res;
 				msg_reply(&msg, &reply);
@@ -471,7 +492,7 @@ void *_gnrc_ppp_thread(void *args)
                 ppp_ipv4_send(pppdev, pkt);
                 break;
 			default:
-				DEBUG("Received an unknown thread msg\n");
+				DEBUG("Received an unknown thread msg: %i\n", msg.type);
     	}
     }
 }
