@@ -2,7 +2,7 @@
 #define PPP_FSM_H_
 
 #include "net/gnrc/ppp/opt.h"
-#include "net/gnrc/ppp/ppp.h"
+#include "net/gnrc/ppp/prot.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +27,7 @@ extern "C" {
 #define PPP_MAX_TERMINATE (3)
 #define PPP_MAX_CONFIG (10)
 
+#define OPT_PAYLOAD_BUF_SIZE (100)
 typedef enum{
 	E_UP,
 	E_DOWN,

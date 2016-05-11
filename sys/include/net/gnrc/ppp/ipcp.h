@@ -27,14 +27,14 @@ typedef struct ppp_ipv4_t
 {
 	ppp_protocol_t prot;
 	ipcp_t *ipcp;
-	gnrc_pppdev_t *pppdev;
+	struct gnrc_pppdev_t *pppdev;
 } ppp_ipv4_t;
 
 struct gnrc_pppdev_t;
 struct ppp_fsm_t;
 
 int ipcp_init(struct gnrc_pppdev_t *ppp_dev, struct ppp_fsm_t *ipcp);
-int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev, ppp_ipv4_t *ipv4, ipcp_t *ipcp, gnrc_pppdev_t *pppdev);
+int ppp_ipv4_init(struct gnrc_pppdev_t *ppp_dev, ppp_ipv4_t *ipv4, ipcp_t *ipcp, struct gnrc_pppdev_t *pppdev);
 int ppp_ipv4_handler(ppp_protocol_t *prot, uint8_t event, gnrc_pktsnip_t *pkt);
 
 #ifdef __cplusplus

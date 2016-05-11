@@ -32,6 +32,7 @@
 #include "xtimer.h"
 #include "thread.h"
 #include "net/gnrc/ppp/opt.h"
+#include "net/gnrc/ppp/prot.h"
 #include "sys/uio.h"
 
 #ifdef __cplusplus
@@ -90,7 +91,6 @@ extern "C" {
 
 #define GNRC_PPP_MSG_QUEUE_SIZE (20)
 
-#define OPT_PAYLOAD_BUF_SIZE (100)
 
 #define OPT_ENABLED (1)
 #define OPT_REQUIRED (2)
@@ -126,13 +126,6 @@ typedef enum
 	PPP_NETWORK,
 	PPP_TERMINATION
 } ppp_state_t;
-
-typedef struct ppp_protocol_t
-{
-	int (*handler)(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args);
-	uint8_t id;
-} ppp_protocol_t;
-
 
 typedef struct pppdev_t pppdev_t;
 typedef struct pppdev_driver_t
