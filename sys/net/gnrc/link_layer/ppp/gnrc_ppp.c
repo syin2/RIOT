@@ -240,13 +240,13 @@ int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev)
 	dev->netdev = netdev;
 	dev->state = PPP_LINK_DEAD;
 
-	dcp_init(dev, (ppp_protocol_t*) dev->l_dcp);
-	lcp_init(dev, (ppp_fsm_t*) dev->l_lcp);
-	ipcp_init(dev, (ppp_fsm_t*) dev->l_ipcp);
-	ppp_ipv4_init(dev, (ppp_ipv4_t*) dev->l_ipv4, (ipcp_t*) dev->l_ipcp, dev);
+	dcp_init(dev, (ppp_protocol_t*) &dev->l_dcp);
+	lcp_init(dev, (ppp_fsm_t*) &dev->l_lcp);
+	ipcp_init(dev, (ppp_fsm_t*) &dev->l_ipcp);
+	ppp_ipv4_init(dev, (ppp_ipv4_t*) &dev->l_ipv4, (ipcp_t*) &dev->l_ipcp, dev);
 
-	trigger_event((ppp_fsm_t*) dev->l_lcp, E_OPEN, NULL);
-	trigger_event((ppp_fsm_t*) dev->l_ipcp, E_OPEN, NULL);
+	trigger_event((ppp_fsm_t*) &dev->l_lcp, E_OPEN, NULL);
+	trigger_event((ppp_fsm_t*) &dev->l_ipcp, E_OPEN, NULL);
 	return 0;
 }
 
@@ -280,7 +280,7 @@ int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 	}
 	
 	DEBUG("Hdr: %p\n", dev);
-	if(gnrc_pkt_len(hdr) > ((lcp_t*) dev->l_lcp)->peer_mru)
+	if(gnrc_pkt_len(hdr) > ((lcp_t*) &dev->l_lcp)->peer_mru)
 	{
 		DEBUG("Sending exceeds peer MRU. Dropping packet.\n");
 		gnrc_pktbuf_release(hdr);
@@ -311,7 +311,7 @@ void send_protocol_reject(lcp_t *lcp, gnrc_pktsnip_t *ppp_pkt)
 
 int gnrc_ppp_get_state(gnrc_pppdev_t *dev)
 {
-	ppp_fsm_t *lcp = (ppp_fsm_t*) dev->l_lcp;
+	ppp_fsm_t *lcp = (ppp_fsm_t*) &dev->l_lcp;
 	switch(lcp->state)
 	{
 		case S_INITIAL:
@@ -367,7 +367,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 		target = mark_ppp_pkt(pkt);
 		if(!target)
 		{
-			send_protocol_reject((lcp_t*) dev->l_lcp, pkt);
+			send_protocol_reject((lcp_t*) &dev->l_lcp, pkt);
 			return -EBADMSG;
 		}
 		ppp_state = gnrc_ppp_get_state(dev);
@@ -380,33 +380,36 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 	}
 
 	/*Drop packet if exceeds MRU*/
-	if(gnrc_pkt_len(pkt) > ((lcp_t*) dev->l_lcp)->mru)
+	if(gnrc_pkt_len(pkt) > ((lcp_t*) &dev->l_lcp)->mru)
 	{
 		DEBUG("gnrc_ppp: Exceeded MRU of device. Dropping packet.\n");
 		gnrc_pktbuf_release(pkt);
 		return -EBADMSG;
 	}
 
+	ppp_protocol_t *target_prot;
 	switch(target)
 	{
 		case ID_LCP:
-			dev->l_lcp->handler(dev->l_lcp, event, pkt);
+			target_prot = (ppp_protocol_t*) &dev->l_lcp;
 			break;
 		case ID_IPCP:
 		case 0xFE:
-			dev->l_ipcp->handler(dev->l_ipcp, event, pkt);
+			target_prot = (ppp_protocol_t*) &dev->l_ipcp;
 			break;
 		case ID_IPV4:
-			dev->l_ipv4->handler(dev->l_ipv4, event, pkt);
+			target_prot = (ppp_protocol_t*) &dev->l_ipv4;
 			break;
 		case ID_PPPDEV:
 		case 0xFF:
-			dev->l_dcp->handler(dev->l_dcp, event, NULL);
+			target_prot = (ppp_protocol_t*) &dev->l_dcp;
 			break;
 		default:
 			DEBUG("Unrecognized target\n");
+			return -1;
 			break;
 	}
+	target_prot->handler(target_prot, event, pkt);
 	return 0;
 }
 
@@ -430,15 +433,6 @@ int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
 void *gnrc_ppp_thread(void *args)
 {
 	gnrc_pppdev_t pppdev;
-	dcp_t dcp;
-	lcp_t lcp;
-	ipcp_t ipcp;
-	ppp_ipv4_t ppp_ipv4;
-
-	pppdev.l_dcp = (ppp_protocol_t*) &dcp;
-	pppdev.l_lcp = (ppp_protocol_t*) &lcp;
-	pppdev.l_ipcp = (ppp_protocol_t*) &ipcp;
-	pppdev.l_ipv4 = (ppp_protocol_t*) &ppp_ipv4;
 
 	gnrc_ppp_init(&pppdev, (pppdev_t*) args);
 

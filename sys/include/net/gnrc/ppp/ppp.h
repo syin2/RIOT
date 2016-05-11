@@ -33,6 +33,8 @@
 #include "thread.h"
 #include "net/gnrc/ppp/opt.h"
 #include "net/gnrc/ppp/prot.h"
+#include "net/gnrc/ppp/lcp.h"
+#include "net/gnrc/ppp/ipcp.h"
 #include "sys/uio.h"
 
 #ifdef __cplusplus
@@ -146,17 +148,6 @@ typedef struct pppdev_t
 } pppdev_t;
 
 
-/* PPP device */
-typedef struct gnrc_pppdev_t{
-	ppp_protocol_t *l_dcp;
-	ppp_protocol_t *l_lcp;
-	ppp_protocol_t *l_ipcp;
-	ppp_protocol_t *l_ipv4;
-	pppdev_t *netdev;
-
-	uint8_t state;
-} gnrc_pppdev_t;
-
 typedef struct dcp_t
 {
 	ppp_protocol_t prot;
@@ -165,8 +156,21 @@ typedef struct dcp_t
 	xtimer_t xtimer;
 	int sent_id;
 	uint8_t dead_counter;
-	gnrc_pppdev_t *pppdev; 
+	struct gnrc_pppdev_t *pppdev; 
 } dcp_t;
+
+
+/* PPP device */
+typedef struct gnrc_pppdev_t{
+	dcp_t l_dcp;
+	lcp_t l_lcp;
+	ipcp_t l_ipcp;
+	ppp_ipv4_t l_ipv4;
+	pppdev_t *netdev;
+
+	uint8_t state;
+} gnrc_pppdev_t;
+
 
 
 int gnrc_ppp_init(gnrc_pppdev_t *dev, pppdev_t *netdev);

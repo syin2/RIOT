@@ -17,7 +17,6 @@ extern "C" {
 #define LCP_RESTART_TIMER (3000000U)
 
 
-
 typedef enum{
 	LCP_MRU,
 	LCP_ACCM,
