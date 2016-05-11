@@ -37,6 +37,9 @@ int ipcp_init(struct gnrc_pppdev_t *ppp_dev, struct ppp_fsm_t *ipcp);
 int ppp_ipv4_init(struct gnrc_pppdev_t *ppp_dev, ppp_ipv4_t *ipv4, ipcp_t *ipcp, struct gnrc_pppdev_t *pppdev);
 int ppp_ipv4_handler(ppp_protocol_t *prot, uint8_t event, gnrc_pktsnip_t *pkt);
 
+int ppp_ipv4_send(struct gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt);
+int ppp_ipv4_recv(struct gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt);
+
 #ifdef __cplusplus
 }
 #endif

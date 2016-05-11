@@ -207,7 +207,7 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			}
 			break;
 		case PPP_RECV:
-			DEBUG("Received IP packet!!\n");
+			ppp_ipv4_recv(pppdev, recv_pkt);
 			break;
 		default:
 			break;
@@ -222,5 +222,17 @@ int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev, ppp_ipv4_t *ipv4, ipcp_t *ipcp, gnrc_p
 	((ppp_protocol_t*) ipv4)->handler = &handle_ipv4;
 	ipv4->ipcp = ipcp;
 	ipv4->pppdev = pppdev;
+	return 0;
+}
+
+int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
+{
+	DEBUG("Received IPv6 packet from upper layer\n");
+	return 0;
+}
+
+int ppp_ipv4_recv(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
+{
+	DEBUG("Received IP packet!!\n");
 	return 0;
 }
