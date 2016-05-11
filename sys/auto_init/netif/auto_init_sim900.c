@@ -35,14 +35,23 @@
 /**
  * @brief   Stacks for the MAC layer threads
  */
-//static char _pppdev_stack[SIM900_STACKSIZE];
-//static gnrc_pppdev_t _gnrc_sim900;
+static char _pppdev_stack[SIM900_STACKSIZE];
+static gnrc_pppdev_t _gnrc_sim900;
 
 //static uint8_t _inbuf[2048];
+static sim900_t dev;
 
 void auto_init_sim900(void)
 {
     DEBUG("auto_init_sim900(): initializing device...\n");
+
+	sim900_params_t params;
+	params.uart = 1;
+	sim900_setup(&dev, &params);
+
+	gnrc_ppp_setup(&_gnrc_sim900, (pppdev_t*) &dev);
+	kernel_pid_t pid = gnrc_pppdev_init(_pppdev_stack, sizeof(_pppdev_stack) ,THREAD_PRIORITY_MAIN-1, "gnrc_sim900", &_gnrc_sim900);
+	(void) pid;
 }
 
 #else
