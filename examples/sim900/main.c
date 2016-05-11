@@ -4,7 +4,7 @@ char thread_stack[2*THREAD_STACKSIZE_MAIN];
 
 int main(void)
 {
-	gnrc_pktbuf_init();
+	//gnrc_pktbuf_init();
 
     sim900_t dev;
 
@@ -12,7 +12,7 @@ int main(void)
 	params.uart = 1;
 	sim900_setup(&dev, &params);
 
-	xtimer_init();
+	//xtimer_init();
 
 	gnrc_pppdev_t pppdev;
 	gnrc_ppp_setup(&pppdev, (pppdev_t*) &dev);
