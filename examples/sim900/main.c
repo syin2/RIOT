@@ -5,10 +5,16 @@
 #include "shell.h"
 #include "shell_commands.h"
 
+#include "msg.h"
+
 #define ENABLE_SHELL (1)
+#define MAIN_QUEUE_SIZE     (8)
+
+static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
 int main(void)
 {
+    msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
 	DEBUG("Here we go!\n");
 	kernel_pid_t netifs[GNRC_NETIF_NUMOF];
 
