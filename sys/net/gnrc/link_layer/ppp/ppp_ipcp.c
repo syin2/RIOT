@@ -27,6 +27,7 @@
 #include "net/gnrc/pktbuf.h"
 #include "net/gnrc/nettype.h"
 #include "net/ipv4/hdr.h"
+#include "net/udp.h"
 #include "net/icmp.h"
 #include <errno.h>
 
@@ -146,17 +147,17 @@ gnrc_pktsnip_t *gen_ip_pkt(ipcp_t *ipcp, gnrc_pktsnip_t *payload, uint8_t protoc
 	ipv4_hdr_t *hdr = pkt->data;	
 	
 	ipv4_addr_t dst;
-	dst.u8[0] = 88;
-	dst.u8[1] = 171;
-	dst.u8[2] = 203;
-	dst.u8[3] = 61;
+	dst.u8[0] = 51;
+	dst.u8[1] = 254;
+	dst.u8[2] = 204;
+	dst.u8[3] = 66;
 
 	ipv4_addr_t src = ipcp->ip;
 
 	ipv4_hdr_set_version(hdr);
 	ipv4_hdr_set_ihl(hdr, 5);
 	ipv4_hdr_set_ts(hdr, 0);
-	ipv4_hdr_set_tl(hdr, sizeof(ipv4_hdr_t)+sizeof(icmp_hdr_t));
+	ipv4_hdr_set_tl(hdr, gnrc_pkt_len(pkt));
 	ipv4_hdr_set_id(hdr, 0);
 	ipv4_hdr_set_flags(hdr, 0);
 	ipv4_hdr_set_fo(hdr, 0);
@@ -174,11 +175,25 @@ gnrc_pktsnip_t *gen_ip_pkt(ipcp_t *ipcp, gnrc_pktsnip_t *payload, uint8_t protoc
 
 /** END OF TEST SECTION **/
 
+gnrc_pktsnip_t *_build_udp(gnrc_pppdev_t *pppdev, gnrc_pktsnip_t *pkt)
+{
+	/* Add UDP header */
+	gnrc_pktsnip_t *udp = gnrc_pktbuf_add(pkt, NULL, sizeof(udp_hdr_t), GNRC_NETTYPE_UNDEF);
+
+	udp_hdr_t *udp_hdr = (udp_hdr_t*) udp->data;
+	udp_hdr->src_port = byteorder_htons(2000);
+	udp_hdr->dst_port = byteorder_htons(9876);
+	udp_hdr->length = byteorder_htons(gnrc_pkt_len(udp));
+	udp_hdr->checksum = byteorder_htons(0);
+	
+	return udp;
+}
+
 int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
 	ipcp_t *ipcp = ((ppp_ipv4_t*) protocol)->ipcp;
 	gnrc_pktsnip_t *echo = gen_icmp_echo();
-	gnrc_pktsnip_t *dummy;
+	//gnrc_pktsnip_t *dummy;
 	gnrc_pppdev_t *pppdev = ((ppp_ipv4_t*) protocol)->pppdev;
 	gnrc_pktsnip_t *pkt;
 	gnrc_pktsnip_t *recv_pkt = (gnrc_pktsnip_t*) args;
@@ -198,12 +213,12 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 				echo = gen_icmp_echo();
 				pkt = gen_ip_pkt(ipcp,echo, 1);
 				gnrc_ppp_send(pppdev, pkt);
-				dummy = gen_dummy_pkt();
+				/*dummy = gen_dummy_pkt();
 				pkt = gen_ip_pkt(ipcp,dummy, 41);
 				gnrc_ppp_send(pppdev, pkt);
 				dummy = gen_dummy_pkt();
 				pkt = gen_ip_pkt(ipcp,dummy, 1);
-				gnrc_ppp_send(pppdev, pkt);
+				gnrc_ppp_send(pppdev, pkt);*/
 			}
 			break;
 		case PPP_RECV:
@@ -228,8 +243,26 @@ int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev, ppp_ipv4_t *ipv4, ipcp_t *ipcp, gnrc_p
 int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 {
 	DEBUG("Received IPv6 packet from upper layer. (Not yet really)\n");
-	DEBUG("For now, just drop packet\n");
-	gnrc_pktbuf_release(pkt);
+
+	int ipv4_ready = ((ppp_fsm_t*) &ppp_dev->l_ipcp)->state == S_OPENED;
+	if(!ipv4_ready)
+	{
+		DEBUG("Still not ready\n");
+		gnrc_pktbuf_release(pkt);
+		return -1;
+	}
+	/* Remove netif*/
+	pkt = gnrc_pktbuf_remove_snip(pkt, pkt);
+	DEBUG("Payload size: %i\n", gnrc_pkt_len(pkt));
+	gnrc_pktsnip_t *sent_pkt = _build_udp(ppp_dev, pkt);
+	DEBUG("UDP size: %i\n", sent_pkt->size);
+	sent_pkt = gen_ip_pkt(&ppp_dev->l_ipcp, sent_pkt, 17);
+	DEBUG("IPv4 size: %i\n", sent_pkt->size);
+	DEBUG("Whole pkt: %i\n", gnrc_pkt_len(sent_pkt));
+	gnrc_ppp_send(ppp_dev, sent_pkt);
+	gnrc_pktsnip_t *echo = gen_icmp_echo();
+	pkt = gen_ip_pkt(&ppp_dev->l_ipcp,echo, 1);
+	gnrc_ppp_send(ppp_dev, pkt);
 	return 0;
 }
 
