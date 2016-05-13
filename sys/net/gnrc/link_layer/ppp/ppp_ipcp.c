@@ -106,9 +106,8 @@ int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *ipcp)
 
 /** BEGIN OF TEST SECTION. PLEASE REMOVE LATER **/
 
-static uint16_t checksum(uint8_t *data, size_t chunks)
+static uint32_t _c1_sum(uint32_t acc, uint8_t *data, size_t chunks)
 {
-	uint32_t acc=0;
 	network_uint16_t u16;
 	for(int i=0;i<chunks;i++)
 	{
@@ -117,6 +116,11 @@ static uint16_t checksum(uint8_t *data, size_t chunks)
 		if(acc > 0xffff)
 			acc-=0xffff;
 	}
+}
+static uint16_t checksum(uint8_t *data, size_t chunks)
+{
+	uint32_t acc=0;
+	acc = _c1_sum(acc, data, chunks);
 	uint16_t ret = acc ^ 0xffff;
 	return ret;
 }
@@ -158,7 +162,7 @@ gnrc_pktsnip_t *gen_ip_pkt(ipcp_t *ipcp, gnrc_pktsnip_t *payload, uint8_t protoc
 	ipv4_hdr_set_ihl(hdr, 5);
 	ipv4_hdr_set_ts(hdr, 0);
 	ipv4_hdr_set_tl(hdr, gnrc_pkt_len(pkt));
-	ipv4_hdr_set_id(hdr, 0);
+	ipv4_hdr_set_id(hdr, 10);
 	ipv4_hdr_set_flags(hdr, 0);
 	ipv4_hdr_set_fo(hdr, 0);
 	ipv4_hdr_set_ttl(hdr, 64);
@@ -177,14 +181,20 @@ gnrc_pktsnip_t *gen_ip_pkt(ipcp_t *ipcp, gnrc_pktsnip_t *payload, uint8_t protoc
 
 gnrc_pktsnip_t *_build_udp(gnrc_pppdev_t *pppdev, gnrc_pktsnip_t *pkt)
 {
+	gnrc_pktbuf_release(pkt);
+
 	/* Add UDP header */
-	gnrc_pktsnip_t *udp = gnrc_pktbuf_add(pkt, NULL, sizeof(udp_hdr_t), GNRC_NETTYPE_UNDEF);
+	gnrc_pktsnip_t *udp = gnrc_pktbuf_add(NULL, NULL, sizeof(udp_hdr_t)+3, GNRC_NETTYPE_UNDEF);
 
 	udp_hdr_t *udp_hdr = (udp_hdr_t*) udp->data;
-	udp_hdr->src_port = byteorder_htons(2000);
+	udp_hdr->src_port = byteorder_htons(53033);
 	udp_hdr->dst_port = byteorder_htons(9876);
 	udp_hdr->length = byteorder_htons(gnrc_pkt_len(udp));
 	udp_hdr->checksum = byteorder_htons(0);
+	uint8_t *payload = (uint8_t*) (udp_hdr+1);
+	*payload = 'f';
+	*(payload+1) = 'o';
+	*(payload+2) = 'o';
 	
 	return udp;
 }
@@ -260,9 +270,6 @@ int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 	DEBUG("IPv4 size: %i\n", sent_pkt->size);
 	DEBUG("Whole pkt: %i\n", gnrc_pkt_len(sent_pkt));
 	gnrc_ppp_send(ppp_dev, sent_pkt);
-	gnrc_pktsnip_t *echo = gen_icmp_echo();
-	pkt = gen_ip_pkt(&ppp_dev->l_ipcp,echo, 1);
-	gnrc_ppp_send(ppp_dev, pkt);
 	return 0;
 }
 
