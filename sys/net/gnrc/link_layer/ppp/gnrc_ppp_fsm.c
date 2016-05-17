@@ -13,7 +13,7 @@
 #include <errno.h>
 #include <string.h>
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG    (1)
 #include "debug.h"
 
 #if ENABLE_DEBUG
@@ -296,8 +296,8 @@ int trigger_event(ppp_fsm_t *cp, int event, gnrc_pktsnip_t *pkt)
 	}
 	int next_state;
 	next_state = state_trans[event][cp->state];
-	DEBUG("%i> ", ((ppp_protocol_t*)cp)->id);
 #if ENABLE_DEBUG
+	DEBUG("%i> ", ((ppp_protocol_t*)cp)->id);
 	print_transition(cp->state, event, next_state);
 #endif
 
@@ -677,18 +677,23 @@ int handle_rcn_nak(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 	if(!pkt)
 	{
 		/* If the packet doesn't have options, it's considered as invalid. */
+		DEBUG("Received NAK packet without options. Discard\n");
 		return -EBADMSG;
 	}
 
 	/* Check if options are valid */
 	if (ppp_conf_opts_valid(pkt, pkt->size) <= 0)
 	{
+		DEBUG("Received NAK pkt with invalid options. Discard\n");
 		return -EBADMSG;
 	}
 
 
 	if (ppp_hdr_get_id(hdr) != cp->cr_sent_identifier)
+	{
+		DEBUG("ID Mismatch in NAK packet\n");
 		return -EBADMSG;
+	}
 
 	/*Handle nak for each option*/
 	ppp_option_t *head = pkt->data;
@@ -861,13 +866,15 @@ int fsm_event_from_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
 int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
 	ppp_fsm_t *target = (ppp_fsm_t*) protocol;
-	uint8_t event;
+	int event;
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
 	switch(ppp_event)
 	{
 		case PPP_RECV:
 			event = fsm_event_from_pkt(target, pkt);
-			trigger_event(target, event, pkt);
+			if(event > 0)
+				trigger_event(target, event, pkt);
+
 			/*TODO: Fix this*/
 			gnrc_pktbuf_release(pkt);
 			break;
