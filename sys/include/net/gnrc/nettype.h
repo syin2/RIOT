@@ -109,6 +109,7 @@ typedef enum {
 	GNRC_NETTYPE_IPCP,
 	GNRC_NETTYPE_HDLC,
 	GNRC_NETTYPE_IPV4,
+	GNRC_NETTYPE_PAP,
 //#endif
 
     GNRC_NETTYPE_NUMOF,         /**< maximum number of available protocols */
@@ -264,6 +265,8 @@ static inline uint16_t gnrc_nettype_to_ppp_protnum(gnrc_nettype_t type)
 //#ifdef MODULE_GNRC_IPV4
 		case GNRC_NETTYPE_IPV4:
 			return PPPTYPE_IPV4;
+		case GNRC_NETTYPE_PAP:
+			return PPPTYPE_PAP;
 //#endif
 		default:
 			return PPPTYPE_UNKNOWN;

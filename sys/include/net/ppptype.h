@@ -34,6 +34,7 @@ extern "C" {
 #define PPPTYPE_NCP_IPV6       (0x8057)    /**< NCP packet*/
 #define PPPTYPE_NCP_IPV4       (0x8021)    /**< NCP packet*/
 #define PPPTYPE_LCP       (0xC021)    /**< LCP packet  */
+#define PPPTYPE_PAP       (0xC023)    /**< PAP packet  */
 #define PPPTYPE_UNKNOWN       (0x8001)    /**<Unknown  packet (Unused protocol number according to IANA) */
 
 #ifdef __cplusplus

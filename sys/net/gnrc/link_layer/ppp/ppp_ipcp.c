@@ -291,7 +291,7 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			DEBUG("Send an ICMP pkt...\n");
 			puts("Now send...");
 			(void) pkt;
-			/*for(int i=0;i<10;i++)
+			for(int i=0;i<10;i++)
 			{
 				echo = gen_icmp_echo();
 				pkt = gen_ip_pkt(ipcp,echo, 1);
@@ -302,7 +302,7 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 				dummy = gen_dummy_pkt();
 				pkt = gen_ip_pkt(ipcp,dummy, 1);
 				gnrc_ppp_send(pppdev, pkt);
-			}*/
+			}
 			break;
 		case PPP_RECV:
 			ppp_ipv4_recv(pppdev, recv_pkt);

@@ -27,7 +27,7 @@
 #include <errno.h>
 #include "net/gnrc/ppp/fsm.h"
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG    (1)
 #include "debug.h"
 
 #if ENABLE_DEBUG
@@ -43,6 +43,8 @@ static cp_conf_t *lcp_get_conf_by_code(ppp_fsm_t *cp, uint8_t code)
 			return &cp->conf[LCP_MRU];
 		case LCP_OPT_ACCM:
 			return &cp->conf[LCP_ACCM];
+		case LCP_OPT_AUTH:
+			return &cp->conf[LCP_AUTH];
 		default:
 			return NULL;
 	}
@@ -109,6 +111,52 @@ void lcp_accm_set(ppp_fsm_t *lcp, ppp_option_t *opt, uint8_t peer)
 		lcp->dev->netdev->driver->set(lcp->dev->netdev, PPPOPT_ACCM_TX, (void*) ppp_opt_get_payload(opt), 4);
 }
 
+uint8_t lcp_auth_is_valid(ppp_option_t *opt)
+{
+	network_uint16_t *u16;
+	u16 = (network_uint16_t*) ppp_opt_get_payload(opt);
+	uint16_t val = byteorder_ntohs(*u16);
+
+	/*Only accept PAP*/
+	DEBUG("Auth is %04x\n", val);
+	if(val == 0xc023)
+		return true;
+
+	return false;
+}
+
+uint8_t lcp_auth_build_nak_opts(uint8_t *buf)
+{
+	uint8_t len = 4;
+	ppp_option_t *opt = (ppp_option_t*) buf;
+	uint8_t *payload = ppp_opt_get_payload(opt);
+
+	if(opt)
+	{
+		ppp_opt_set_type(opt, 3);	
+		ppp_opt_set_length(opt, len);
+		*payload = (0xC0);
+		*(payload+1) = 0x23;
+	}
+	return len;
+}
+
+void lcp_auth_set(ppp_fsm_t *lcp, ppp_option_t *opt, uint8_t peer)
+{
+	lcp_t *l = (lcp_t*) lcp;
+	DEBUG("Setting Auth (to PAP for the moment) \n");
+	if(peer)
+	{
+		DEBUG("Setting target\n");
+		lcp->targets = (lcp->targets & 0xFF00) | (ID_PAP & 0xFF);
+		l->local_auth = 1;	
+	}
+	else
+	{
+		l->remote_auth = 1;
+	}
+}
+
 static void lcp_config_init(ppp_fsm_t *lcp)
 {
 	lcp->conf = LCP_NUMOPTS ? ((lcp_t*) lcp)->lcp_opts : NULL;
@@ -126,10 +174,19 @@ static void lcp_config_init(ppp_fsm_t *lcp)
 	lcp->conf[LCP_ACCM].default_value = byteorder_htonl(0xFFFFFFFF);
 	lcp->conf[LCP_ACCM].size = 4;
 	lcp->conf[LCP_ACCM].flags = 0;
-	lcp->conf[LCP_ACCM].next = NULL;
+	lcp->conf[LCP_ACCM].next = &lcp->conf[LCP_AUTH];
 	lcp->conf[LCP_ACCM].is_valid = &lcp_accm_is_valid;
 	lcp->conf[LCP_ACCM].build_nak_opts = &lcp_accm_build_nak_opts;
 	lcp->conf[LCP_ACCM].set = &lcp_accm_set;
+
+	lcp->conf[LCP_AUTH].type = LCP_OPT_AUTH;
+	lcp->conf[LCP_AUTH].default_value = byteorder_htonl(0xFFFFFFFF);
+	lcp->conf[LCP_AUTH].size = 2;
+	lcp->conf[LCP_AUTH].flags = 0;
+	lcp->conf[LCP_AUTH].next = NULL;
+	lcp->conf[LCP_AUTH].is_valid = &lcp_auth_is_valid;
+	lcp->conf[LCP_AUTH].build_nak_opts = &lcp_auth_build_nak_opts;
+	lcp->conf[LCP_AUTH].set = &lcp_auth_set;
 }
 
 
@@ -170,5 +227,7 @@ int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
 	lcp->targets = ((ID_PPPDEV & 0xffff) << 8) | (BROADCAST_NCP & 0xffff);
 	((lcp_t*) lcp)->mru = 1500;
 	((lcp_t*) lcp)->peer_mru = 1500;
+	((lcp_t*) lcp)->remote_auth = 0;
+	((lcp_t*) lcp)->local_auth = 0;
 	return 0;
 }

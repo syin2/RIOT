@@ -27,6 +27,7 @@
 #include "net/gnrc/ppp/lcp.h"
 #include "net/gnrc/ppp/ipcp.h"
 #include "net/gnrc/ppp/fsm.h"
+#include "net/gnrc/ppp/pap.h"
 #include "net/hdlc/hdr.h"
 #include "net/ppp/hdr.h"
 #include <errno.h>
@@ -78,6 +79,8 @@ uint8_t mark_ppp_pkt(gnrc_pktsnip_t *pkt)
 			break;
 		case PPPTYPE_IPV4:
 			return ID_IPV4;
+		case PPPTYPE_PAP:
+			return ID_PAP;
 		default:
 			DEBUG("Unknown PPP protocol: %i\n", protocol);
 	}
@@ -200,7 +203,7 @@ void print_pkt(gnrc_pktsnip_t *hdlc_hdr, gnrc_pktsnip_t *ppp_hdr, gnrc_pktsnip_t
 	uint8_t code = ppp_hdr_get_code(ppp);
 	print_ppp_code(code);
 	DEBUG(",ID:%i,SIZE:%i,", ppp_hdr_get_id(ppp), ppp_hdr_get_length(ppp));
-	if(code >= PPP_CONF_REQ && code <= PPP_CONF_REJ)
+	if(code >= PPP_CONF_REQ && code <= PPP_CONF_REJ && (ppp_hdr->type == GNRC_NETTYPE_LCP || ppp_hdr->type == GNRC_NETTYPE_IPCP))
 	{
 		print_opts(payload);
 	}
@@ -248,6 +251,7 @@ int gnrc_ppp_setup(gnrc_pppdev_t *dev, pppdev_t *netdev)
 	lcp_init(dev, (ppp_fsm_t*) &dev->l_lcp);
 	ipcp_init(dev, (ppp_fsm_t*) &dev->l_ipcp);
 	ppp_ipv4_init(dev, (ppp_ipv4_t*) &dev->l_ipv4, (ipcp_t*) &dev->l_ipcp, dev);
+	pap_init(dev, (pap_t*) &dev->l_pap);
 
 	trigger_event((ppp_fsm_t*) &dev->l_lcp, E_OPEN, NULL);
 	trigger_event((ppp_fsm_t*) &dev->l_ipcp, E_OPEN, NULL);
@@ -350,6 +354,8 @@ uint8_t _pkt_allowed(uint8_t state, uint8_t target)
 		case ID_IPCP:
 		case ID_IPV4:
 			return state == PPP_NETWORK;
+		case ID_PAP:
+			return state == PPP_AUTHENTICATION;
 		default:
 			DEBUG("Pkt not allowed in this PPP state. Discard\n"); 
 			break;
@@ -376,11 +382,12 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 		}
 		ppp_state = gnrc_ppp_get_state(dev);
 		DEBUG("PPP STATE IS: %i\n", ppp_state);
+		/*
 		if(!_pkt_allowed(ppp_state, target))
 		{
 			gnrc_pktbuf_release(pkt);
 			return -EBADMSG;
-		}
+		}*/
 	}
 
 	/*Drop packet if exceeds MRU*/
@@ -407,6 +414,9 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 		case ID_PPPDEV:
 		case 0xFF:
 			target_prot = (ppp_protocol_t*) &dev->l_dcp;
+			break;
+		case ID_PAP:
+			target_prot = (ppp_protocol_t*) &dev->l_pap;
 			break;
 		default:
 			DEBUG("Unrecognized target\n");
@@ -522,6 +532,13 @@ void gnrc_ppp_dispatch_pkt(msg_t *msg, kernel_pid_t pid)
 void gnrc_ppp_dial_up(msg_t *msg, kernel_pid_t pid)
 {
 	gnrc_ppp_trigger_event(msg, pid, ID_PPPDEV, PPP_DIALUP);
+}
+
+void send_protocol_msg(msg_t *msg, uint8_t target, uint8_t event)
+{
+	msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
+	msg->content.value = (target<<8) + event;
+	msg_send(msg, thread_getpid());
 }
 
 kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,

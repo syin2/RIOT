@@ -9,6 +9,7 @@ extern "C" {
 
 #define LCP_OPT_MRU (1)
 #define LCP_OPT_ACCM (2)
+#define LCP_OPT_AUTH (3)
 
 #define LCP_MAX_MRU (2000)
 #define LCP_DEFAULT_MRU (1500)
@@ -20,6 +21,7 @@ extern "C" {
 typedef enum{
 	LCP_MRU,
 	LCP_ACCM,
+	LCP_AUTH,
 	LCP_NUMOPTS
 } lcp_options_t;
 
@@ -31,6 +33,8 @@ typedef struct lcp_t
 	uint8_t pr_id;
 	uint16_t peer_mru;
 	uint16_t mru;
+	uint8_t local_auth;
+	uint8_t remote_auth;
 } lcp_t;
 
 struct gnrc_pppdev_t;

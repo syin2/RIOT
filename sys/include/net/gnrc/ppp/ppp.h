@@ -34,6 +34,7 @@
 #include "net/gnrc/ppp/opt.h"
 #include "net/gnrc/ppp/prot.h"
 #include "net/gnrc/ppp/lcp.h"
+#include "net/gnrc/ppp/pap.h"
 #include "net/gnrc/ppp/ipcp.h"
 #include "sys/uio.h"
 
@@ -85,6 +86,7 @@ extern "C" {
 #define ID_LCP (1)
 #define ID_IPCP (2)
 #define ID_IPV4 (3)
+#define ID_PAP (4)
 #define ID_PPPDEV (0xee)
 
 #define BROADCAST_LCP (0xff)
@@ -166,6 +168,7 @@ typedef struct gnrc_pppdev_t{
 	lcp_t l_lcp;
 	ipcp_t l_ipcp;
 	ppp_ipv4_t l_ipv4;
+	pap_t l_pap;
 	pppdev_t *netdev;
 
 	uint8_t state;
@@ -193,6 +196,7 @@ void gnrc_ppp_dispatch_pkt(msg_t *msg, kernel_pid_t pid);
 void gnrc_ppp_dial_up(msg_t *msg, kernel_pid_t pid);
 int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value_len);
 
+void send_protocol_msg(msg_t *msg, uint8_t target, uint8_t event);
 kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,
                         const char *name, gnrc_pppdev_t *gnrc_pppdev);
 
