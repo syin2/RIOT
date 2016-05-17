@@ -39,6 +39,14 @@
 #include <inttypes.h>
 #endif
 
+typedef struct __attribute__((packed))
+{
+	ipv4_addr_t src;
+	ipv4_addr_t dst;
+	uint8_t zero;
+	uint8_t protocol;
+	network_uint16_t udp_len;
+} udp_phdr_t;
 
 static cp_conf_t *ipcp_get_conf_by_code(ppp_fsm_t *cp, uint8_t code)
 {
@@ -116,13 +124,67 @@ static uint32_t _c1_sum(uint32_t acc, uint8_t *data, size_t chunks)
 		if(acc > 0xffff)
 			acc-=0xffff;
 	}
+	return acc;
 }
-static uint16_t checksum(uint8_t *data, size_t chunks)
+
+
+static uint16_t checksum(gnrc_pktsnip_t *pkt)
+{
+	uint32_t acc=0;
+	network_uint16_t u16 = byteorder_htons(0);
+	uint8_t even=0;
+	gnrc_pktsnip_t *p = pkt;
+	while(p)
+	{
+		for(int i=0;i<p->size;i++)
+		{
+			memcpy(((uint8_t*) &u16)+even, ((uint8_t*) p->data)+i, 1);
+			if(even)
+			{
+				acc+=byteorder_ntohs(u16);
+				if(acc > 0xffff)
+					acc-=0xffff;
+				u16 = byteorder_htons(0);
+			}
+			even ^= 1;
+		}
+		p = p->next;
+	}
+	if(even)
+	{
+		acc+=byteorder_ntohs(u16);
+		if(acc > 0xffff)
+			acc-=0xffff;
+
+	}
+	uint16_t ret = acc ^ 0xffff;
+	return ret;
+}
+
+
+static uint16_t pchecksum(uint8_t *data, size_t chunks)
 {
 	uint32_t acc=0;
 	acc = _c1_sum(acc, data, chunks);
 	uint16_t ret = acc ^ 0xffff;
 	return ret;
+}
+
+static uint16_t udp_checksum(ipv4_addr_t src, ipv4_addr_t dst, uint8_t protocol, uint16_t udp_length, gnrc_pktsnip_t *pkt)
+{
+	uint8_t pseudo_hdr[12];
+	udp_phdr_t *phdr= (udp_phdr_t*) pseudo_hdr;
+
+	phdr->src = src;
+	phdr->dst = dst;
+	phdr->zero = 0;
+	phdr->protocol = protocol;
+	phdr->udp_len = byteorder_htons(udp_length);
+
+	gnrc_pktsnip_t *chk = gnrc_pktbuf_add(pkt, pseudo_hdr, sizeof(pseudo_hdr), GNRC_NETTYPE_UNDEF);
+	uint16_t chksum = checksum(chk);
+	chk = gnrc_pktbuf_remove_snip(chk, chk);
+	return chksum;
 }
 gnrc_pktsnip_t *gen_icmp_echo(void)
 {
@@ -136,7 +198,7 @@ gnrc_pktsnip_t *gen_icmp_echo(void)
 	hdr->sn = byteorder_htons(10);
 
 	/* Calculate checksum */
-	hdr->csum = byteorder_htons(checksum((uint8_t*) hdr, 4));
+	hdr->csum = byteorder_htons(checksum(pkt));
 	return pkt;
 }
 
@@ -162,7 +224,7 @@ gnrc_pktsnip_t *gen_ip_pkt(ipcp_t *ipcp, gnrc_pktsnip_t *payload, uint8_t protoc
 	ipv4_hdr_set_ihl(hdr, 5);
 	ipv4_hdr_set_ts(hdr, 0);
 	ipv4_hdr_set_tl(hdr, gnrc_pkt_len(pkt));
-	ipv4_hdr_set_id(hdr, 10);
+	ipv4_hdr_set_id(hdr, 31136);
 	ipv4_hdr_set_flags(hdr, 0);
 	ipv4_hdr_set_fo(hdr, 0);
 	ipv4_hdr_set_ttl(hdr, 64);
@@ -172,7 +234,7 @@ gnrc_pktsnip_t *gen_ip_pkt(ipcp_t *ipcp, gnrc_pktsnip_t *payload, uint8_t protoc
 	ipv4_hdr_set_dst(hdr, dst);
 
 	/*Calculate checkshum*/
-	ipv4_hdr_set_csum(hdr, checksum((uint8_t*) hdr, 10));
+	ipv4_hdr_set_csum(hdr, pchecksum(pkt->data,10));
 	
 	return pkt;
 }
@@ -184,10 +246,18 @@ gnrc_pktsnip_t *_build_udp(gnrc_pppdev_t *pppdev, gnrc_pktsnip_t *pkt)
 	gnrc_pktbuf_release(pkt);
 
 	/* Add UDP header */
-	gnrc_pktsnip_t *udp = gnrc_pktbuf_add(NULL, NULL, sizeof(udp_hdr_t)+3, GNRC_NETTYPE_UNDEF);
+	gnrc_pktsnip_t *udp = gnrc_pktbuf_add(NULL, NULL, sizeof(udp_hdr_t)+4, GNRC_NETTYPE_UNDEF);
+
+	ipv4_addr_t dst;
+	dst.u8[0] = 51;
+	dst.u8[1] = 254;
+	dst.u8[2] = 204;
+	dst.u8[3] = 66;
+
+	ipv4_addr_t src = pppdev->l_ipcp.ip;
 
 	udp_hdr_t *udp_hdr = (udp_hdr_t*) udp->data;
-	udp_hdr->src_port = byteorder_htons(53033);
+	udp_hdr->src_port = byteorder_htons(53209);
 	udp_hdr->dst_port = byteorder_htons(9876);
 	udp_hdr->length = byteorder_htons(gnrc_pkt_len(udp));
 	udp_hdr->checksum = byteorder_htons(0);
@@ -195,15 +265,19 @@ gnrc_pktsnip_t *_build_udp(gnrc_pppdev_t *pppdev, gnrc_pktsnip_t *pkt)
 	*payload = 'f';
 	*(payload+1) = 'o';
 	*(payload+2) = 'o';
+	*(payload+3) = 'o';
 	
+	udp_hdr->checksum = byteorder_htons(udp_checksum(src, dst, 17, byteorder_ntohs(udp_hdr->length), udp));
 	return udp;
 }
 
 int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
 	ipcp_t *ipcp = ((ppp_ipv4_t*) protocol)->ipcp;
-	gnrc_pktsnip_t *echo = gen_icmp_echo();
-	//gnrc_pktsnip_t *dummy;
+	gnrc_pktsnip_t *echo;
+	(void) echo;
+	gnrc_pktsnip_t *dummy;
+	(void) dummy;
 	gnrc_pppdev_t *pppdev = ((ppp_ipv4_t*) protocol)->pppdev;
 	gnrc_pktsnip_t *pkt;
 	gnrc_pktsnip_t *recv_pkt = (gnrc_pktsnip_t*) args;
@@ -215,21 +289,20 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			DEBUG("Msg: Obtained IP address! \n");
 			DEBUG("Ip address is %i.%i.%i.%i\n",ipcp->ip.u8[0],ipcp->ip.u8[1],ipcp->ip.u8[2],ipcp->ip.u8[3]);	
 			DEBUG("Send an ICMP pkt...\n");
-
-			pkt = gen_ip_pkt(ipcp,echo, 1);
 			puts("Now send...");
-			for(int i=0;i<10;i++)
+			(void) pkt;
+			/*for(int i=0;i<10;i++)
 			{
 				echo = gen_icmp_echo();
 				pkt = gen_ip_pkt(ipcp,echo, 1);
 				gnrc_ppp_send(pppdev, pkt);
-				/*dummy = gen_dummy_pkt();
+				dummy = gen_dummy_pkt();
 				pkt = gen_ip_pkt(ipcp,dummy, 41);
 				gnrc_ppp_send(pppdev, pkt);
 				dummy = gen_dummy_pkt();
 				pkt = gen_ip_pkt(ipcp,dummy, 1);
-				gnrc_ppp_send(pppdev, pkt);*/
-			}
+				gnrc_ppp_send(pppdev, pkt);
+			}*/
 			break;
 		case PPP_RECV:
 			ppp_ipv4_recv(pppdev, recv_pkt);
@@ -263,12 +336,15 @@ int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 	}
 	/* Remove netif*/
 	pkt = gnrc_pktbuf_remove_snip(pkt, pkt);
-	DEBUG("Payload size: %i\n", gnrc_pkt_len(pkt));
-	gnrc_pktsnip_t *sent_pkt = _build_udp(ppp_dev, pkt);
-	DEBUG("UDP size: %i\n", sent_pkt->size);
+
+	gnrc_pktsnip_t *sent_pkt;
+	/*DEBUG("Sending Ping packet\n");
+	gnrc_pktsnip_t *echo = gen_icmp_echo();
+	sent_pkt = gen_ip_pkt(&ppp_dev->l_ipcp,echo, 1);
+	gnrc_ppp_send(ppp_dev, sent_pkt);*/
+
+	sent_pkt = _build_udp(ppp_dev, pkt);
 	sent_pkt = gen_ip_pkt(&ppp_dev->l_ipcp, sent_pkt, 17);
-	DEBUG("IPv4 size: %i\n", sent_pkt->size);
-	DEBUG("Whole pkt: %i\n", gnrc_pkt_len(sent_pkt));
 	gnrc_ppp_send(ppp_dev, sent_pkt);
 	return 0;
 }
@@ -276,5 +352,15 @@ int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 int ppp_ipv4_recv(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 {
 	DEBUG("Received IP packet!!\n");
+	gnrc_pktsnip_t *p = pkt;
+	while(p)
+	{
+		for(int i=0;i<p->size;i++)
+		{
+			DEBUG("%02x\n", *(((uint8_t*) p->data)+i));
+		}
+		p=p->next;
+	}
+	gnrc_pktbuf_release(pkt);
 	return 0;
 }
