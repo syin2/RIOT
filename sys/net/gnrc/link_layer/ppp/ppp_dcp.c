@@ -1,6 +1,7 @@
 #include "net/gnrc/ppp/ppp.h"
 
 #define ENABLE_DEBUG    (0)
+#define ENABLE_MONITOR (0)
 #include "debug.h"
 
 int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
@@ -29,10 +30,12 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			msg->content.value = (ID_LCP << 8) | (PPP_LINKUP & 0xFFFF);
 			msg_send(msg, thread_getpid());
 
+#if ENABLE_MONITOR
 			/*Start monitor*/
 			timer_msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
 			timer_msg->content.value = (ID_PPPDEV<<8) | PPP_MONITOR;		
 			xtimer_set_msg(xtimer, 5000000, timer_msg, thread_getpid());
+#endif
 			break;
 		case PPP_LINKDOWN:
 			DEBUG("Driver: PPP_LINKDOWN\n");
