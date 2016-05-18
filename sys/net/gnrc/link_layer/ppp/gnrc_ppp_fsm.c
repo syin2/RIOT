@@ -37,11 +37,10 @@ void _reset_cp_conf(cp_conf_t *conf)
 		conf = conf->next;
 	}
 }
-gnrc_pktsnip_t *build_options(ppp_fsm_t *cp)
+size_t _opts_size(cp_conf_t *head_opt)
 {
 	size_t size=0;
-	cp_conf_t *opt = cp->conf;
-
+	cp_conf_t *opt = head_opt;
 	while(opt)
 	{
 		if(opt->flags & OPT_ENABLED)
@@ -50,26 +49,34 @@ gnrc_pktsnip_t *build_options(ppp_fsm_t *cp)
 		}
 		opt = opt->next;
 	}
+	return size;
+}
+
+void _write_opts(cp_conf_t *head_conf, uint8_t *buf)
+{
+	int cursor=0;
+	while(head_conf)
+	{
+		if(head_conf->flags & OPT_ENABLED)
+		{
+			*(buf+cursor) = head_conf->type;
+			*(buf+cursor+1) = head_conf->size+2;
+			memcpy(buf+2+cursor, ((uint8_t*) &head_conf->value)+sizeof(uint32_t)-head_conf->size, head_conf->size);	
+			cursor+=2+head_conf->size;
+		}
+		head_conf = head_conf->next;
+	}
+}
+
+gnrc_pktsnip_t *build_options(ppp_fsm_t *cp)
+{
+	size_t size = _opts_size(cp->conf);
 
 	if(!size)
 		return NULL;
 
 	gnrc_pktsnip_t *opts = gnrc_pktbuf_add(NULL, NULL, size, GNRC_NETTYPE_UNDEF);
-
-	opt = cp->conf;
-
-	int cursor=0;
-	while(opt)
-	{
-		if(opt->flags & OPT_ENABLED)
-		{
-			*(((uint8_t*)opts->data)+cursor) = opt->type;
-			*(((uint8_t*)opts->data)+cursor+1) = opt->size+2;
-			memcpy(opts->data+2+cursor, ((uint8_t*) &opt->value)+sizeof(uint32_t)-opt->size, opt->size);	
-			cursor+=2+opt->size;
-		}
-		opt = opt->next;
-	}
+	_write_opts(cp->conf, (uint8_t*) opts->data);
 	return opts;
 }
 
