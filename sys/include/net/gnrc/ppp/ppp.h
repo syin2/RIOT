@@ -200,6 +200,13 @@ void send_protocol_msg(msg_t *msg, uint8_t target, uint8_t event);
 kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,
                         const char *name, gnrc_pppdev_t *gnrc_pppdev);
 
+void send_configure_request(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *payload);
+void send_configure_ack(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *payload);
+void send_configure_nak(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *payload);
+void send_configure_rej(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *payload);
+void send_terminate_req(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *payload);
+void send_terminate_ack(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *payload);
+void send_code_rej(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *payload);
 #ifdef __cplusplus
 }
 #endif

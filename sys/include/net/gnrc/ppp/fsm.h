@@ -178,6 +178,8 @@ int fsm_event_from_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt);
 int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args); 
 void send_fsm_msg(msg_t *msg, uint8_t target, uint8_t event);
 
+typedef int (*opt_callback_t)(uint8_t type, uint8_t *payload, size_t size, void **args);
+
 #ifdef __cplusplus
 }
 #endif

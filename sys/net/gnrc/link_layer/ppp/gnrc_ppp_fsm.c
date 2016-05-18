@@ -404,12 +404,9 @@ void scr(ppp_fsm_t *cp, void *args)
 		cp->cr_sent_size = opts->size;
 	}
 
-	/*Build pkt*/
-	gnrc_pktsnip_t *pkt = pkt_build(cp->prottype, PPP_CONF_REQ, ++cp->cr_sent_identifier,opts);
-	
+	/*Send configure request*/
+	send_configure_request(cp->dev, cp->prottype, ++cp->cr_sent_identifier, opts);
 
-	/*Send packet*/
-	gnrc_ppp_send(cp->dev, pkt);
 	set_timeout(cp, cp->restart_timer);
 }
 
@@ -427,17 +424,14 @@ void sca(ppp_fsm_t *cp, void *args)
 	if(has_options)
 	{
 		DEBUG(">> Received pkt asked for options. Send them back, with ACK pkt\n");
-		opts = gnrc_pktbuf_add(NULL, pkt->data, pkt->size, GNRC_NETTYPE_UNDEF);;
+		opts = gnrc_pktbuf_add(NULL, pkt->data, pkt->size, GNRC_NETTYPE_UNDEF);
 	}
 	else
 	{
 		DEBUG(">> Received pkt didn't ask for options -> So just ACK\n");
 	}
 
-	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, PPP_CONF_ACK, ppp_hdr_get_id(recv_ppp_hdr),opts);
-	
-	/*Send packet*/
-	gnrc_ppp_send(cp->dev, send_pkt);
+	send_configure_ack(cp->dev, cp->prottype, ppp_hdr_get_id(recv_ppp_hdr), opts);
 }
 
 void scn(ppp_fsm_t *cp, void *args)

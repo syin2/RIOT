@@ -109,6 +109,7 @@ int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *ipcp)
 	ipcp->get_conf_by_code = &ipcp_get_conf_by_code;
 	ipcp->prot.handler = &fsm_handle_ppp_msg;
 	ipcp->targets = ((ID_LCP << 8) & 0xffff) | (ID_IPV4 & 0xffff);
+	((ipcp_t*) ipcp)->ip_id = 123420;
 	return 0;
 }
 
@@ -224,7 +225,7 @@ gnrc_pktsnip_t *gen_ip_pkt(ipcp_t *ipcp, gnrc_pktsnip_t *payload, uint8_t protoc
 	ipv4_hdr_set_ihl(hdr, 5);
 	ipv4_hdr_set_ts(hdr, 0);
 	ipv4_hdr_set_tl(hdr, gnrc_pkt_len(pkt));
-	ipv4_hdr_set_id(hdr, 31136);
+	ipv4_hdr_set_id(hdr, ++ipcp->ip_id);
 	ipv4_hdr_set_flags(hdr, 0);
 	ipv4_hdr_set_fo(hdr, 0);
 	ipv4_hdr_set_ttl(hdr, 64);
@@ -243,10 +244,8 @@ gnrc_pktsnip_t *gen_ip_pkt(ipcp_t *ipcp, gnrc_pktsnip_t *payload, uint8_t protoc
 
 gnrc_pktsnip_t *_build_udp(gnrc_pppdev_t *pppdev, gnrc_pktsnip_t *pkt)
 {
-	gnrc_pktbuf_release(pkt);
-
 	/* Add UDP header */
-	gnrc_pktsnip_t *udp = gnrc_pktbuf_add(NULL, NULL, sizeof(udp_hdr_t)+4, GNRC_NETTYPE_UNDEF);
+	gnrc_pktsnip_t *udp = gnrc_pktbuf_add(pkt, NULL, sizeof(udp_hdr_t), GNRC_NETTYPE_UNDEF);
 
 	ipv4_addr_t dst;
 	dst.u8[0] = 51;
@@ -261,11 +260,6 @@ gnrc_pktsnip_t *_build_udp(gnrc_pppdev_t *pppdev, gnrc_pktsnip_t *pkt)
 	udp_hdr->dst_port = byteorder_htons(9876);
 	udp_hdr->length = byteorder_htons(gnrc_pkt_len(udp));
 	udp_hdr->checksum = byteorder_htons(0);
-	uint8_t *payload = (uint8_t*) (udp_hdr+1);
-	*payload = 'f';
-	*(payload+1) = 'o';
-	*(payload+2) = 'o';
-	*(payload+3) = 'o';
 	
 	udp_hdr->checksum = byteorder_htons(udp_checksum(src, dst, 17, byteorder_ntohs(udp_hdr->length), udp));
 	return udp;
@@ -337,6 +331,8 @@ int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 	/* Remove netif*/
 	pkt = gnrc_pktbuf_remove_snip(pkt, pkt);
 
+	if(pkt->type == GNRC_NETTYPE_IPV6)
+		DEBUG("There's an IPv6 packet :)\n");
 	gnrc_pktsnip_t *sent_pkt;
 	/*DEBUG("Sending Ping packet\n");
 	gnrc_pktsnip_t *echo = gen_icmp_echo();
@@ -357,7 +353,7 @@ int ppp_ipv4_recv(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 	{
 		for(int i=0;i<p->size;i++)
 		{
-			DEBUG("%02x\n", *(((uint8_t*) p->data)+i));
+			DEBUG("%c\n", (char) *(((uint8_t*) p->data)+i));
 		}
 		p=p->next;
 	}

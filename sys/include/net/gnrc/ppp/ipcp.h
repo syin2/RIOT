@@ -21,6 +21,7 @@ typedef struct ipcp_t
 	ipv4_addr_t local_ip;
 	ipv4_addr_t ip;
 	cp_conf_t ipcp_opts[IPCP_NUMOPTS];
+	int ip_id;
 } ipcp_t;
 
 typedef struct ppp_ipv4_t
