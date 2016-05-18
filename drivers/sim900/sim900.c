@@ -73,6 +73,7 @@ static inline void _isr_at_command(sim900_t *dev, char data)
     dev->at_status |= (dev->_stream == STREAM_CONN) * HAS_CONN;
     dev->_num_esc -= (dev->_stream & 0xFFFF) == STREAM_CR;
 
+	printf("%c", data);
     /* if the AT command finished, send msg to driver */
     if (!dev->_num_esc) {
         _reset_at_status(dev);
@@ -357,8 +358,8 @@ int sim900_init(pppdev_t *d)
     dev->int_fcs = PPPINITFCS16;
     dev->_num_esc = 0;
     dev->_stream = 0;
-    dev->rx_accm = 0;
-    dev->tx_accm = 0;
+    dev->rx_accm = 0xffffffff;
+    dev->tx_accm = 0xffffffff;
     dev->mac_pid = thread_getpid();
     memset(dev->apn, 0, SIM900_APN_SIZE);
 
