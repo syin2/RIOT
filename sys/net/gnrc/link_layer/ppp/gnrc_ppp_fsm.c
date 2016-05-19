@@ -21,10 +21,10 @@
 #include <inttypes.h>
 #endif
 
-#define for_each_option(opt, buf, size) \
+#define FOR_EACH_OPTION(opt, buf, size) \
 	for(ppp_option_t *opt = (ppp_option_t*) buf; opt != NULL; opt = ppp_opt_get_next(opt, (ppp_option_t*) buf, size))
 
-#define for_each_conf(conf, head) \
+#define FOR_EACH_CONF(conf, head) \
 	for(cp_conf_t *conf = head; conf != NULL; conf = conf->next)
 
 void set_timeout(ppp_fsm_t *cp, uint32_t time)
@@ -37,23 +37,20 @@ void set_timeout(ppp_fsm_t *cp, uint32_t time)
 
 void _reset_cp_conf(cp_conf_t *conf)
 {
-	while(conf)
+	FOR_EACH_CONF(c, conf)
 	{
 		conf->value = conf->default_value;
-		conf = conf->next;
 	}
 }
-size_t _opts_size(cp_conf_t *head_opt)
+size_t _opts_size(cp_conf_t *head_conf)
 {
 	size_t size=0;
-	cp_conf_t *opt = head_opt;
-	while(opt)
+	FOR_EACH_CONF(conf, head_conf)
 	{
-		if(opt->flags & OPT_ENABLED)
+		if(conf->flags & OPT_ENABLED)
 		{
-			size += 2+opt->size;
+			size += 2+conf->size;
 		}
-		opt = opt->next;
 	}
 	return size;
 }
@@ -61,16 +58,16 @@ size_t _opts_size(cp_conf_t *head_opt)
 void _write_opts(cp_conf_t *head_conf, uint8_t *buf)
 {
 	int cursor=0;
-	while(head_conf)
+
+	FOR_EACH_CONF(conf, head_conf)
 	{
-		if(head_conf->flags & OPT_ENABLED)
+		if(conf->flags & OPT_ENABLED)
 		{
-			*(buf+cursor) = head_conf->type;
-			*(buf+cursor+1) = head_conf->size+2;
-			memcpy(buf+2+cursor, ((uint8_t*) &head_conf->value)+sizeof(uint32_t)-head_conf->size, head_conf->size);	
-			cursor+=2+head_conf->size;
+			*(buf+cursor) = conf->type;
+			*(buf+cursor+1) = conf->size+2;
+			memcpy(buf+2+cursor, ((uint8_t*) &conf->value)+sizeof(uint32_t)-conf->size, conf->size);	
+			cursor+=2+conf->size;
 		}
-		head_conf = head_conf->next;
 	}
 }
 
@@ -88,11 +85,6 @@ gnrc_pktsnip_t *build_options(ppp_fsm_t *cp)
 
 static uint8_t get_scnpkt_data(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt, uint16_t *n)
 {
-	ppp_option_t *head = pkt->data;
-	(void) head;
-	//ppp_option_t *curr_opt;
-	//(void) curr_opt;
-
 	uint8_t rej_size = 0;
 	uint8_t nak_size = 0;
 	uint8_t curr_type;
@@ -100,7 +92,7 @@ static uint8_t get_scnpkt_data(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt, uint16_t *n)
 	cp_conf_t *curr_conf;
 	uint8_t curr_size;
 
-	for_each_option(opt, pkt->data, pkt->size)
+	FOR_EACH_OPTION(opt, pkt->data, pkt->size)
 	{
 		curr_type = ppp_opt_get_type(opt);
 		curr_conf = cp->get_conf_by_code(cp, curr_type);
@@ -116,14 +108,10 @@ static uint8_t get_scnpkt_data(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt, uint16_t *n)
 	}
 
 	/* Append required options */
-	curr_conf = cp->conf;
-
-	for_each_conf(curr_conf, cp->conf)
-	//while(curr_conf)
+	FOR_EACH_CONF(conf, cp->conf)
 	{
-		if(curr_conf->flags & OPT_REQUIRED)
-			nak_size += curr_conf->size;
-		//curr_conf = curr_conf->next;
+		if(conf->flags & OPT_REQUIRED)
+			nak_size += conf->size;
 	}
 
 	*n = rej_size ? rej_size : nak_size;
@@ -132,48 +120,41 @@ static uint8_t get_scnpkt_data(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt, uint16_t *n)
 
 static void build_nak_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt, uint8_t *buf)
 {
-	ppp_option_t *head = pkt->data;
-	ppp_option_t *curr_opt = head;
 	cp_conf_t *curr_conf;
-
 	uint8_t curr_type;
-
 	uint8_t cursor = 0;
-	while(curr_opt)
+
+	FOR_EACH_OPTION(opt, pkt->data, pkt->size)
 	{
-		curr_type = ppp_opt_get_type(curr_opt);
+		curr_type = ppp_opt_get_type(opt);
 		curr_conf = cp->get_conf_by_code(cp, curr_type);
 
-		if (curr_conf && !curr_conf->is_valid(curr_opt))
+		if (curr_conf && !curr_conf->is_valid(opt))
 		{
 			cursor += curr_conf->build_nak_opts(buf+cursor);	
 		}
-		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
 	}
 }
 
 static void build_rej_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt, uint8_t *buf)
 {
-	ppp_option_t *head = pkt->data;
-	ppp_option_t *curr_opt = head;
 	cp_conf_t *curr_conf;
 
 	uint8_t curr_type;
 	uint16_t curr_size;
 
 	uint8_t cursor = 0;
-	while(curr_opt)
+	FOR_EACH_OPTION(opt, pkt->data, pkt->size)
 	{
-		curr_type = ppp_opt_get_type(curr_opt);
+		curr_type = ppp_opt_get_type(opt);
 		curr_conf = cp->get_conf_by_code(cp, curr_type);
-		curr_size = ppp_opt_get_length(curr_opt);
+		curr_size = ppp_opt_get_length(opt);
 
 		if(curr_conf == NULL)
 		{
-			memcpy(buf+cursor, curr_opt, curr_size);
+			memcpy(buf+cursor, opt, curr_size);
 			cursor += curr_size;
 		}
-		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
 	}
 }
 #if ENABLE_DEBUG
@@ -585,54 +566,43 @@ int handle_rcr(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
 		return -EBADMSG;
 	}
 
-	ppp_option_t *head = (ppp_option_t*) pkt->data;
-	ppp_option_t *curr_opt = head;
-
-	while(curr_opt)
+	FOR_EACH_OPTION(opt, pkt->data, pkt->size)
 	{
-		if(!_opt_is_ack(cp, curr_opt))
+		if(!_opt_is_ack(cp, opt))
 			return E_RCRm;
-		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
 	}
 
 	/*Check if there's an option that is required but not sent */
-	curr_opt = head;
-	cp_conf_t *curr_conf = cp->conf;
-
-	
 	uint8_t found;
-	while(curr_conf)
+	FOR_EACH_CONF(conf, cp->conf)
 	{
-		if(!(curr_conf->flags & OPT_REQUIRED))
+		if(!(conf->flags & OPT_REQUIRED))
 		{
-			curr_conf = curr_conf->next;
 			continue;
 		}
 		found = false;
-		while(curr_opt)
+		FOR_EACH_OPTION(opt, pkt->data, pkt->size)
 		{
-			if(curr_conf->type == ppp_opt_get_type(curr_opt))
+			if(conf->type == ppp_opt_get_type(opt))
 			{
 				found = true;
 				break;
 			}
 		}
+
 		if(!found)
 			return E_RCRm;
-
-		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
 	}
 
 	/* Valid options... set them before SCA */
-	curr_opt = head;
-	while(curr_opt)
+	cp_conf_t *curr_conf;
+	FOR_EACH_OPTION(opt, pkt->data, pkt->size)
 	{
-		curr_conf = cp->get_conf_by_code(cp, ppp_opt_get_type(curr_opt));
+		curr_conf = cp->get_conf_by_code(cp, ppp_opt_get_type(opt));
 		if(curr_conf)
-			curr_conf->set(cp, curr_opt, true);
+			curr_conf->set(cp, opt, true);
 		else
 			DEBUG("handle_rcr inconsistency in pkt. Shouldn't happen\n");
-		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
 	}
 
 	return E_RCRp;
@@ -662,20 +632,17 @@ int handle_rca(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 	/*Write options in corresponding devices*/
 	if (pkt)
 	{
-		ppp_option_t *head = (ppp_option_t*) opts;
-		ppp_option_t *curr_opt = head;
 		cp_conf_t *conf;
-		while(curr_opt)
+		FOR_EACH_OPTION(opt, opts, pkt->size)
 		{
-			conf = cp->get_conf_by_code(cp, ppp_opt_get_type(curr_opt));
+			conf = cp->get_conf_by_code(cp, ppp_opt_get_type(opt));
 			if(!conf)
 			{
 				/*Received invalid ACK*/
 				DEBUG("Peer sent inconsistent ACK\n");
 				return -EBADMSG;
 			}
-			conf->set(cp, curr_opt, false);
-			curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
+			conf->set(cp, opt, false);
 		}
 	}
 	return E_RCA;
@@ -705,24 +672,22 @@ int handle_rcn_nak(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 	}
 
 	/*Handle nak for each option*/
-	ppp_option_t *head = pkt->data;
-	ppp_option_t *curr_opt = head;
-
 	cp_conf_t *curr_conf;
 	network_uint32_t value;
-	while(curr_opt)
+
+	FOR_EACH_OPTION(opt, pkt->data, pkt->size)
 	{
-		curr_conf = cp->get_conf_by_code(cp, ppp_opt_get_type(curr_opt));
+		curr_conf = cp->get_conf_by_code(cp, ppp_opt_get_type(opt));
 		if(curr_conf != NULL)
 		{
 			if(!(curr_conf->flags & OPT_ENABLED))
 			{
 				curr_conf->flags |= OPT_ENABLED;
 			}
-			else if(curr_conf->is_valid(curr_opt))
+			else if(curr_conf->is_valid(opt))
 			{
 				value = byteorder_htonl(0);
-				memcpy(&value+(4-curr_conf->size), ppp_opt_get_payload(curr_opt), curr_conf->size);
+				memcpy(&value+(4-curr_conf->size), ppp_opt_get_payload(opt), curr_conf->size);
 				curr_conf->value = value;
 			}
 			else
@@ -730,41 +695,35 @@ int handle_rcn_nak(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 				curr_conf->flags &= ~OPT_ENABLED;
 			}
 		}
-		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
 	}
 	return E_RCN;
 }
 
 int handle_rcn_rej(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 {
-	if(!pkt || ppp_hdr_get_id(hdr) != cp->cr_sent_identifier || ppp_conf_opts_valid(pkt, pkt->size) <= 0 || ppp_hdr_get_length(hdr)-sizeof(ppp_hdr_t) > cp->cr_sent_size)
+	if(!pkt || ppp_hdr_get_id(hdr) != cp->cr_sent_identifier || ppp_conf_opts_valid(pkt, pkt->size) <= 0 || ppp_hdr_get_length(hdr)-sizeof(ppp_hdr_t) != cp->cr_sent_size)
 		return -EBADMSG;
 
 
-	ppp_option_t *head = pkt->data;
-	ppp_option_t *curr_opt = head;
 	uint16_t size = cp->cr_sent_size;
 
-	while(curr_opt)
+	FOR_EACH_OPTION(opt, pkt->data, pkt->size)
 	{
-		if(!ppp_opt_is_subset(curr_opt, cp->cr_sent_opts, size))
+		if(!ppp_opt_is_subset(opt, cp->cr_sent_opts, size))
 			return -EBADMSG;
-		curr_opt = ppp_opt_get_next(curr_opt, head, size);
 	}
 
 	/* Disable every REJ option */
-	curr_opt = head;
 	cp_conf_t *curr_conf;
-	while(curr_opt)
+	FOR_EACH_OPTION(opt, pkt->data, pkt->size)
 	{
-		curr_conf = cp->get_conf_by_code(cp, ppp_opt_get_type(curr_opt));
+		curr_conf = cp->get_conf_by_code(cp, ppp_opt_get_type(opt));
 		if(curr_conf == NULL)
 		{
 			DEBUG("This shouldn't happen...\n");
 			return -EBADMSG;
 		}
 		curr_conf->flags &= ~OPT_ENABLED;
-		curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
 	}
 	return E_RCN;
 }
