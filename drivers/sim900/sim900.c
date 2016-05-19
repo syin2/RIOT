@@ -73,7 +73,6 @@ static inline void _isr_at_command(sim900_t *dev, char data)
     dev->at_status |= (dev->_stream == STREAM_CONN) * HAS_CONN;
     dev->_num_esc -= (dev->_stream & 0xFFFF) == STREAM_CR;
 
-	printf("%c", data);
     /* if the AT command finished, send msg to driver */
     if (!dev->_num_esc) {
         _reset_at_status(dev);

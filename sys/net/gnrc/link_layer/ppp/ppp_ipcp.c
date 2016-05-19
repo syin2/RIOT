@@ -268,10 +268,8 @@ gnrc_pktsnip_t *_build_udp(gnrc_pppdev_t *pppdev, gnrc_pktsnip_t *pkt)
 int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
 	ipcp_t *ipcp = ((ppp_ipv4_t*) protocol)->ipcp;
-	gnrc_pktsnip_t *echo;
-	(void) echo;
-	gnrc_pktsnip_t *dummy;
-	(void) dummy;
+	(void) ipcp;
+
 	gnrc_pppdev_t *pppdev = ((ppp_ipv4_t*) protocol)->pppdev;
 	gnrc_pktsnip_t *pkt;
 	gnrc_pktsnip_t *recv_pkt = (gnrc_pktsnip_t*) args;
@@ -282,21 +280,7 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 		case PPP_LINKUP:
 			DEBUG("Msg: Obtained IP address! \n");
 			DEBUG("Ip address is %i.%i.%i.%i\n",ipcp->ip.u8[0],ipcp->ip.u8[1],ipcp->ip.u8[2],ipcp->ip.u8[3]);	
-			DEBUG("Send an ICMP pkt...\n");
-			puts("Now send...");
 			(void) pkt;
-			for(int i=0;i<10;i++)
-			{
-				echo = gen_icmp_echo();
-				pkt = gen_ip_pkt(ipcp,echo, 1);
-				gnrc_ppp_send(pppdev, pkt);
-				dummy = gen_dummy_pkt();
-				pkt = gen_ip_pkt(ipcp,dummy, 41);
-				gnrc_ppp_send(pppdev, pkt);
-				dummy = gen_dummy_pkt();
-				pkt = gen_ip_pkt(ipcp,dummy, 1);
-				gnrc_ppp_send(pppdev, pkt);
-			}
 			break;
 		case PPP_RECV:
 			ppp_ipv4_recv(pppdev, recv_pkt);
@@ -328,17 +312,11 @@ int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 		gnrc_pktbuf_release(pkt);
 		return -1;
 	}
+
 	/* Remove netif*/
 	pkt = gnrc_pktbuf_remove_snip(pkt, pkt);
 
-	if(pkt->type == GNRC_NETTYPE_IPV6)
-		DEBUG("There's an IPv6 packet :)\n");
 	gnrc_pktsnip_t *sent_pkt;
-	/*DEBUG("Sending Ping packet\n");
-	gnrc_pktsnip_t *echo = gen_icmp_echo();
-	sent_pkt = gen_ip_pkt(&ppp_dev->l_ipcp,echo, 1);
-	gnrc_ppp_send(ppp_dev, sent_pkt);*/
-
 	sent_pkt = _build_udp(ppp_dev, pkt);
 	sent_pkt = gen_ip_pkt(&ppp_dev->l_ipcp, sent_pkt, 17);
 	gnrc_ppp_send(ppp_dev, sent_pkt);
@@ -348,15 +326,36 @@ int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 int ppp_ipv4_recv(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 {
 	DEBUG("Received IP packet!!\n");
-	gnrc_pktsnip_t *p = pkt;
-	while(p)
-	{
-		for(int i=0;i<p->size;i++)
-		{
-			DEBUG("%c\n", (char) *(((uint8_t*) p->data)+i));
-		}
-		p=p->next;
+	gnrc_pktsnip_t *ipv4_hdr = gnrc_pktbuf_mark(pkt, sizeof(ipv4_hdr_t), GNRC_NETTYPE_UNDEF);
+	gnrc_pktsnip_t *udp_hdr = gnrc_pktbuf_mark(pkt, sizeof(udp_hdr_t), GNRC_NETTYPE_UNDEF);
+
+	gnrc_pktbuf_remove_snip(pkt, ipv4_hdr);
+	gnrc_pktbuf_remove_snip(pkt, udp_hdr);
+
+	/* create netif header */
+	gnrc_pktsnip_t *netif_hdr;
+	netif_hdr = gnrc_pktbuf_add(NULL, NULL,
+			sizeof(gnrc_netif_hdr_t) + (2 * 6),
+			GNRC_NETTYPE_NETIF);
+
+	if (netif_hdr == NULL) {
+		goto safe_out;
 	}
-	gnrc_pktbuf_release(pkt);
+
+	gnrc_netif_hdr_init(netif_hdr->data, 6, 6);
+	((gnrc_netif_hdr_t *)netif_hdr->data)->if_pid = thread_getpid();
+
+	LL_APPEND(pkt, netif_hdr);
+
+	 /* throw away packet if no one is interested */
+    if (!gnrc_netapi_dispatch_receive(GNRC_NETTYPE_IPV6, GNRC_NETREG_DEMUX_CTX_ALL, pkt)) {
+        DEBUG("gnrc_netdev2: unable to forward packet of type %i\n", pkt->type);
+        gnrc_pktbuf_release(pkt);
+        return 0;
+    }	
+
 	return 0;
+safe_out:
+    gnrc_pktbuf_release(pkt);
+    return 0;
 }

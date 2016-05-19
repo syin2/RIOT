@@ -27,6 +27,8 @@
 #include "net/gnrc/ppp/lcp.h"
 #include "net/gnrc/ppp/ipcp.h"
 #include "net/gnrc/ppp/fsm.h"
+#include "net/ipv6/addr.h"
+#include "net/gnrc/ipv6/netif.h"
 #include "net/gnrc/ppp/pap.h"
 #include "net/hdlc/hdr.h"
 #include "net/ppp/hdr.h"
@@ -369,6 +371,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 	uint8_t event = ppp_msg & 0xFF;
 	DEBUG("Receiving a PPP_NETTYPE msg with target %i and event %i\n", target, event);
 	int ppp_state;
+	(void) ppp_state;
 	gnrc_pktsnip_t *pkt = NULL;
 
 	if(event == PPP_RECV)
@@ -431,8 +434,17 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 int gnrc_ppp_get_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value_len)
 {
 	int res;
+	/*Fake values*/
+	uint8_t mac[] = {38, 53, 143, 233, 6, 93};
+	uint8_t iid[] = {38, 53, 143, 233, 6, 93, 35, 87};
 	switch(opt)
 	{
+		case NETOPT_ADDRESS:
+			memcpy(value, mac, 6);
+			return 6;
+		case NETOPT_IPV6_IID:
+			memcpy(value, iid, 8);
+			return 8;
 		default:
 			res = -ENOTSUP;
 			break;
@@ -450,7 +462,7 @@ int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
 			res = dev->netdev->driver->set(dev->netdev, PPPOPT_APN_NAME, value, value_len);
 			break;
 		default:
-			DEBUG("No options from gnrc_ppp yet!\n");
+			DEBUG("Unknown option\n");
 			res = -ENOTSUP;
 			break;
 	}
@@ -463,6 +475,8 @@ void *_gnrc_ppp_thread(void *args)
 	DEBUG("gnrc_ppp_trhead started\n");
 	gnrc_pppdev_t *pppdev = (gnrc_pppdev_t*) args;
 	gnrc_netif_add(thread_getpid());
+	//ipv6_addr_t ipv6;
+	//gnrc_ipv6_netif_add_addr(thread_getpid(), ipv6_addr_from_str(&ipv6, "ffee::01"), 1, 0);
 	pppdev_t *d = pppdev->netdev;
     d->driver->init(d);
 
@@ -490,6 +504,7 @@ void *_gnrc_ppp_thread(void *args)
 				msg_reply(&msg, &reply);
 				break;
 			case GNRC_NETAPI_MSG_TYPE_GET:
+				DEBUG("Received GET msg\n");
 				opt = (gnrc_netapi_opt_t*) msg.content.ptr;
 				res = gnrc_ppp_get_opt(pppdev, opt->opt, opt->data, opt->data_len);
 				reply.type = GNRC_NETAPI_MSG_TYPE_ACK;
