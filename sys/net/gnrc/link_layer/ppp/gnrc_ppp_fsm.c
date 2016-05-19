@@ -24,6 +24,9 @@
 #define for_each_option(opt, buf, size) \
 	for(ppp_option_t *opt = (ppp_option_t*) buf; opt != NULL; opt = ppp_opt_get_next(opt, (ppp_option_t*) buf, size))
 
+#define for_each_conf(conf, head) \
+	for(cp_conf_t *conf = head; conf != NULL; conf = conf->next)
+
 void set_timeout(ppp_fsm_t *cp, uint32_t time)
 {
 	cp->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
@@ -97,32 +100,30 @@ static uint8_t get_scnpkt_data(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt, uint16_t *n)
 	cp_conf_t *curr_conf;
 	uint8_t curr_size;
 
-	for_each_option(curr_opt, pkt->data, pkt->size)
-	//for(ppp_option_t *curr_opt = head; curr_opt != NULL; curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size))
-	//while(curr_opt)
+	for_each_option(opt, pkt->data, pkt->size)
 	{
-		curr_type = ppp_opt_get_type(curr_opt);
+		curr_type = ppp_opt_get_type(opt);
 		curr_conf = cp->get_conf_by_code(cp, curr_type);
-		curr_size = ppp_opt_get_length(curr_opt);
+		curr_size = ppp_opt_get_length(opt);
 		if(curr_conf == NULL)
 		{
 			rej_size += curr_size;
 		}
-		else if(!curr_conf->is_valid(curr_opt))
+		else if(!curr_conf->is_valid(opt))
 		{
 			nak_size += curr_conf->build_nak_opts(NULL);
 		}
-		//curr_opt = ppp_opt_get_next(curr_opt, head, pkt->size);
 	}
 
 	/* Append required options */
 	curr_conf = cp->conf;
 
-	while(curr_conf)
+	for_each_conf(curr_conf, cp->conf)
+	//while(curr_conf)
 	{
 		if(curr_conf->flags & OPT_REQUIRED)
 			nak_size += curr_conf->size;
-		curr_conf = curr_conf->next;
+		//curr_conf = curr_conf->next;
 	}
 
 	*n = rej_size ? rej_size : nak_size;
