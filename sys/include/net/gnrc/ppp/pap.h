@@ -1,0 +1,30 @@
+#ifndef PPP_PAP_H
+#define PPP_PAP_H
+
+#include "net/gnrc/ppp/prot.h"
+#include "xtimer.h"
+#include "msg.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct pap_t
+{
+	ppp_protocol_t prot;
+	char username[1];
+	char password[1];
+	uint8_t counter;
+	uint8_t id;
+	struct gnrc_pppdev_t *dev;
+	xtimer_t xtimer;
+	msg_t timer_msg;
+	msg_t msg;
+} pap_t;
+
+int pap_init(struct gnrc_pppdev_t *ppp_dev, pap_t *pap);
+#ifdef __cplusplus
+}
+#endif
+
+#endif
