@@ -364,7 +364,6 @@ void zrc(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Zero restart counter\n ");
-	(void) cp;
 	cp->restart_counter = 0;
 	set_timeout(cp, cp->restart_timer);
 }
@@ -390,7 +389,6 @@ void scr(ppp_fsm_t *cp, void *args)
 
 	/*Send configure request*/
 	send_configure_request(cp->dev, cp->prottype, ++cp->cr_sent_identifier, opts);
-
 	set_timeout(cp, cp->restart_timer);
 }
 
@@ -407,12 +405,7 @@ void sca(ppp_fsm_t *cp, void *args)
 
 	if(has_options)
 	{
-		DEBUG(">> Received pkt asked for options. Send them back, with ACK pkt\n");
 		opts = gnrc_pktbuf_add(NULL, pkt->data, pkt->size, GNRC_NETTYPE_UNDEF);
-	}
-	else
-	{
-		DEBUG(">> Received pkt didn't ask for options -> So just ACK\n");
 	}
 
 	send_configure_ack(cp->dev, cp->prottype, ppp_hdr_get_id(recv_ppp_hdr), opts);
@@ -435,18 +428,16 @@ void scn(ppp_fsm_t *cp, void *args)
 	{
 		case PPP_CONF_NAK:
 			build_nak_pkt(cp, pkt, (uint8_t*)opts->data);
+			send_configure_nak(cp->dev, cp->prottype, ppp_hdr_get_id((ppp_hdr_t*) pkt->next->data), opts);
 			break;
 		case PPP_CONF_REJ:
 			build_rej_pkt(cp, pkt, (uint8_t*) opts->data);
+			send_configure_rej(cp->dev, cp->prottype, ppp_hdr_get_id((ppp_hdr_t*) pkt->next->data), opts);
 			break;
 		default:
 			DEBUG("Shouldn't be here...\n");
 			break;
 	}
-
-	ppp_hdr_t *recv_ppp_hdr = (ppp_hdr_t*) pkt->next->data;
-	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, type, ppp_hdr_get_id(recv_ppp_hdr),opts);
-	gnrc_ppp_send(cp->dev, send_pkt);
 }
 
 void str(ppp_fsm_t *cp, void *args)
