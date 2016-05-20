@@ -27,6 +27,9 @@
 #define FOR_EACH_CONF(conf, head) \
 	for(cp_conf_t *conf = head; conf != NULL; conf = conf->next)
 
+#define UPPER_LAYER(cp) (cp->targets & 0xffff)
+#define LOWER_LAYER(cp) ((cp->targets >> 8) & 0xffff)
+
 void set_timeout(ppp_fsm_t *cp, uint32_t time)
 {
 	ppp_target_t self = ((ppp_protocol_t*)cp)->id;
@@ -315,9 +318,9 @@ int trigger_event(ppp_fsm_t *cp, int event, gnrc_pktsnip_t *pkt)
 void tlu(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
-	_reset_cp_conf(cp->conf);
 	DEBUG("> This layer up (a.k.a Successfully negotiated Link)\n");
-	send_ppp_event(&cp->msg, ppp_msg_set((cp->targets) & 0xffff, PPP_LINKUP));
+	_reset_cp_conf(cp->conf);
+	send_ppp_event(&cp->msg, ppp_msg_set(UPPER_LAYER(cp), PPP_LINKUP));
 	(void) cp;
 }
 
@@ -326,7 +329,7 @@ void tld(ppp_fsm_t *cp, void *args)
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG("> This layer down\n");
 	_reset_cp_conf(cp->conf);
-	send_ppp_event(&cp->msg, ppp_msg_set((cp->targets) & 0xffff, PPP_LINKDOWN));
+	send_ppp_event(&cp->msg, ppp_msg_set(UPPER_LAYER(cp), PPP_LINKDOWN));
 	(void) cp;
 }
 
@@ -335,7 +338,7 @@ void tls(ppp_fsm_t *cp, void *args)
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  This layer started\n");
 	_reset_cp_conf(cp->conf);
-	send_ppp_event(&cp->msg, ppp_msg_set((cp->targets >> 8) & 0xffff, PPP_UL_STARTED));
+	send_ppp_event(&cp->msg, ppp_msg_set(LOWER_LAYER(cp), PPP_UL_STARTED));
 	(void) cp;
 }
 
@@ -343,8 +346,7 @@ void tlf(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  This layer finished\n");
-	puts("I will fail");
-	send_ppp_event(&cp->msg, ppp_msg_set((cp->targets >> 8) & 0xffff, PPP_UL_FINISHED));
+	send_ppp_event(&cp->msg, ppp_msg_set(LOWER_LAYER(cp), PPP_UL_FINISHED));
 	(void) cp;
 }
 
@@ -352,17 +354,12 @@ void irc(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Init Restart Counter\n");
+
 	uint8_t cr = *((int*) args) & F_SCR; 
 
-	if(cr)
-	{
-		cp->restart_counter = PPP_MAX_CONFIG;
-	}
-	else
-	{
-		cp->restart_counter = PPP_MAX_TERMINATE;
-	}
+	cp->restart_counter = cr ? PPP_MAX_CONFIG : PPP_MAX_TERMINATE;
 }
+
 void zrc(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
@@ -756,7 +753,7 @@ int handle_term_ack(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
 }
 
 
-static int handle_conf(ppp_fsm_t *cp, int type, gnrc_pktsnip_t *pkt)
+static int handle_conf_pkt(ppp_fsm_t *cp, int type, gnrc_pktsnip_t *pkt)
 {
 	gnrc_pktsnip_t *ppp_hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), cp->prottype);
 	gnrc_pktsnip_t *payload = ppp_hdr == pkt ? NULL : pkt;
@@ -805,7 +802,7 @@ int fsm_event_from_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
 		case PPP_CONF_ACK:
 		case PPP_CONF_NAK:
 		case PPP_CONF_REJ:
-			event = handle_conf(cp, type, pkt);
+			event = handle_conf_pkt(cp, type, pkt);
 			break;
 		case PPP_TERM_REQ:
 			event = E_RTR;
