@@ -444,9 +444,8 @@ void str(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  Sending Terminate Request\n");
-	(void) cp;
-	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, PPP_TERM_REQ, cp->tr_sent_identifier++, NULL);
-	gnrc_ppp_send(cp->dev, send_pkt);
+
+	send_terminate_req(cp->dev, cp->prottype, cp->tr_sent_identifier++);
 }
 
 void sta(ppp_fsm_t *cp, void *args)
