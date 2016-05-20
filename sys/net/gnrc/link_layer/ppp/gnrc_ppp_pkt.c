@@ -28,6 +28,11 @@ void send_terminate_req(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id)
 {
 	_send_ppp_pkt(dev, protocol, PPP_TERM_REQ, id, NULL);
 }
-/*
-void send_terminate_ack(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *payload)
-void send_code_rej(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *payload)*/
+void send_terminate_ack(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *response)
+{
+	_send_ppp_pkt(dev, protocol, PPP_TERM_ACK, id, response);
+}
+void send_code_rej(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *rejected)
+{
+	_send_ppp_pkt(dev, protocol, PPP_CODE_REJ, id, rejected);
+}

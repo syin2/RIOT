@@ -461,8 +461,7 @@ void sta(ppp_fsm_t *cp, void *args)
 	{
 		recv_pkt = gnrc_pktbuf_add(NULL, pkt->data, pkt->size, GNRC_NETTYPE_UNDEF);	
 	}
-	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, PPP_TERM_ACK, ppp_hdr_get_id(recv_ppp_hdr), recv_pkt);
-	gnrc_ppp_send(cp->dev, send_pkt);
+	send_terminate_ack(cp->dev, cp->prottype, ppp_hdr_get_id(recv_ppp_hdr), recv_pkt);
 }
 void scj(ppp_fsm_t *cp, void *args)
 {
@@ -471,8 +470,7 @@ void scj(ppp_fsm_t *cp, void *args)
 	DEBUG(">  Sending Code Rej\n");
 
 	gnrc_pktsnip_t *payload = gnrc_pktbuf_add(NULL, pkt->data, pkt->size, cp->prottype);
-	gnrc_pktsnip_t *send_pkt = pkt_build(cp->prottype, PPP_CODE_REJ, cp->cr_sent_identifier++, payload);
-	gnrc_ppp_send(cp->dev, send_pkt);
+	send_code_rej(cp->dev, cp->prottype, cp->cr_sent_identifier++, payload);
 }
 void ser(ppp_fsm_t *cp, void *args)
 {
