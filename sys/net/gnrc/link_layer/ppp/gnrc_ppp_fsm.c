@@ -66,13 +66,15 @@ void _write_opts(cp_conf_t *head_conf, uint8_t *buf)
 	}
 }
 
-gnrc_pktsnip_t *build_options(ppp_fsm_t *cp)
+gnrc_pktsnip_t *_build_conf_req_options(ppp_fsm_t *cp)
 {
+	/* Get size of outgoing options */
 	size_t size = _opts_size(cp->conf);
 
 	if(!size)
 		return NULL;
 
+	/* Write opts to pkt */
 	gnrc_pktsnip_t *opts = gnrc_pktbuf_add(NULL, NULL, size, GNRC_NETTYPE_UNDEF);
 	_write_opts(cp->conf, (uint8_t*) opts->data);
 	return opts;
@@ -152,6 +154,7 @@ static void build_rej_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt, uint8_t *buf)
 		}
 	}
 }
+
 #if ENABLE_DEBUG
 static void print_state(int state)
 {
@@ -314,7 +317,7 @@ void tlu(ppp_fsm_t *cp, void *args)
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	_reset_cp_conf(cp->conf);
 	DEBUG("> This layer up (a.k.a Successfully negotiated Link)\n");
-	send_fsm_msg(&cp->msg, (cp->targets) & 0xffff, PPP_LINKUP);
+	send_ppp_event(&cp->msg, ppp_msg_set((cp->targets) & 0xffff, PPP_LINKUP));
 	(void) cp;
 }
 
@@ -323,7 +326,7 @@ void tld(ppp_fsm_t *cp, void *args)
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG("> This layer down\n");
 	_reset_cp_conf(cp->conf);
-	send_fsm_msg(&cp->msg, (cp->targets) & 0xffff, PPP_LINKDOWN);
+	send_ppp_event(&cp->msg, ppp_msg_set((cp->targets) & 0xffff, PPP_LINKDOWN));
 	(void) cp;
 }
 
@@ -332,7 +335,7 @@ void tls(ppp_fsm_t *cp, void *args)
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  This layer started\n");
 	_reset_cp_conf(cp->conf);
-	send_fsm_msg(&cp->msg, (cp->targets >> 8) & 0xffff, PPP_UL_STARTED);
+	send_ppp_event(&cp->msg, ppp_msg_set((cp->targets >> 8) & 0xffff, PPP_UL_STARTED));
 	(void) cp;
 }
 
@@ -341,7 +344,7 @@ void tlf(ppp_fsm_t *cp, void *args)
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  This layer finished\n");
 	puts("I will fail");
-	send_fsm_msg(&cp->msg, (cp->targets >> 8) & 0xffff, PPP_UL_FINISHED);
+	send_ppp_event(&cp->msg, ppp_msg_set((cp->targets >> 8) & 0xffff, PPP_UL_FINISHED));
 	(void) cp;
 }
 
@@ -379,7 +382,7 @@ void scr(ppp_fsm_t *cp, void *args)
 	cp->restart_counter -= 1;
 
 	/* Build options */
-	gnrc_pktsnip_t *opts = build_options(cp);
+	gnrc_pktsnip_t *opts = _build_conf_req_options(cp);
 
 	/*In case there are options, copy to sent opts*/
 	if(opts)
@@ -515,7 +518,7 @@ void ser(ppp_fsm_t *cp, void *args)
 			break;
 	}
 	/*Send PPP_LINK_ALIVE to upper layer*/
-	send_fsm_msg(&cp->msg, (cp->targets >> 8) & 0xffff, PPP_LINK_ALIVE);
+	send_ppp_event(&cp->msg, ppp_msg_set((cp->targets >> 8) & 0xffff, PPP_LINK_ALIVE));
 }
 
 int cp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *cp)
@@ -852,7 +855,7 @@ int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void 
 			break;
 		case PPP_UL_STARTED:
 			if(target->state == S_OPENED)
-				send_fsm_msg(&target->msg, (target->targets) & 0xffff, PPP_LINKUP);
+				send_ppp_event(&target->msg, ppp_msg_set((target->targets) & 0xffff, PPP_LINKUP));
 			break;
 		case PPP_TIMEOUT:
 			if(target->restart_counter)
@@ -868,11 +871,4 @@ int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void 
 			break;
 	}
 	return 0;
-}
-void send_fsm_msg(msg_t *msg, uint8_t target, uint8_t event)
-{
-	DEBUG("Sending msg to upper layer...\n");
-	msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-	msg->content.value = (target<<8) + event;
-	msg_send(msg, thread_getpid());
 }
