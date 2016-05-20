@@ -214,10 +214,10 @@ gnrc_pktsnip_t *gen_ip_pkt(ipcp_t *ipcp, gnrc_pktsnip_t *payload, uint8_t protoc
 	ipv4_hdr_t *hdr = pkt->data;	
 	
 	ipv4_addr_t dst;
-	dst.u8[0] = 51;
-	dst.u8[1] = 254;
-	dst.u8[2] = 204;
-	dst.u8[3] = 66;
+	dst.u8[0] = 92;
+	dst.u8[1] = 243;
+	dst.u8[2] = 22;
+	dst.u8[3] = 149;
 
 	ipv4_addr_t src = ipcp->ip;
 
@@ -248,10 +248,10 @@ gnrc_pktsnip_t *_build_udp(gnrc_pppdev_t *pppdev, gnrc_pktsnip_t *pkt)
 	gnrc_pktsnip_t *udp = gnrc_pktbuf_add(pkt, NULL, sizeof(udp_hdr_t), GNRC_NETTYPE_UNDEF);
 
 	ipv4_addr_t dst;
-	dst.u8[0] = 51;
-	dst.u8[1] = 254;
-	dst.u8[2] = 204;
-	dst.u8[3] = 66;
+	dst.u8[0] = 92;
+	dst.u8[1] = 243;
+	dst.u8[2] = 22;
+	dst.u8[3] = 149;
 
 	ipv4_addr_t src = pppdev->l_ipcp.ip;
 

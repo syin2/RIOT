@@ -17,6 +17,24 @@ typedef struct ppp_protocol_t
 	uint8_t id;
 } ppp_protocol_t;
 
+typedef uint16_t ppp_msg_t;
+typedef uint8_t ppp_target_t;
+typedef uint8_t ppp_event_t;
+
+static inline ppp_event_t ppp_msg_set(ppp_target_t target, ppp_event_t ppp_event)
+{
+	return (target<<8) | ppp_event;
+}
+
+static inline ppp_target_t ppp_msg_get_target(ppp_msg_t ppp_msg)
+{
+	return (ppp_msg>>8);
+}
+
+static inline ppp_event_t ppp_msg_get_event(ppp_msg_t ppp_msg)
+{
+	return (ppp_msg & 0xffff);
+}
 
 
 #ifdef __cplusplus
