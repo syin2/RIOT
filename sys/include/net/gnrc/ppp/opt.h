@@ -102,6 +102,15 @@ static inline int ppp_opt_is_subset(ppp_option_t *opt, ppp_option_t *optset, siz
 	return false;
 }
 
+static inline int ppp_opt_fill(void *opt_buf, uint8_t type, void *payload, size_t pay_size)
+{
+	ppp_option_t *opt = opt_buf;
+	ppp_opt_set_type(opt, type);
+	ppp_opt_set_length(opt, 2+pay_size);
+	ppp_opt_set_payload(opt, payload, pay_size);
+	return 2+pay_size;
+}
+
 #ifdef __cplusplus
 }
 #endif

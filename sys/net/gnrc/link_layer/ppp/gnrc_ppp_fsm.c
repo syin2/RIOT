@@ -61,10 +61,7 @@ void _write_opts(cp_conf_t *head_conf, uint8_t *buf)
 	{
 		if(conf->flags & OPT_ENABLED)
 		{
-			*(buf+cursor) = conf->type;
-			*(buf+cursor+1) = conf->size+2;
-			memcpy(buf+2+cursor, ((uint8_t*) &conf->value)+sizeof(uint32_t)-conf->size, conf->size);	
-			cursor+=2+conf->size;
+			cursor += ppp_opt_fill(buf+cursor, conf->type, (&conf->value)+sizeof(uint32_t)-conf->size, conf->size);
 		}
 	}
 }
