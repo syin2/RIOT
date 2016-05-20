@@ -46,7 +46,7 @@ typedef enum{
 	E_RXJm,
 	E_RXR,
 	PPP_NUM_EVENTS
-} ppp_event_t;
+} fsm_event_t;
 
 
 typedef enum{

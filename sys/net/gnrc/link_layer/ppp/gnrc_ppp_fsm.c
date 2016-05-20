@@ -29,10 +29,8 @@
 
 void set_timeout(ppp_fsm_t *cp, uint32_t time)
 {
-	cp->msg.type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-	cp->msg.content.value = (((ppp_protocol_t*)cp)->id<<8) +PPP_TIMEOUT;
-	xtimer_remove(&cp->xtimer);
-	xtimer_set_msg(&cp->xtimer, cp->restart_timer, &cp->msg, thread_getpid());
+	ppp_target_t self = ((ppp_protocol_t*)cp)->id;
+	send_ppp_event_xtimer(&cp->msg, &cp->xtimer, ppp_msg_set(self, PPP_TIMEOUT), cp->restart_timer);
 }
 
 void _reset_cp_conf(cp_conf_t *conf)

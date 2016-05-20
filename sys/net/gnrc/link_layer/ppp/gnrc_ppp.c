@@ -46,6 +46,21 @@
 #define dump_hex 1
 
 
+void send_ppp_event(msg_t *msg, ppp_msg_t ppp_msg)
+{
+	msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
+	msg->content.value = ppp_msg;
+	msg_send(msg, thread_getpid());
+}
+
+void send_ppp_event_xtimer(msg_t *msg, xtimer_t *xtimer, ppp_msg_t ppp_msg, int timeout)
+{
+	msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
+	msg->content.value = ppp_msg;
+	xtimer_remove(xtimer);
+	xtimer_set_msg(xtimer, timeout, msg, thread_getpid());
+}
+
 /* Generate PPP pkt */
 gnrc_pktsnip_t * pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnrc_pktsnip_t *payload)
 {
