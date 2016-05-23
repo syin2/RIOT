@@ -31,7 +31,7 @@
 #include "net/icmp.h"
 #include <errno.h>
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG    (1)
 #include "debug.h"
 
 #if ENABLE_DEBUG
@@ -208,24 +208,19 @@ gnrc_pktsnip_t *gen_dummy_pkt(void)
 	char dummy_data[] = "test";
 	return gnrc_pktbuf_add(NULL, dummy_data, sizeof(dummy_data), GNRC_NETTYPE_UNDEF);
 }
-gnrc_pktsnip_t *gen_ip_pkt(ipcp_t *ipcp, gnrc_pktsnip_t *payload, uint8_t protocol)
+gnrc_pktsnip_t *gen_ip_pkt(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *payload, uint8_t protocol)
 {
 	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(payload, NULL, sizeof(ipv4_hdr_t), GNRC_NETTYPE_IPV4);
 	ipv4_hdr_t *hdr = pkt->data;	
 	
-	ipv4_addr_t dst;
-	dst.u8[0] = 51;
-	dst.u8[1] = 254;
-	dst.u8[2] = 204;
-	dst.u8[3] = 66;
-
-	ipv4_addr_t src = ipcp->ip;
+	ipv4_addr_t dst = ipv4->tunnel_addr;
+	ipv4_addr_t src = ipv4->ipcp->ip;
 
 	ipv4_hdr_set_version(hdr);
 	ipv4_hdr_set_ihl(hdr, 5);
 	ipv4_hdr_set_ts(hdr, 0);
 	ipv4_hdr_set_tl(hdr, gnrc_pkt_len(pkt));
-	ipv4_hdr_set_id(hdr, ++ipcp->ip_id);
+	ipv4_hdr_set_id(hdr, ++ipv4->ipcp->ip_id);
 	ipv4_hdr_set_flags(hdr, 0);
 	ipv4_hdr_set_fo(hdr, 0);
 	ipv4_hdr_set_ttl(hdr, 64);
@@ -242,18 +237,13 @@ gnrc_pktsnip_t *gen_ip_pkt(ipcp_t *ipcp, gnrc_pktsnip_t *payload, uint8_t protoc
 
 /** END OF TEST SECTION **/
 
-gnrc_pktsnip_t *_build_udp(ipcp_t *ipcp, gnrc_pktsnip_t *pkt)
+gnrc_pktsnip_t *_build_udp(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *pkt)
 {
 	/* Add UDP header */
 	gnrc_pktsnip_t *udp = gnrc_pktbuf_add(pkt, NULL, sizeof(udp_hdr_t), GNRC_NETTYPE_UNDEF);
 
-	ipv4_addr_t dst;
-	dst.u8[0] = 51;
-	dst.u8[1] = 254;
-	dst.u8[2] = 204;
-	dst.u8[3] = 66;
-
-	ipv4_addr_t src = ipcp->ip;
+	ipv4_addr_t dst = ipv4->tunnel_addr;
+	ipv4_addr_t src = ipv4->ipcp->ip;
 
 	udp_hdr_t *udp_hdr = (udp_hdr_t*) udp->data;
 	udp_hdr->src_port = byteorder_htons(53209);
@@ -298,14 +288,16 @@ int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev, ppp_ipv4_t *ipv4, ipcp_t *ipcp, gnrc_p
 	((ppp_protocol_t*) ipv4)->handler = &handle_ipv4;
 	ipv4->ipcp = ipcp;
 	ipv4->pppdev = pppdev;
+	ipv4->tunnel_addr.u32 = byteorder_htonl(0);
+	ipv4->tunnel_port = 0;
 	return 0;
 }
 
-static gnrc_pktsnip_t *_encapsulate_pkt(ipcp_t *ipcp, gnrc_pktsnip_t *pkt)
+static gnrc_pktsnip_t *_encapsulate_pkt(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *pkt)
 {
 	gnrc_pktsnip_t *sent_pkt;
-	sent_pkt = _build_udp(ipcp, pkt);
-	sent_pkt = gen_ip_pkt(ipcp, sent_pkt, 17);
+	sent_pkt = _build_udp(ipv4, pkt);
+	sent_pkt = gen_ip_pkt(ipv4, sent_pkt, 17);
 	return sent_pkt;
 }
 
@@ -322,7 +314,7 @@ int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 	/* Remove netif*/
 	pkt = gnrc_pktbuf_remove_snip(pkt, pkt);
 
-	gnrc_pktsnip_t *send_pkt = _encapsulate_pkt(&ppp_dev->l_ipcp, pkt);
+	gnrc_pktsnip_t *send_pkt = _encapsulate_pkt(&ppp_dev->l_ipv4, pkt);
 	gnrc_ppp_send(ppp_dev, send_pkt);
 	return 0;
 }

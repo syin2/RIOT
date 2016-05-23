@@ -6,6 +6,7 @@
 #include "shell_commands.h"
 
 #include "msg.h"
+#include "net/ipv4/hdr.h"
 
 #define ENABLE_SHELL (1)
 #define MAIN_QUEUE_SIZE     (8)
@@ -21,7 +22,13 @@ int main(void)
 	DEBUG("Number of interfaces: %i\n", gnrc_netif_get(netifs));
 
 	char apn[] ="mmsbouygtel.com";
+	ipv4_addr_t tunnel_addr;
+	tunnel_addr.u8[0] = 51;
+	tunnel_addr.u8[1] = 254;
+	tunnel_addr.u8[2] = 204;
+	tunnel_addr.u8[3] = 66;
 	gnrc_netapi_set(netifs[1], NETOPT_APN_NAME, 0, apn, sizeof(apn)-1);
+	gnrc_netapi_set(netifs[1], NETOPT_TUNNEL_IPV4_ADDRESS, 0, (void*) &tunnel_addr , sizeof(ipv4_addr_t));
 
 	msg_t msg;
 	gnrc_ppp_dial_up(&msg, netifs[1]);

@@ -211,6 +211,8 @@ typedef enum {
 	NETOPT_APN_USER,
 	NETOPT_APN_PASSWORD,
 	NETOPT_ACCM,
+	NETOPT_TUNNEL_IPV4_ADDRESS,
+	NETOPT_TUNNEL_UDP_PORT,
 
     /* add more options if needed */
 

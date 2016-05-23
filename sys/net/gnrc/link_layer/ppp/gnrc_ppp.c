@@ -35,7 +35,7 @@
 #include <errno.h>
 #include <string.h>
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG    (1)
 #include "debug.h"
 
 #if ENABLE_DEBUG
@@ -475,6 +475,16 @@ int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
 		case NETOPT_APN_NAME:
 			DEBUG("Setting APN!\n");
 			res = dev->netdev->driver->set(dev->netdev, PPPOPT_APN_NAME, value, value_len);
+			break;
+		case NETOPT_TUNNEL_IPV4_ADDRESS:
+			DEBUG("Setting tunnel IPv4 address\n");
+			dev->l_ipv4.tunnel_addr = *((ipv4_addr_t*) value);
+			res = 0;
+			break;
+		case NETOPT_TUNNEL_UDP_PORT:
+			DEBUG("Setting tunnel UDP port\n");
+			dev->l_ipv4.tunnel_port = *((uint16_t*) value);
+			res = 0;
 			break;
 		default:
 			DEBUG("Unknown option\n");
