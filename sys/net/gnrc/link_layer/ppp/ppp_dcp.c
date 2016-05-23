@@ -1,7 +1,7 @@
 #include "net/gnrc/ppp/ppp.h"
 
-#define ENABLE_DEBUG    (0)
-#define ENABLE_MONITOR (1)
+#define ENABLE_DEBUG    (1)
+#define ENABLE_MONITOR (0)
 #include "debug.h"
 
 int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)

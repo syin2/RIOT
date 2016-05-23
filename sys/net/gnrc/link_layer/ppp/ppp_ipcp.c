@@ -247,7 +247,7 @@ gnrc_pktsnip_t *_build_udp(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *pkt)
 
 	udp_hdr_t *udp_hdr = (udp_hdr_t*) udp->data;
 	udp_hdr->src_port = byteorder_htons(53209);
-	udp_hdr->dst_port = byteorder_htons(9876);
+	udp_hdr->dst_port = byteorder_htons(ipv4->tunnel_port);
 	udp_hdr->length = byteorder_htons(gnrc_pkt_len(udp));
 	udp_hdr->checksum = byteorder_htons(0);
 	

@@ -23,12 +23,14 @@ int main(void)
 
 	char apn[] ="mmsbouygtel.com";
 	ipv4_addr_t tunnel_addr;
+	uint16_t port = 9876;
 	tunnel_addr.u8[0] = 51;
 	tunnel_addr.u8[1] = 254;
 	tunnel_addr.u8[2] = 204;
 	tunnel_addr.u8[3] = 66;
 	gnrc_netapi_set(netifs[1], NETOPT_APN_NAME, 0, apn, sizeof(apn)-1);
 	gnrc_netapi_set(netifs[1], NETOPT_TUNNEL_IPV4_ADDRESS, 0, (void*) &tunnel_addr , sizeof(ipv4_addr_t));
+	gnrc_netapi_set(netifs[1], NETOPT_TUNNEL_UDP_PORT, 0, (void*) &port , sizeof(uint16_t));
 
 	msg_t msg;
 	gnrc_ppp_dial_up(&msg, netifs[1]);

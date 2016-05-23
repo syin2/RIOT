@@ -512,6 +512,7 @@ void *_gnrc_ppp_thread(void *args)
 	gnrc_netapi_opt_t *opt;
     while(1)
     {
+		DEBUG("gnrc_ppp: waiting for msg\n");
     	msg_receive(&msg);
 		event = msg.content.value;	
 		switch(msg.type){
