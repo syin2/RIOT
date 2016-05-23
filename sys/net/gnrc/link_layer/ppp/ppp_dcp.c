@@ -11,65 +11,57 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 	xtimer_t *xtimer = &((dcp_t*) protocol)->xtimer;
 	dcp_t *dcp = (dcp_t*) protocol;
 	pppdev_t *pppdev = dcp->pppdev->netdev;
-	DEBUG("In DCP handler\n");
+
 	switch(ppp_event)
 	{
 		case PPP_UL_STARTED:
 			DEBUG("Driver: PPP_UL_STARTED\n");
 			break;
+
 		case PPP_UL_FINISHED:
 			DEBUG("Driver: PPP_UL_FINISHED\n");
 			/*Remove timer*/
 			xtimer_remove(xtimer);
-
 			pppdev->driver->link_down(pppdev);
 			break;
+
 		case PPP_LINKUP:
 			DEBUG("Driver: PPP_LINKUP\n");
-			msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-			msg->content.value = (ID_LCP << 8) | (PPP_LINKUP & 0xFFFF);
-			msg_send(msg, thread_getpid());
-
+			send_ppp_event(msg, ppp_msg_set(ID_LCP, PPP_LINKUP));
 #if ENABLE_MONITOR
 			/*Start monitor*/
-			timer_msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-			timer_msg->content.value = (ID_PPPDEV<<8) | PPP_MONITOR;		
-			xtimer_set_msg(xtimer, 5000000, timer_msg, thread_getpid());
+			send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(ID_PPPDEV, PPP_MONITOR), 5000000);
 #endif
 			break;
+
 		case PPP_LINKDOWN:
 			DEBUG("Driver: PPP_LINKDOWN\n");
-			msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-			msg->content.value = (ID_LCP << 8) | (PPP_LINKDOWN & 0xFFFF);
-			msg_send(msg, thread_getpid());
+			send_ppp_event(msg, ppp_msg_set(ID_LCP, PPP_LINKDOWN));
 			break;
+
 		case PPP_MONITOR:
 			if(dcp->dead_counter)
 			{
-				msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-				msg->content.value = (ID_LCP<<8) | PPP_MONITOR;		
-				msg_send(msg, thread_getpid());
-
-				timer_msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-				timer_msg->content.value = (ID_PPPDEV<<8) | PPP_MONITOR;		
-				xtimer_set_msg(xtimer, 5000000, timer_msg, thread_getpid());
+				send_ppp_event(msg, ppp_msg_set(ID_LCP, PPP_MONITOR));
+				send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(ID_PPPDEV, PPP_MONITOR), 5000000);
 				dcp->dead_counter -= 1;
 			}
 			else
 			{
-				msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-				msg->content.value = (ID_PPPDEV<<8) | PPP_UL_FINISHED;		
-				msg_send(msg, thread_getpid());
+				send_ppp_event(msg, ppp_msg_set(ID_PPPDEV, PPP_UL_FINISHED));
 				dcp->dead_counter = DCP_DEAD_COUNTER;
 			}
 			break;
+
 		case PPP_LINK_ALIVE:
 			DEBUG("Received ECHO request! Link working! :)\n");
 			dcp->dead_counter = DCP_DEAD_COUNTER;
 			break;
+
 		case PPP_DIALUP:
 			DEBUG("Dialing device driver\n");
 			pppdev->driver->dial_up(pppdev);
+			break;
 		default:
 			DEBUG("DCP: Receive unknown message\n");
 			break;
