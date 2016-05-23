@@ -62,7 +62,7 @@ typedef enum{
 	S_ACK_SENT,
 	S_OPENED,
 	PPP_NUM_STATES
-} ppp_cp_state_t;
+} fsm_state_t;
 
 
 /* state transition for control layer FSM */
@@ -115,22 +115,14 @@ typedef struct ppp_fsm_t{
 	gnrc_nettype_t prottype;
 	uint16_t supported_codes;
 	uint8_t state;
-
 	uint8_t restart_counter;
-	uint8_t counter_failure;
 	uint32_t restart_timer;
-
 	struct gnrc_pppdev_t *dev;
 	xtimer_t xtimer;
-
-	/* For Configure Request */
 	uint8_t cr_sent_identifier;
 	uint8_t cr_sent_opts[OPT_PAYLOAD_BUF_SIZE];
 	uint16_t cr_sent_size;
-
-	/* For terminate request */
 	uint8_t tr_sent_identifier;
-
 	msg_t msg;
 	cp_conf_t* (*get_conf_by_code)(ppp_fsm_t *cp, uint8_t code);
 	cp_conf_t *conf;
@@ -144,41 +136,15 @@ typedef struct cp_conf_t
 	network_uint32_t default_value;
 	size_t size;
 	uint8_t flags;
-
 	uint8_t (*is_valid)(ppp_option_t *opt);
 	uint8_t (*build_nak_opts)(ppp_option_t *opt);
 	void (*set)(ppp_fsm_t *t, ppp_option_t *opt, uint8_t peer);
 	struct cp_conf_t *next;
 } cp_conf_t;
 
-/* Implementation of LCP fsm actions */
-void tlu(ppp_fsm_t *lcp, void *args);
-void tld(ppp_fsm_t *lcp, void *args);
-void tls(ppp_fsm_t *lcp, void *args);
-void tlf(ppp_fsm_t *lcp, void *args);
-void irc(ppp_fsm_t *lcp, void *args);
-void zrc(ppp_fsm_t *lcp, void *args);
-void scr(ppp_fsm_t *lcp, void *args);
-void sca(ppp_fsm_t *lcp, void *args);
-void scn(ppp_fsm_t *lcp, void *args);
-void str(ppp_fsm_t *lcp, void *args);
-void sta(ppp_fsm_t *lcp, void *args);
-void scj(ppp_fsm_t *lcp, void *args);
-void ser(ppp_fsm_t *lcp, void *args);
-
 int fsm_init(struct gnrc_pppdev_t *ppp_dev, ppp_fsm_t *cp);
 int trigger_fsm_event(ppp_fsm_t *cp, int event, gnrc_pktsnip_t *pkt);
-int handle_rcr(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt);
-int handle_rca(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
-int handle_rcn_nak(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
-int handle_rcn_rej(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
-int handle_coderej(ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt);
-int handle_term_ack(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt);
-int fsm_event_from_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt);
 int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args); 
-void send_fsm_msg(msg_t *msg, uint8_t target, uint8_t event);
-
-typedef int (*opt_callback_t)(uint8_t type, uint8_t *payload, size_t size, void **args);
 
 #ifdef __cplusplus
 }

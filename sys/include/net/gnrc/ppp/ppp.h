@@ -196,7 +196,6 @@ void gnrc_ppp_dispatch_pkt(msg_t *msg, kernel_pid_t pid);
 void gnrc_ppp_dial_up(msg_t *msg, kernel_pid_t pid);
 int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value_len);
 
-void send_protocol_msg(msg_t *msg, uint8_t target, uint8_t event);
 kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,
                         const char *name, gnrc_pppdev_t *gnrc_pppdev);
 

@@ -575,13 +575,6 @@ void gnrc_ppp_dial_up(msg_t *msg, kernel_pid_t pid)
 	gnrc_ppp_trigger_event(msg, pid, ID_PPPDEV, PPP_DIALUP);
 }
 
-void send_protocol_msg(msg_t *msg, uint8_t target, uint8_t event)
-{
-	msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-	msg->content.value = (target<<8) + event;
-	msg_send(msg, thread_getpid());
-}
-
 kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,
                         const char *name, gnrc_pppdev_t *gnrc_pppdev)
 {

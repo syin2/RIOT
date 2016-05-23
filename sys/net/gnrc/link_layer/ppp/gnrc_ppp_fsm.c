@@ -263,57 +263,6 @@ static void print_transition(int state, uint8_t event, int next_state)
 	DEBUG("\n");
 }
 #endif
-/* Call functions depending on function flag*/
-static void _event_action(ppp_fsm_t *cp, uint8_t event, gnrc_pktsnip_t *pkt) 
-{
-	int flags;
-
-	flags = actions[event][cp->state];
-
-	if(flags & F_TLU) tlu(cp, NULL);
-	if(flags & F_TLD) tld(cp, NULL);
-	if(flags & F_TLS) tls(cp, NULL);
-	if(flags & F_TLF) tlf(cp, NULL);
-	if(flags & F_IRC) irc(cp, (void*) &flags);
-	if(flags & F_ZRC) zrc(cp, NULL);
-	if(flags & F_SCR) scr(cp, (void*) pkt);
-	if(flags & F_SCA) sca(cp, (void*) pkt);
-	if(flags & F_SCN) scn(cp, (void*) pkt);
-	if(flags & F_STR) str(cp, NULL);
-	if(flags & F_STA) sta(cp, (void*) pkt);
-	if(flags & F_SCJ) scj(cp, (void*) pkt);
-	if(flags & F_SER) ser(cp, (void*) pkt);
-}
-
-int trigger_fsm_event(ppp_fsm_t *cp, int event, gnrc_pktsnip_t *pkt)
-{
-	if (event < 0)
-	{
-		return -EBADMSG;
-	}
-	int next_state;
-	next_state = state_trans[event][cp->state];
-#if ENABLE_DEBUG
-	DEBUG("%i> ", ((ppp_protocol_t*)cp)->id);
-	print_transition(cp->state, event, next_state);
-#endif
-
-	/* Keep in same state if there's something wrong (RFC 1661) */
-	if(next_state != S_UNDEF){
-		_event_action(cp, event, pkt);
-		cp->state = next_state;
-	}
-	else
-	{
-		DEBUG("Received illegal transition!\n");
-	}
-	/*Check if next state doesn't have a running timer*/
-	if (cp->state < S_CLOSING || cp->state == S_OPENED)
-	{
-		xtimer_remove(&cp->xtimer);
-	}
-	return 0;
-}
 
 void tlu(ppp_fsm_t *cp, void *args)
 {
@@ -504,6 +453,58 @@ void ser(ppp_fsm_t *cp, void *args)
 
 	/*Send PPP_LINK_ALIVE to lower layer*/
 	send_ppp_event(&cp->msg, ppp_msg_set(LOWER_LAYER(cp), PPP_LINK_ALIVE));
+}
+
+/* Call functions depending on function flag*/
+static void _event_action(ppp_fsm_t *cp, uint8_t event, gnrc_pktsnip_t *pkt) 
+{
+	int flags;
+
+	flags = actions[event][cp->state];
+
+	if(flags & F_TLU) tlu(cp, NULL);
+	if(flags & F_TLD) tld(cp, NULL);
+	if(flags & F_TLS) tls(cp, NULL);
+	if(flags & F_TLF) tlf(cp, NULL);
+	if(flags & F_IRC) irc(cp, (void*) &flags);
+	if(flags & F_ZRC) zrc(cp, NULL);
+	if(flags & F_SCR) scr(cp, (void*) pkt);
+	if(flags & F_SCA) sca(cp, (void*) pkt);
+	if(flags & F_SCN) scn(cp, (void*) pkt);
+	if(flags & F_STR) str(cp, NULL);
+	if(flags & F_STA) sta(cp, (void*) pkt);
+	if(flags & F_SCJ) scj(cp, (void*) pkt);
+	if(flags & F_SER) ser(cp, (void*) pkt);
+}
+
+int trigger_fsm_event(ppp_fsm_t *cp, int event, gnrc_pktsnip_t *pkt)
+{
+	if (event < 0)
+	{
+		return -EBADMSG;
+	}
+	int next_state;
+	next_state = state_trans[event][cp->state];
+#if ENABLE_DEBUG
+	DEBUG("%i> ", ((ppp_protocol_t*)cp)->id);
+	print_transition(cp->state, event, next_state);
+#endif
+
+	/* Keep in same state if there's something wrong (RFC 1661) */
+	if(next_state != S_UNDEF){
+		_event_action(cp, event, pkt);
+		cp->state = next_state;
+	}
+	else
+	{
+		DEBUG("Received illegal transition!\n");
+	}
+	/*Check if next state doesn't have a running timer*/
+	if (cp->state < S_CLOSING || cp->state == S_OPENED)
+	{
+		xtimer_remove(&cp->xtimer);
+	}
+	return 0;
 }
 
 int fsm_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *cp)
