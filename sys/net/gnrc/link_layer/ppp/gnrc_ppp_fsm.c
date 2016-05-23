@@ -285,7 +285,7 @@ static void _event_action(ppp_fsm_t *cp, uint8_t event, gnrc_pktsnip_t *pkt)
 	if(flags & F_SER) ser(cp, (void*) pkt);
 }
 
-int trigger_event(ppp_fsm_t *cp, int event, gnrc_pktsnip_t *pkt)
+int trigger_fsm_event(ppp_fsm_t *cp, int event, gnrc_pktsnip_t *pkt)
 {
 	if (event < 0)
 	{
@@ -485,7 +485,7 @@ void ser(ppp_fsm_t *cp, void *args)
 	gnrc_pktsnip_t *data = NULL;
 	if(pkt != ppp_hdr)
 	{
-		data = pkt;
+		data = gnrc_pktbuf_add(NULL, pkt->data, pkt->size, GNRC_NETTYPE_UNDEF);
 	}
 
 	switch(code)
@@ -502,8 +502,8 @@ void ser(ppp_fsm_t *cp, void *args)
 			break;
 	}
 
-	/*Send PPP_LINK_ALIVE to upper layer*/
-	send_ppp_event(&cp->msg, ppp_msg_set((cp->targets >> 8) & 0xffff, PPP_LINK_ALIVE));
+	/*Send PPP_LINK_ALIVE to lower layer*/
+	send_ppp_event(&cp->msg, ppp_msg_set(LOWER_LAYER(cp), PPP_LINK_ALIVE));
 }
 
 int fsm_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *cp)
@@ -823,34 +823,31 @@ int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void 
 		case PPP_RECV:
 			event = fsm_event_from_pkt(target, pkt);
 			if(event > 0)
-				trigger_event(target, event, pkt);
-
-			/*TODO: Fix this*/
+				trigger_fsm_event(target, event, pkt);
 			gnrc_pktbuf_release(pkt);
 			break;
 		case PPP_LINKUP:
 			DEBUG("Event: PPP_LINKUP\n");
-			/*Set here PPP states...*/
-			trigger_event(target, E_UP, NULL);
+			trigger_fsm_event(target, E_UP, NULL);
 			break;
 		case PPP_LINKDOWN:
 			DEBUG("Event: PPP_LINKDOWN\n");
-			trigger_event(target, E_DOWN, NULL);
+			trigger_fsm_event(target, E_DOWN, NULL);
 			break;
 		case PPP_UL_STARTED:
 			if(target->state == S_OPENED)
-				send_ppp_event(&target->msg, ppp_msg_set((target->targets) & 0xffff, PPP_LINKUP));
+				send_ppp_event(&target->msg, ppp_msg_set(UPPER_LAYER(target), PPP_LINKUP));
 			break;
 		case PPP_TIMEOUT:
 			if(target->restart_counter)
 			{
 				DEBUG("Event: TO+\n");
-				trigger_event(target, E_TOp, NULL);
+				trigger_fsm_event(target, E_TOp, NULL);
 			}
 			else
 			{
 				DEBUG("Event: TO-\n");
-				trigger_event(target, E_TOm, NULL);
+				trigger_fsm_event(target, E_TOm, NULL);
 			}
 			break;
 	}

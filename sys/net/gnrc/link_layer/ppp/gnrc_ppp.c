@@ -270,8 +270,8 @@ int gnrc_ppp_setup(gnrc_pppdev_t *dev, pppdev_t *netdev)
 	ppp_ipv4_init(dev, (ppp_ipv4_t*) &dev->l_ipv4, (ipcp_t*) &dev->l_ipcp, dev);
 	pap_init(dev, (pap_t*) &dev->l_pap);
 
-	trigger_event((ppp_fsm_t*) &dev->l_lcp, E_OPEN, NULL);
-	trigger_event((ppp_fsm_t*) &dev->l_ipcp, E_OPEN, NULL);
+	trigger_fsm_event((ppp_fsm_t*) &dev->l_lcp, E_OPEN, NULL);
+	trigger_fsm_event((ppp_fsm_t*) &dev->l_ipcp, E_OPEN, NULL);
 	return 0;
 }
 
