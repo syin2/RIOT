@@ -16,10 +16,8 @@ typedef struct pap_t
 	char password[1];
 	uint8_t counter;
 	uint8_t id;
-	struct gnrc_pppdev_t *dev;
 	xtimer_t xtimer;
 	msg_t timer_msg;
-	msg_t msg;
 } pap_t;
 
 int pap_init(struct gnrc_pppdev_t *ppp_dev, pap_t *pap);

@@ -117,13 +117,11 @@ typedef struct ppp_fsm_t{
 	uint8_t state;
 	uint8_t restart_counter;
 	uint32_t restart_timer;
-	struct gnrc_pppdev_t *dev;
 	xtimer_t xtimer;
 	uint8_t cr_sent_identifier;
 	uint8_t cr_sent_opts[OPT_PAYLOAD_BUF_SIZE];
 	uint16_t cr_sent_size;
 	uint8_t tr_sent_identifier;
-	msg_t msg;
 	cp_conf_t* (*get_conf_by_code)(ppp_fsm_t *cp, uint8_t code);
 	cp_conf_t *conf;
 	uint16_t targets;

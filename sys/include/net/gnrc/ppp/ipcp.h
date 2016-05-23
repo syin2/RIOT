@@ -27,8 +27,6 @@ typedef struct ipcp_t
 typedef struct ppp_ipv4_t
 {
 	ppp_protocol_t prot;
-	ipcp_t *ipcp;
-	struct gnrc_pppdev_t *pppdev;
 	ipv4_addr_t tunnel_addr;
 	uint16_t tunnel_port;
 } ppp_ipv4_t;

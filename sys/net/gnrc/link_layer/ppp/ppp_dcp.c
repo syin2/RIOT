@@ -6,11 +6,11 @@
 
 int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
-	msg_t *msg = &((dcp_t*) protocol)->msg;
+	msg_t *msg = &protocol->msg;
 	msg_t *timer_msg = &((dcp_t*) protocol)->timer_msg;
 	xtimer_t *xtimer = &((dcp_t*) protocol)->xtimer;
 	dcp_t *dcp = (dcp_t*) protocol;
-	pppdev_t *pppdev = dcp->pppdev->netdev;
+	pppdev_t *pppdev = protocol->pppdev->netdev;
 
 	switch(ppp_event)
 	{
@@ -61,6 +61,7 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 		case PPP_DIALUP:
 			DEBUG("Dialing device driver\n");
 			pppdev->driver->dial_up(pppdev);
+			DEBUG("Break\n");
 			break;
 		default:
 			DEBUG("DCP: Receive unknown message\n");
@@ -71,9 +72,9 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 int dcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *dcp)
 {
 	dcp->handler = &dcp_handler;
+	dcp->pppdev = ppp_dev;
 	dcp->id = ID_PPPDEV;
 	((dcp_t*) dcp)->sent_id = 0;
-	((dcp_t*) dcp)->pppdev = ppp_dev;
 	((dcp_t*) dcp)->dead_counter = DCP_DEAD_COUNTER;
 	return 0;
 }

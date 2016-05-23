@@ -6,6 +6,7 @@
 #include <inttypes.h>
 #include <byteorder.h>
 #include "net/ppp/hdr.h"
+#include "msg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,6 +16,8 @@ typedef struct ppp_protocol_t
 {
 	int (*handler)(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args);
 	uint8_t id;
+	msg_t msg;
+	struct gnrc_pppdev_t *pppdev;
 } ppp_protocol_t;
 
 typedef uint16_t ppp_msg_t;

@@ -153,12 +153,10 @@ typedef struct pppdev_t
 typedef struct dcp_t
 {
 	ppp_protocol_t prot;
-	msg_t msg;
 	msg_t timer_msg;
 	xtimer_t xtimer;
 	int sent_id;
 	uint8_t dead_counter;
-	struct gnrc_pppdev_t *pppdev; 
 } dcp_t;
 
 

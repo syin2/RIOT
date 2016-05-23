@@ -104,11 +104,12 @@ uint8_t lcp_accm_build_nak_opts(uint8_t *buf)
 
 void lcp_accm_set(ppp_fsm_t *lcp, ppp_option_t *opt, uint8_t peer)
 {
+	gnrc_pppdev_t *dev = ((ppp_protocol_t*) lcp)->pppdev;
 	DEBUG("Setting ACCM\n");
 	if(peer)
-		lcp->dev->netdev->driver->set(lcp->dev->netdev, PPPOPT_ACCM_RX, (void*) ppp_opt_get_payload(opt), 4);
+		dev->netdev->driver->set(dev->netdev, PPPOPT_ACCM_RX, (void*) ppp_opt_get_payload(opt), 4);
 	else
-		lcp->dev->netdev->driver->set(lcp->dev->netdev, PPPOPT_ACCM_TX, (void*) ppp_opt_get_payload(opt), 4);
+		dev->netdev->driver->set(dev->netdev, PPPOPT_ACCM_TX, (void*) ppp_opt_get_payload(opt), 4);
 }
 
 uint8_t lcp_auth_is_valid(ppp_option_t *opt)
@@ -198,12 +199,12 @@ int lcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 		/*Send Echo Request*/
 		DEBUG("Sending echo request");
 		gnrc_pktsnip_t *pkt = pkt_build(GNRC_NETTYPE_LCP, PPP_ECHO_REQ, lcp->cr_sent_identifier++, NULL);
-		gnrc_ppp_send(lcp->dev, pkt);
+		gnrc_ppp_send(protocol->pppdev, pkt);
 		return 0;
 	}
 	else if(ppp_event == PPP_UL_FINISHED)
 	{
-		send_ppp_event(&lcp->msg, ppp_msg_set((lcp->targets >> 8) & 0xffff, PPP_UL_FINISHED));
+		send_ppp_event(&protocol->msg, ppp_msg_set((lcp->targets >> 8) & 0xffff, PPP_UL_FINISHED));
 		return 0;
 	}
 	else
@@ -214,6 +215,7 @@ int lcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 
 int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
 {
+	((ppp_protocol_t*) lcp)->pppdev = ppp_dev;
 	fsm_init(ppp_dev, lcp);
 	lcp_config_init(lcp);
 

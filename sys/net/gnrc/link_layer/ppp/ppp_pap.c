@@ -15,7 +15,7 @@ gnrc_pktsnip_t *_pap_payload(pap_t *pap)
 int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
 	pap_t *pap = (pap_t*) protocol;
-	msg_t *msg = &pap->msg;
+	msg_t *msg = &protocol->msg;
 	gnrc_pktsnip_t *pkt, *sent_pkt;
 	xtimer_t *xtimer = &pap->xtimer;
 	msg_t *timer_msg = &pap->timer_msg;
@@ -27,7 +27,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			DEBUG("Starting PAP\n");
 			pkt = _pap_payload(pap);
 			sent_pkt = pkt_build(GNRC_NETTYPE_PAP, 1, ++pap->id, pkt);
-			gnrc_ppp_send(pap->dev, sent_pkt);
+			gnrc_ppp_send(protocol->pppdev, sent_pkt);
 			timer_msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
 			timer_msg->content.value = (ID_PAP<<8) | PPP_TIMEOUT;		
 			xtimer_set_msg(xtimer, 5000000, timer_msg, thread_getpid());
@@ -58,7 +58,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 		case PPP_TIMEOUT:
 			pkt = _pap_payload(pap);
 			sent_pkt = pkt_build(GNRC_NETTYPE_PAP, 1, ++pap->id, pkt);
-			gnrc_ppp_send(pap->dev, sent_pkt);
+			gnrc_ppp_send(protocol->pppdev, sent_pkt);
 			timer_msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
 			timer_msg->content.value = (ID_PAP<<8) | PPP_TIMEOUT;		
 			xtimer_set_msg(xtimer, 5000000, timer_msg, thread_getpid());
@@ -77,8 +77,8 @@ int pap_init(struct gnrc_pppdev_t *ppp_dev, pap_t *pap)
 	//pap->password = {0};
 	pap->counter = 3;
 	pap->id = 0;
-	pap->dev = ppp_dev;
 	pap->prot.handler = &pap_handler;
+	((ppp_protocol_t*) pap)->pppdev = ppp_dev;
 	return 0;
 }
 

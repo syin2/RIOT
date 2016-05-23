@@ -331,7 +331,7 @@ void send_protocol_reject(lcp_t *lcp, gnrc_pktsnip_t *ppp_pkt)
 	gnrc_pktbuf_remove_snip(ppp_pkt, ppp_pkt->next);
 	gnrc_pktsnip_t *rp = gnrc_pktbuf_add(ppp_pkt, &protocol, 2, GNRC_NETTYPE_UNDEF);
 	gnrc_pktsnip_t *send_pkt = pkt_build(GNRC_NETTYPE_LCP, PPP_PROT_REJ, lcp->pr_id++, rp);
-	gnrc_ppp_send(((ppp_fsm_t*) lcp)->dev, send_pkt);
+	gnrc_ppp_send(((ppp_protocol_t*) lcp)->pppdev, send_pkt);
 }
 
 int gnrc_ppp_get_state(gnrc_pppdev_t *dev)
