@@ -36,3 +36,7 @@ void send_code_rej(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc
 {
 	_send_ppp_pkt(dev, protocol, PPP_CODE_REJ, id, rejected);
 }
+void send_echo_reply(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *data)
+{
+	_send_ppp_pkt(dev, protocol, PPP_ECHO_REP, id, data);
+}

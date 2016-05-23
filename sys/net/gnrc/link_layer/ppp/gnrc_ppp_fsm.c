@@ -479,21 +479,20 @@ void ser(ppp_fsm_t *cp, void *args)
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
 	gnrc_pktsnip_t *ppp_hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), cp->prottype);
 	ppp_hdr_t *hdr = ppp_hdr->data;
+	uint8_t id = ppp_hdr_get_id(hdr);
 	
+	uint8_t code = ppp_hdr_get_code(hdr);
 	gnrc_pktsnip_t *data = NULL;
-	gnrc_pktsnip_t *send_pkt;
 	if(pkt != ppp_hdr)
 	{
 		data = pkt;
 	}
 
-	uint8_t code = ppp_hdr_get_code(hdr);
 	switch(code)
 	{
 		case PPP_ECHO_REQ:
 			DEBUG(">  Sending Echo Reply\n");
-			send_pkt = pkt_build(cp->prottype, PPP_ECHO_REP, ppp_hdr_get_id(hdr), data);
-			gnrc_ppp_send(cp->dev, send_pkt);
+			send_echo_reply(cp->dev, cp->prottype, id, data);
 			break;
 		case PPP_ECHO_REP:
 			DEBUG(">  Received echo reply. Nothing to do\n");
@@ -502,11 +501,12 @@ void ser(ppp_fsm_t *cp, void *args)
 			DEBUG(">  Received Discard Request. Nothing to do\n");
 			break;
 	}
+
 	/*Send PPP_LINK_ALIVE to upper layer*/
 	send_ppp_event(&cp->msg, ppp_msg_set((cp->targets >> 8) & 0xffff, PPP_LINK_ALIVE));
 }
 
-int cp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *cp)
+int fsm_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *cp)
 {
 	cp->state = S_INITIAL;
 	cp->cr_sent_identifier = 0;
@@ -521,8 +521,7 @@ static int _opt_is_ack(ppp_fsm_t *cp, ppp_option_t *opt)
 	return curr_conf && curr_conf->is_valid(opt);
 }
 
-int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr)
-{
+int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr) {
 	if(pkt->type == GNRC_NETTYPE_UNDEF)
 	{
 		*ppp_hdr = (ppp_hdr_t*) pkt->next->data;

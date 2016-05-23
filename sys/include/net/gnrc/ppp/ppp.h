@@ -207,6 +207,7 @@ void send_configure_rej(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id,
 void send_terminate_req(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id);
 void send_terminate_ack(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *response);
 void send_code_rej(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *rejected);
+void send_echo_reply(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *data);
 #ifdef __cplusplus
 }
 #endif

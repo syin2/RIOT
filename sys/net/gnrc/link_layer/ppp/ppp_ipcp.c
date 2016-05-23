@@ -31,7 +31,7 @@
 #include "net/icmp.h"
 #include <errno.h>
 
-#define ENABLE_DEBUG    (1)
+#define ENABLE_DEBUG    (0)
 #include "debug.h"
 
 #if ENABLE_DEBUG
@@ -99,7 +99,7 @@ static void ipcp_config_init(ppp_fsm_t *ipcp)
 
 int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *ipcp)
 {
-	cp_init(ppp_dev, ipcp);
+	fsm_init(ppp_dev, ipcp);
 	ipcp_config_init(ipcp);
 
 	ipcp->supported_codes = FLAG_CONF_REQ | FLAG_CONF_ACK | FLAG_CONF_NAK | FLAG_CONF_REJ | FLAG_TERM_REQ | FLAG_TERM_ACK | FLAG_CODE_REJ;
@@ -214,10 +214,10 @@ gnrc_pktsnip_t *gen_ip_pkt(ipcp_t *ipcp, gnrc_pktsnip_t *payload, uint8_t protoc
 	ipv4_hdr_t *hdr = pkt->data;	
 	
 	ipv4_addr_t dst;
-	dst.u8[0] = 92;
-	dst.u8[1] = 243;
-	dst.u8[2] = 22;
-	dst.u8[3] = 149;
+	dst.u8[0] = 51;
+	dst.u8[1] = 254;
+	dst.u8[2] = 204;
+	dst.u8[3] = 66;
 
 	ipv4_addr_t src = ipcp->ip;
 
@@ -242,18 +242,18 @@ gnrc_pktsnip_t *gen_ip_pkt(ipcp_t *ipcp, gnrc_pktsnip_t *payload, uint8_t protoc
 
 /** END OF TEST SECTION **/
 
-gnrc_pktsnip_t *_build_udp(gnrc_pppdev_t *pppdev, gnrc_pktsnip_t *pkt)
+gnrc_pktsnip_t *_build_udp(ipcp_t *ipcp, gnrc_pktsnip_t *pkt)
 {
 	/* Add UDP header */
 	gnrc_pktsnip_t *udp = gnrc_pktbuf_add(pkt, NULL, sizeof(udp_hdr_t), GNRC_NETTYPE_UNDEF);
 
 	ipv4_addr_t dst;
-	dst.u8[0] = 92;
-	dst.u8[1] = 243;
-	dst.u8[2] = 22;
-	dst.u8[3] = 149;
+	dst.u8[0] = 51;
+	dst.u8[1] = 254;
+	dst.u8[2] = 204;
+	dst.u8[3] = 66;
 
-	ipv4_addr_t src = pppdev->l_ipcp.ip;
+	ipv4_addr_t src = ipcp->ip;
 
 	udp_hdr_t *udp_hdr = (udp_hdr_t*) udp->data;
 	udp_hdr->src_port = byteorder_htons(53209);
@@ -301,14 +301,20 @@ int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev, ppp_ipv4_t *ipv4, ipcp_t *ipcp, gnrc_p
 	return 0;
 }
 
+static gnrc_pktsnip_t *_encapsulate_pkt(ipcp_t *ipcp, gnrc_pktsnip_t *pkt)
+{
+	gnrc_pktsnip_t *sent_pkt;
+	sent_pkt = _build_udp(ipcp, pkt);
+	sent_pkt = gen_ip_pkt(ipcp, sent_pkt, 17);
+	return sent_pkt;
+}
+
 int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 {
-	DEBUG("Received IPv6 packet from upper layer. (Not yet really)\n");
-
 	int ipv4_ready = ((ppp_fsm_t*) &ppp_dev->l_ipcp)->state == S_OPENED;
 	if(!ipv4_ready)
 	{
-		DEBUG("Still not ready\n");
+		DEBUG("gnrc_ppp: IPCP down. Dropping packet.\n");
 		gnrc_pktbuf_release(pkt);
 		return -1;
 	}
@@ -316,10 +322,8 @@ int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 	/* Remove netif*/
 	pkt = gnrc_pktbuf_remove_snip(pkt, pkt);
 
-	gnrc_pktsnip_t *sent_pkt;
-	sent_pkt = _build_udp(ppp_dev, pkt);
-	sent_pkt = gen_ip_pkt(&ppp_dev->l_ipcp, sent_pkt, 17);
-	gnrc_ppp_send(ppp_dev, sent_pkt);
+	gnrc_pktsnip_t *send_pkt = _encapsulate_pkt(&ppp_dev->l_ipcp, pkt);
+	gnrc_ppp_send(ppp_dev, send_pkt);
 	return 0;
 }
 

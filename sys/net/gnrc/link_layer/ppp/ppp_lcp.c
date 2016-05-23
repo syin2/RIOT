@@ -27,7 +27,7 @@
 #include <errno.h>
 #include "net/gnrc/ppp/fsm.h"
 
-#define ENABLE_DEBUG    (1)
+#define ENABLE_DEBUG    (0)
 #include "debug.h"
 
 #if ENABLE_DEBUG
@@ -214,7 +214,7 @@ int lcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 
 int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
 {
-	cp_init(ppp_dev, lcp);
+	fsm_init(ppp_dev, lcp);
 	lcp_config_init(lcp);
 
 	lcp->supported_codes = FLAG_CONF_REQ | FLAG_CONF_ACK | FLAG_CONF_NAK | FLAG_CONF_REJ | FLAG_TERM_REQ | FLAG_TERM_ACK | FLAG_CODE_REJ | FLAG_ECHO_REQ | FLAG_ECHO_REP | FLAG_DISC_REQ;
