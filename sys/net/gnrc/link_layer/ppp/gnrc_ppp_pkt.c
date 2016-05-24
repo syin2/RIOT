@@ -40,3 +40,7 @@ void send_echo_reply(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gn
 {
 	_send_ppp_pkt(dev, protocol, PPP_ECHO_REP, id, data);
 }
+void send_protocol_reject(gnrc_pppdev_t *dev, uint8_t id, gnrc_pktsnip_t *pkt)
+{
+	_send_ppp_pkt(dev, GNRC_NETTYPE_LCP, PPP_PROT_REJ, id, pkt);
+}

@@ -323,16 +323,6 @@ int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 	return res;
 }
 
-void send_protocol_reject(lcp_t *lcp, gnrc_pktsnip_t *ppp_pkt)
-{
-	/* Remove hdlc header */
-	network_uint16_t protocol = byteorder_htons(hdlc_hdr_get_protocol(ppp_pkt->next->data));
-	gnrc_pktbuf_remove_snip(ppp_pkt, ppp_pkt->next);
-	gnrc_pktsnip_t *rp = gnrc_pktbuf_add(ppp_pkt, &protocol, 2, GNRC_NETTYPE_UNDEF);
-	gnrc_pktsnip_t *send_pkt = pkt_build(GNRC_NETTYPE_LCP, PPP_PROT_REJ, lcp->pr_id++, rp);
-	gnrc_ppp_send(((ppp_protocol_t*) lcp)->pppdev, send_pkt);
-}
-
 int gnrc_ppp_get_state(gnrc_pppdev_t *dev)
 {
 	ppp_fsm_t *lcp = (ppp_fsm_t*) &dev->l_lcp;
@@ -393,7 +383,11 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 		target = mark_ppp_pkt(pkt);
 		if(!target)
 		{
-			send_protocol_reject((lcp_t*) &dev->l_lcp, pkt);
+			/* Remove hdlc header */
+			network_uint16_t protocol = byteorder_htons(hdlc_hdr_get_protocol(pkt->next->data));
+			gnrc_pktbuf_remove_snip(pkt, pkt->next);
+			gnrc_pktsnip_t *rp = gnrc_pktbuf_add(pkt, &protocol, 2, GNRC_NETTYPE_UNDEF);
+			send_protocol_reject(dev, dev->l_lcp.pr_id++, rp);
 			return -EBADMSG;
 		}
 		ppp_state = gnrc_ppp_get_state(dev);
