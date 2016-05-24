@@ -190,7 +190,7 @@ void print_opts(gnrc_pktsnip_t *payload)
 			type = ppp_opt_get_type(curr_opt);
 			length = ppp_opt_get_length(curr_opt);
 			DEBUG("\n\t[TYPE:%i, LENGTH:%i, VALUE:<",type, length);
-			p = (uint8_t*) ppp_opt_get_payload(curr_opt);
+			ppp_opt_get_payload(curr_opt, (void**) &p);
 			for(int i=0;i<length-2; i++)
 			{
 				DEBUG(" %02x ", *(p+i));

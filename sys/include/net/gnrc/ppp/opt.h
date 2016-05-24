@@ -44,9 +44,10 @@ static inline void ppp_opt_set_length(ppp_option_t *opt, uint8_t length)
 	*(((uint8_t*) opt)+1) = length;
 }
 
-static inline void * ppp_opt_get_payload(ppp_option_t *opt)
+static inline uint8_t ppp_opt_get_payload(ppp_option_t *opt, void **payload)
 {
-	return (void*) (((uint8_t*) opt)+2);
+	*payload = ((uint8_t*) opt)+2;
+	return (uint8_t) *(((uint8_t*) opt)+1);
 }
 
 static inline void ppp_opt_set_payload(ppp_option_t *opt, void *data, size_t size)

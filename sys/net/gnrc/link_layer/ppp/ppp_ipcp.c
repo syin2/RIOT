@@ -71,10 +71,12 @@ uint8_t ipcp_ipaddress_build_nak_opts(uint8_t *buf)
 }
 void ipcp_ipaddress_set(ppp_fsm_t *ipcp, ppp_option_t *opt, uint8_t peer)
 {
+	uint8_t *payload;
+	ppp_opt_get_payload(opt, (void**) &payload);
 	if(!peer)
-		((ipcp_t*) ipcp)->ip = *((ipv4_addr_t*) ppp_opt_get_payload(opt));
+		((ipcp_t*) ipcp)->ip = *((ipv4_addr_t*) payload);
 	else
-		((ipcp_t*) ipcp)->local_ip = *((ipv4_addr_t*) ppp_opt_get_payload(opt));
+		((ipcp_t*) ipcp)->local_ip = *((ipv4_addr_t*) payload);
 }
 
 static void ipcp_config_init(ppp_fsm_t *ipcp)

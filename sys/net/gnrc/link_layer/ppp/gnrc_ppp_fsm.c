@@ -661,6 +661,7 @@ int handle_rcn_nak(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 	/*Handle nak for each option*/
 	cp_conf_t *curr_conf;
 	network_uint32_t value;
+	uint8_t *payload;
 
 	FOR_EACH_OPTION(opt, pkt->data, pkt->size)
 	{
@@ -674,7 +675,8 @@ int handle_rcn_nak(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 			else if(curr_conf->is_valid(opt))
 			{
 				value = byteorder_htonl(0);
-				memcpy(&value+(4-curr_conf->size), ppp_opt_get_payload(opt), curr_conf->size);
+				ppp_opt_get_payload(opt, (void**) &payload);
+				memcpy(&value+(4-curr_conf->size), payload, curr_conf->size);
 				curr_conf->value = value;
 			}
 			else

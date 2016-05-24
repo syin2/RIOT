@@ -52,7 +52,8 @@ static cp_conf_t *lcp_get_conf_by_code(ppp_fsm_t *cp, uint8_t code)
 
 uint8_t lcp_mru_is_valid(ppp_option_t *opt)
 {
-	uint8_t *payload = ppp_opt_get_payload(opt);
+	uint8_t *payload;
+	ppp_opt_get_payload(opt, (void**) &payload);
 	uint16_t u16 = ((*payload)<<8) + *(payload+1);
 	if(u16 > LCP_MAX_MRU){
 		return false;
@@ -77,13 +78,15 @@ uint8_t lcp_mru_build_nak_opts(uint8_t *buf)
 
 void lcp_mru_set(ppp_fsm_t *lcp, ppp_option_t *opt, uint8_t peer)
 {
+	uint8_t *payload;
+	ppp_opt_get_payload(opt, (void**) &payload);
 	if(peer)
 	{
-		((lcp_t*) lcp)->peer_mru = byteorder_ntohs(*((network_uint16_t*) ppp_opt_get_payload(opt)));
+		((lcp_t*) lcp)->peer_mru = byteorder_ntohs(*((network_uint16_t*) payload));
 	}
 	else
 	{
-		((lcp_t*) lcp)->mru = byteorder_ntohs(*((network_uint16_t*) ppp_opt_get_payload(opt)));
+		((lcp_t*) lcp)->mru = byteorder_ntohs(*((network_uint16_t*) payload));
 	}
 }
 
@@ -103,16 +106,18 @@ uint8_t lcp_accm_build_nak_opts(uint8_t *buf)
 void lcp_accm_set(ppp_fsm_t *lcp, ppp_option_t *opt, uint8_t peer)
 {
 	gnrc_pppdev_t *dev = ((ppp_protocol_t*) lcp)->pppdev;
+	uint8_t *payload;
+	ppp_opt_get_payload(opt, (void**) &payload);
 	if(peer)
-		dev->netdev->driver->set(dev->netdev, PPPOPT_ACCM_RX, (void*) ppp_opt_get_payload(opt), 4);
+		dev->netdev->driver->set(dev->netdev, PPPOPT_ACCM_RX, (void*) payload, sizeof(uint32_t));
 	else
-		dev->netdev->driver->set(dev->netdev, PPPOPT_ACCM_TX, (void*) ppp_opt_get_payload(opt), 4);
+		dev->netdev->driver->set(dev->netdev, PPPOPT_ACCM_TX, (void*) payload, sizeof(uint32_t));
 }
 
 uint8_t lcp_auth_is_valid(ppp_option_t *opt)
 {
 	network_uint16_t *u16;
-	u16 = (network_uint16_t*) ppp_opt_get_payload(opt);
+	ppp_opt_get_payload(opt, (void**) &u16);
 	uint16_t val = byteorder_ntohs(*u16);
 
 	/*Only accept PAP*/
@@ -126,7 +131,9 @@ uint8_t lcp_auth_build_nak_opts(uint8_t *buf)
 {
 	uint8_t len = 4;
 	ppp_option_t *opt = (ppp_option_t*) buf;
-	uint8_t *payload = ppp_opt_get_payload(opt);
+
+	uint8_t *payload;
+	ppp_opt_get_payload(opt, (void**) &payload);
 
 	if(opt)
 	{
