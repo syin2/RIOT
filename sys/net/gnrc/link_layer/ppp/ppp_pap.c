@@ -75,10 +75,8 @@ int pap_init(struct gnrc_pppdev_t *ppp_dev, pap_t *pap)
 {
 	//pap->username = {0};
 	//pap->password = {0};
+	ppp_protocol_init((ppp_protocol_t*) pap, ppp_dev, pap_handler, 241);
 	pap->counter = 3;
-	pap->id = 0;
-	pap->prot.handler = &pap_handler;
-	((ppp_protocol_t*) pap)->pppdev = ppp_dev;
 	return 0;
 }
 

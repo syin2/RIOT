@@ -215,17 +215,15 @@ int lcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 
 int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
 {
-	((ppp_protocol_t*) lcp)->pppdev = ppp_dev;
+	ppp_protocol_init((ppp_protocol_t*) lcp, ppp_dev, lcp_handler, ID_LCP);
 	fsm_init(ppp_dev, lcp);
 	lcp_config_init(lcp);
 
 	lcp->supported_codes = FLAG_CONF_REQ | FLAG_CONF_ACK | FLAG_CONF_NAK | FLAG_CONF_REJ | FLAG_TERM_REQ | FLAG_TERM_ACK | FLAG_CODE_REJ | FLAG_ECHO_REQ | FLAG_ECHO_REP | FLAG_DISC_REQ;
-	((ppp_protocol_t*)lcp)->id = ID_LCP;
 	((lcp_t*)lcp)->pr_id = 0;
 	lcp->prottype = GNRC_NETTYPE_LCP;
 	lcp->restart_timer = LCP_RESTART_TIMER;
 	lcp->get_conf_by_code = &lcp_get_conf_by_code;
-	lcp->prot.handler = &lcp_handler;
 	lcp->targets = ((ID_PPPDEV & 0xffff) << 8) | (BROADCAST_NCP & 0xffff);
 	((lcp_t*) lcp)->mru = 1500;
 	((lcp_t*) lcp)->peer_mru = 1500;

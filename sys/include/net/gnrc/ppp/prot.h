@@ -12,12 +12,18 @@
 extern "C" {
 #endif
 
+typedef enum {
+	PROTOCOL_DOWN,
+	PROTOCOL_UP
+} ppp_protocol_state_t;
+
 typedef struct ppp_protocol_t
 {
 	int (*handler)(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args);
 	uint8_t id;
 	msg_t msg;
 	struct gnrc_pppdev_t *pppdev;
+	ppp_protocol_state_t state;
 } ppp_protocol_t;
 
 typedef uint16_t ppp_msg_t;
@@ -41,6 +47,7 @@ static inline ppp_event_t ppp_msg_get_event(ppp_msg_t ppp_msg)
 
 void send_ppp_event(msg_t *msg, ppp_msg_t ppp_msg);
 void send_ppp_event_xtimer(msg_t *msg, xtimer_t *xtimer, ppp_msg_t ppp_msg, int timeout);
+void ppp_protocol_init(ppp_protocol_t *protocol, struct gnrc_pppdev_t *pppdev, int (*handler)(struct ppp_protocol_t*, uint8_t, void*), uint8_t id); 
 
 
 #ifdef __cplusplus

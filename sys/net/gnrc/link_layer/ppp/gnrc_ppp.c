@@ -594,3 +594,10 @@ kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,
 
     return res;
 }
+void ppp_protocol_init(ppp_protocol_t *protocol, struct gnrc_pppdev_t *pppdev, int (*handler)(struct ppp_protocol_t*, uint8_t, void*), uint8_t id)
+{
+	protocol->handler = handler;
+	protocol->id = id;
+	protocol->pppdev = pppdev;
+	protocol->state = PROTOCOL_DOWN;
+}

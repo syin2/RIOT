@@ -269,6 +269,7 @@ void tlu(ppp_fsm_t *cp, void *args)
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG("> This layer up (a.k.a Successfully negotiated Link)\n");
 	_reset_cp_conf(cp->conf);
+	((ppp_protocol_t*) cp)->state = PROTOCOL_UP;
 	send_ppp_event(&((ppp_protocol_t*)cp)->msg, ppp_msg_set(UPPER_LAYER(cp), PPP_LINKUP));
 	(void) cp;
 }
@@ -278,6 +279,7 @@ void tld(ppp_fsm_t *cp, void *args)
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG("> This layer down\n");
 	_reset_cp_conf(cp->conf);
+	((ppp_protocol_t*) cp)->state = PROTOCOL_DOWN;
 	send_ppp_event(&((ppp_protocol_t*) cp)->msg, ppp_msg_set(UPPER_LAYER(cp), PPP_LINKDOWN));
 	(void) cp;
 }

@@ -30,12 +30,14 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			send_ppp_event(msg, ppp_msg_set(ID_LCP, PPP_LINKUP));
 #if ENABLE_MONITOR
 			/*Start monitor*/
+			protocol->state = PROTOCOL_UP;
 			send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(ID_PPPDEV, PPP_MONITOR), 5000000);
 #endif
 			break;
 
 		case PPP_LINKDOWN:
 			DEBUG("Driver: PPP_LINKDOWN\n");
+			protocol->state = PROTOCOL_DOWN;
 			send_ppp_event(msg, ppp_msg_set(ID_LCP, PPP_LINKDOWN));
 			break;
 
@@ -71,9 +73,7 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 }
 int dcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *dcp)
 {
-	dcp->handler = &dcp_handler;
-	dcp->pppdev = ppp_dev;
-	dcp->id = ID_PPPDEV;
+	ppp_protocol_init(dcp, ppp_dev, dcp_handler, ID_PPPDEV); 
 	((dcp_t*) dcp)->sent_id = 0;
 	((dcp_t*) dcp)->dead_counter = DCP_DEAD_COUNTER;
 	return 0;

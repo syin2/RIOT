@@ -93,16 +93,14 @@ static void ipcp_config_init(ppp_fsm_t *ipcp)
 
 int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *ipcp)
 {
+	ppp_protocol_init((ppp_protocol_t*) ipcp, ppp_dev, fsm_handle_ppp_msg, ID_IPCP);
 	fsm_init(ppp_dev, ipcp);
 	ipcp_config_init(ipcp);
 
-	((ppp_protocol_t*) ipcp)->pppdev = ppp_dev;
 	ipcp->supported_codes = FLAG_CONF_REQ | FLAG_CONF_ACK | FLAG_CONF_NAK | FLAG_CONF_REJ | FLAG_TERM_REQ | FLAG_TERM_ACK | FLAG_CODE_REJ;
-	((ppp_protocol_t*) ipcp)->id = ID_IPCP;
 	ipcp->prottype = GNRC_NETTYPE_IPCP;
 	ipcp->restart_timer = IPCP_RESTART_TIMER;
 	ipcp->get_conf_by_code = &ipcp_get_conf_by_code;
-	ipcp->prot.handler = &fsm_handle_ppp_msg;
 	ipcp->targets = ((ID_LCP << 8) & 0xffff) | (ID_IPV4 & 0xffff);
 	((ipcp_t*) ipcp)->ip_id = 123420;
 	return 0;
@@ -199,7 +197,12 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 		case PPP_LINKUP:
 			DEBUG("Msg: Obtained IP address! \n");
 			DEBUG("Ip address is %i.%i.%i.%i\n",ipcp->ip.u8[0],ipcp->ip.u8[1],ipcp->ip.u8[2],ipcp->ip.u8[3]);	
+			protocol->state = PROTOCOL_UP;
 			(void) pkt;
+			break;
+		case PPP_LINKDOWN:
+			DEBUG("IPv4 down\n");
+			protocol->state = PROTOCOL_DOWN;
 			break;
 		case PPP_RECV:
 			ppp_ipv4_recv(pppdev, recv_pkt);
@@ -214,8 +217,7 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 
 int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev, ppp_ipv4_t *ipv4, ipcp_t *ipcp, gnrc_pppdev_t *pppdev)
 {
-	((ppp_protocol_t*) ipv4)->handler = &handle_ipv4;
-	((ppp_protocol_t*) ipv4)->pppdev = ppp_dev;
+	ppp_protocol_init((ppp_protocol_t*) ipv4, ppp_dev, handle_ipv4, 240); 
 	ipv4->tunnel_addr.u32 = byteorder_htonl(0);
 	ipv4->tunnel_port = 0;
 	return 0;
@@ -231,7 +233,7 @@ static gnrc_pktsnip_t *_encapsulate_pkt(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *pkt)
 
 int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 {
-	int ipv4_ready = ((ppp_fsm_t*) &ppp_dev->l_ipcp)->state == S_OPENED;
+	int ipv4_ready = ((ppp_protocol_t*) &ppp_dev->l_ipcp)->state == PROTOCOL_UP;
 	if(!ipv4_ready)
 	{
 		DEBUG("gnrc_ppp: IPCP down. Dropping packet.\n");
