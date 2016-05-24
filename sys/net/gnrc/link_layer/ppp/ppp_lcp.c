@@ -64,13 +64,12 @@ uint8_t lcp_mru_build_nak_opts(uint8_t *buf)
 {
 	uint8_t len = 4;
 	ppp_option_t *opt = (ppp_option_t*) buf;
-	uint8_t *payload = ppp_opt_get_payload(opt);
+	network_uint16_t mru = byteorder_htons(LCP_DEFAULT_MRU);
 	if(opt)
 	{
 		ppp_opt_set_type(opt, 1);	
 		ppp_opt_set_length(opt, len);
-		*payload = (LCP_DEFAULT_MRU & 0xFF00) >> 8;
-		*(payload+1) = LCP_DEFAULT_MRU & 0xFF;
+		ppp_opt_set_payload(opt, &mru, sizeof(network_uint16_t));
 	}
 	return len;
 }
