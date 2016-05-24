@@ -75,12 +75,12 @@ gnrc_pktsnip_t * pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gn
 	return ppp_pkt;
 }
 
-uint8_t mark_ppp_pkt(gnrc_pktsnip_t *pkt)
+int mark_ppp_pkt(gnrc_pktsnip_t *pkt)
 {
 	gnrc_pktsnip_t *result = gnrc_pktbuf_mark(pkt, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
 	if (!result) {
 		DEBUG("gnrc_ppp: no space left in packet buffer\n");
-		return 0; /*TODO:Fix right value */	
+		return -ENOBUFS;
 	}
 	
 	hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t*) result->data;
@@ -287,7 +287,6 @@ int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 	gnrc_pktsnip_t *hdr = gnrc_pktbuf_add(pkt, (void*) &hdlc_hdr, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
 	DEBUG(">>>>>>>>>> SEND:");
 
-	/*TODO: De-hardcode this*/
 	if(hdlc_hdr_get_protocol(&hdlc_hdr) == PPPTYPE_IPV4)
 	{
 		DEBUG("HDLC's IPV4: <");
