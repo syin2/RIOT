@@ -12,6 +12,9 @@
 extern "C" {
 #endif
 
+#define UPPER_LAYER(cp) (cp->targets & 0xffff)
+#define LOWER_LAYER(cp) ((cp->targets >> 8) & 0xffff)
+
 typedef enum {
 	PROTOCOL_DOWN,
 	PROTOCOL_UP

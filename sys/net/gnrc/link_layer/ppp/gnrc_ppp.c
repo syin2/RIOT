@@ -369,10 +369,10 @@ uint8_t _pkt_allowed(uint8_t state, uint8_t target)
 	return 0;
 }
 
-int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
+int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 {
-	uint8_t target = (ppp_msg & 0xFF00)>>8;
-	uint8_t event = ppp_msg & 0xFF;
+	ppp_target_t target = ppp_msg_get_target(ppp_msg);
+	ppp_event_t event = ppp_msg_get_event(ppp_msg);
 	int ppp_state;
 	(void) ppp_state;
 	gnrc_pktsnip_t *pkt = NULL;

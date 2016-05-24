@@ -27,9 +27,6 @@
 #define FOR_EACH_CONF(conf, head) \
 	for(cp_conf_t *conf = head; conf != NULL; conf = conf->next)
 
-#define UPPER_LAYER(cp) (cp->targets & 0xffff)
-#define LOWER_LAYER(cp) ((cp->targets >> 8) & 0xffff)
-
 void set_timeout(ppp_fsm_t *cp, uint32_t time)
 {
 	ppp_target_t self = ((ppp_protocol_t*)cp)->id;

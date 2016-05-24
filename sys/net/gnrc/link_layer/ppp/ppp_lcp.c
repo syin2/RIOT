@@ -198,7 +198,7 @@ int lcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 	}
 	else if(ppp_event == PPP_UL_FINISHED)
 	{
-		send_ppp_event(&protocol->msg, ppp_msg_set((lcp->targets >> 8) & 0xffff, PPP_UL_FINISHED));
+		send_ppp_event(&protocol->msg, ppp_msg_set(LOWER_LAYER(lcp), PPP_UL_FINISHED));
 		return 0;
 	}
 	else
