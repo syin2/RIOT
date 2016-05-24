@@ -114,6 +114,10 @@ static inline void _write_rx_char(sim900_t *dev, uint8_t data)
 {
     uint8_t c;
 
+	/* Prevent buffer overflow. Shouldn't happen, but just in case. Pkt will be dropped due to wrong checksum */
+	if(dev->int_count >= dev->rx_len)
+		dev->int_count = 0;
+
     if (!(data <= HDLC_SIX_CMPL && dev->rx_accm & (1 << data))) {
         dev->ppp_rx_state = PPP_RX_STARTED;
         c = data ^ dev->escape;
