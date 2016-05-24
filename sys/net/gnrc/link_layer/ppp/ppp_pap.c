@@ -7,8 +7,11 @@
 
 gnrc_pktsnip_t *_pap_payload(pap_t *pap)
 {
-	uint8_t data[2] = {0,0};
-	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, (void*) data, 2, GNRC_NETTYPE_UNDEF);
+	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, 2+pap->user_size+pap->pass_size, GNRC_NETTYPE_UNDEF);
+	*((uint8_t*) pkt->data) = pap->user_size;
+	memcpy(((uint8_t*) pkt->data)+1, pap->username, pap->user_size);
+	*(((uint8_t*) pkt->data)+1+pap->user_size) = pap->pass_size;
+	memcpy(((uint8_t*) pkt->data)+2+pap->user_size, pap->password, pap->pass_size);
 	return pkt;
 }
 
@@ -48,8 +51,8 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 
 int pap_init(struct gnrc_pppdev_t *ppp_dev, pap_t *pap)
 {
-	//pap->username = {0};
-	//pap->password = {0};
+	pap->user_size = 0;
+	pap->pass_size = 0;
 	ppp_protocol_init((ppp_protocol_t*) pap, ppp_dev, pap_handler, 241);
 	pap->counter = 3;
 	return 0;

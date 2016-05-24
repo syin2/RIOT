@@ -474,6 +474,14 @@ int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
 			dev->l_ipv4.tunnel_port = *((uint16_t*) value);
 			res = 0;
 			break;
+		case NETOPT_APN_USER:
+			memcpy(dev->l_pap.username, value, value_len);
+			res = 0;
+			break;
+		case NETOPT_APN_PASS:
+			memcpy(dev->l_pap.password, value, value_len);
+			res = 0;
+			break;
 		default:
 			DEBUG("Unknown option\n");
 			res = -ENOTSUP;

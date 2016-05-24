@@ -12,8 +12,10 @@ extern "C" {
 typedef struct pap_t
 {
 	ppp_protocol_t prot;
-	char username[1];
-	char password[1];
+	char username[20];
+	size_t user_size;
+	char password[20];
+	size_t pass_size;
 	uint8_t counter;
 	uint8_t id;
 	xtimer_t xtimer;
