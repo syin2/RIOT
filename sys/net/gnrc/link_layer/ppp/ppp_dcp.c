@@ -74,7 +74,6 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 int dcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *dcp)
 {
 	ppp_protocol_init(dcp, ppp_dev, dcp_handler, ID_PPPDEV); 
-	((dcp_t*) dcp)->sent_id = 0;
 	((dcp_t*) dcp)->dead_counter = DCP_DEAD_COUNTER;
 	return 0;
 }

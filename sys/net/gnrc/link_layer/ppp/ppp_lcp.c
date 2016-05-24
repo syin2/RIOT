@@ -193,7 +193,7 @@ int lcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 	{
 		/*Send Echo Request*/
 		DEBUG("Sending echo request");
-		gnrc_pktsnip_t *pkt = pkt_build(GNRC_NETTYPE_LCP, PPP_ECHO_REQ, lcp->cr_sent_identifier++, NULL);
+		gnrc_pktsnip_t *pkt = pkt_build(GNRC_NETTYPE_LCP, PPP_ECHO_REQ, ((lcp_t*) lcp)->monitor_id++, NULL);
 		gnrc_ppp_send(protocol->pppdev, pkt);
 		return 0;
 	}
@@ -224,5 +224,6 @@ int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
 	((lcp_t*) lcp)->peer_mru = 1500;
 	((lcp_t*) lcp)->remote_auth = 0;
 	((lcp_t*) lcp)->local_auth = 0;
+	((lcp_t*) lcp)->monitor_id = 0;
 	return 0;
 }

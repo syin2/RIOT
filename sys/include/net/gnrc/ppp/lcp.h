@@ -35,6 +35,7 @@ typedef struct lcp_t
 	uint16_t mru;
 	uint8_t local_auth;
 	uint8_t remote_auth;
+	uint8_t monitor_id;
 } lcp_t;
 
 struct gnrc_pppdev_t;

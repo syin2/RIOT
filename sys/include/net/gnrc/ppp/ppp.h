@@ -155,7 +155,6 @@ typedef struct dcp_t
 	ppp_protocol_t prot;
 	msg_t timer_msg;
 	xtimer_t xtimer;
-	int sent_id;
 	uint8_t dead_counter;
 } dcp_t;
 
