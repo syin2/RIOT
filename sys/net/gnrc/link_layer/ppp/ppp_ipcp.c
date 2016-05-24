@@ -29,6 +29,7 @@
 #include "net/ipv4/hdr.h"
 #include "net/udp.h"
 #include "net/icmp.h"
+#include "net/inet_csum.h"
 #include <errno.h>
 
 #define ENABLE_DEBUG    (1)
@@ -52,7 +53,7 @@ static cp_conf_t *ipcp_get_conf_by_code(ppp_fsm_t *cp, uint8_t code)
 {
 	switch(code)
 	{
-		case 3:
+		case IPCP_OPT_IP_ADDRESS:
 			return &cp->conf[IPCP_IPADDRESS];
 		default:
 			return NULL;
@@ -107,62 +108,17 @@ int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *ipcp)
 	return 0;
 }
 
-/** BEGIN OF TEST SECTION. PLEASE REMOVE LATER **/
-
-static uint32_t _c1_sum(uint32_t acc, uint8_t *data, size_t chunks)
-{
-	network_uint16_t u16;
-	for(int i=0;i<chunks;i++)
-	{
-		memcpy(&u16, data+2*i, 2);
-		acc+=byteorder_ntohs(u16);
-		if(acc > 0xffff)
-			acc-=0xffff;
-	}
-	return acc;
-}
-
-
 static uint16_t checksum(gnrc_pktsnip_t *pkt)
 {
-	uint32_t acc=0;
-	network_uint16_t u16 = byteorder_htons(0);
-	uint8_t even=0;
-	gnrc_pktsnip_t *p = pkt;
-	while(p)
+	uint16_t  acc=0;
+	uint16_t chksum=0;
+	while(pkt)
 	{
-		for(int i=0;i<p->size;i++)
-		{
-			memcpy(((uint8_t*) &u16)+even, ((uint8_t*) p->data)+i, 1);
-			if(even)
-			{
-				acc+=byteorder_ntohs(u16);
-				if(acc > 0xffff)
-					acc-=0xffff;
-				u16 = byteorder_htons(0);
-			}
-			even ^= 1;
-		}
-		p = p->next;
+		chksum = inet_csum_slice(chksum, pkt->data, pkt->size, acc);
+		acc += pkt->size;
+		pkt = pkt->next;
 	}
-	if(even)
-	{
-		acc+=byteorder_ntohs(u16);
-		if(acc > 0xffff)
-			acc-=0xffff;
-
-	}
-	uint16_t ret = acc ^ 0xffff;
-	return ret;
-}
-
-
-static uint16_t pchecksum(uint8_t *data, size_t chunks)
-{
-	uint32_t acc=0;
-	acc = _c1_sum(acc, data, chunks);
-	uint16_t ret = acc ^ 0xffff;
-	return ret;
+	return chksum == 0xFFFF ? 0xFFFF : ~chksum;
 }
 
 static uint16_t udp_checksum(ipv4_addr_t src, ipv4_addr_t dst, uint8_t protocol, uint16_t udp_length, gnrc_pktsnip_t *pkt)
@@ -176,32 +132,13 @@ static uint16_t udp_checksum(ipv4_addr_t src, ipv4_addr_t dst, uint8_t protocol,
 	phdr->protocol = protocol;
 	phdr->udp_len = byteorder_htons(udp_length);
 
+
 	gnrc_pktsnip_t *chk = gnrc_pktbuf_add(pkt, pseudo_hdr, sizeof(pseudo_hdr), GNRC_NETTYPE_UNDEF);
 	uint16_t chksum = checksum(chk);
 	chk = gnrc_pktbuf_remove_snip(chk, chk);
 	return chksum;
 }
-gnrc_pktsnip_t *gen_icmp_echo(void)
-{
-	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, sizeof(icmp_hdr_t), GNRC_NETTYPE_UNDEF);
-	icmp_hdr_t *hdr = pkt->data;
 
-	hdr->type = 8;
-	hdr->code = 0;
-	hdr->csum = byteorder_htons(0);
-	hdr->id = byteorder_htons(0);
-	hdr->sn = byteorder_htons(10);
-
-	/* Calculate checksum */
-	hdr->csum = byteorder_htons(checksum(pkt));
-	return pkt;
-}
-
-gnrc_pktsnip_t *gen_dummy_pkt(void)
-{
-	char dummy_data[] = "test";
-	return gnrc_pktbuf_add(NULL, dummy_data, sizeof(dummy_data), GNRC_NETTYPE_UNDEF);
-}
 gnrc_pktsnip_t *gen_ip_pkt(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *payload, uint8_t protocol)
 {
 	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(payload, NULL, sizeof(ipv4_hdr_t), GNRC_NETTYPE_IPV4);
@@ -224,12 +161,10 @@ gnrc_pktsnip_t *gen_ip_pkt(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *payload, uint8_t pr
 	ipv4_hdr_set_dst(hdr, dst);
 
 	/*Calculate checkshum*/
-	ipv4_hdr_set_csum(hdr, pchecksum(pkt->data,10));
+	ipv4_hdr_set_csum(hdr, ~inet_csum_slice(0, pkt->data,pkt->size, 0));
 	
 	return pkt;
 }
-
-/** END OF TEST SECTION **/
 
 gnrc_pktsnip_t *_build_udp(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *pkt)
 {

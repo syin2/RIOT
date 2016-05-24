@@ -8,6 +8,7 @@
 extern "C" {
 #endif
 
+#define IPCP_OPT_IP_ADDRESS (3)
 #define IPCP_RESTART_TIMER (3000000U)
 
 typedef enum{

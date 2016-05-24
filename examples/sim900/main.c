@@ -16,7 +16,6 @@ static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 int main(void)
 {
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
-	DEBUG("Here we go!\n");
 	kernel_pid_t netifs[GNRC_NETIF_NUMOF];
 
 	DEBUG("Number of interfaces: %i\n", gnrc_netif_get(netifs));
