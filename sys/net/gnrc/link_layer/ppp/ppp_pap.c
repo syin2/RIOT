@@ -23,8 +23,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 	{
 		case PPP_LINKUP:
 			pkt = _pap_payload(pap);
-			sent_pkt = pkt_build(GNRC_NETTYPE_PAP, 1, ++pap->id, pkt);
-			gnrc_ppp_send(protocol->pppdev, sent_pkt);
+			send_pap_request(protocol->pppdev, ++pap->id, pkt);
 			timer_msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
 			timer_msg->content.value = (ID_PAP<<8) | PPP_TIMEOUT;		
 			xtimer_set_msg(xtimer, 5000000, timer_msg, thread_getpid());

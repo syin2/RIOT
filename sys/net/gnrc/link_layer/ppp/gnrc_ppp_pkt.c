@@ -44,3 +44,7 @@ void send_protocol_reject(gnrc_pppdev_t *dev, uint8_t id, gnrc_pktsnip_t *pkt)
 {
 	_send_ppp_pkt(dev, GNRC_NETTYPE_LCP, PPP_PROT_REJ, id, pkt);
 }
+void send_pap_request(gnrc_pppdev_t *dev, uint8_t id, gnrc_pktsnip_t *credentials)
+{
+	_send_ppp_pkt(dev, GNRC_NETTYPE_PAP, PPP_CONF_REQ, id, credentials);	
+}
