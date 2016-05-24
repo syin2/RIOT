@@ -16,7 +16,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
 	pap_t *pap = (pap_t*) protocol;
 	msg_t *msg = &protocol->msg;
-	gnrc_pktsnip_t *pkt, *sent_pkt;
+	gnrc_pktsnip_t *pkt;
 	xtimer_t *xtimer = &pap->xtimer;
 	msg_t *timer_msg = &pap->timer_msg;
 	switch(ppp_event)
@@ -24,28 +24,19 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 		case PPP_LINKUP:
 			pkt = _pap_payload(pap);
 			send_pap_request(protocol->pppdev, ++pap->id, pkt);
-			timer_msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-			timer_msg->content.value = (ID_PAP<<8) | PPP_TIMEOUT;		
-			xtimer_set_msg(xtimer, 5000000, timer_msg, thread_getpid());
+			send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(ID_PAP,PPP_TIMEOUT), 5000000);
 			break;
 		case PPP_LINKDOWN:
-			msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-			msg->content.value = (BROADCAST_NCP << 8) | (PPP_LINKDOWN & 0xFFFF);
-			msg_send(msg, thread_getpid());
+			send_ppp_event(msg, ppp_msg_set(BROADCAST_NCP, PPP_LINKDOWN));
 			break;
 		case PPP_RECV:
 			xtimer_remove(xtimer);
-			msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-			msg->content.value = (BROADCAST_NCP << 8) | (PPP_LINKUP & 0xFFFF);
-			msg_send(msg, thread_getpid());
+			send_ppp_event(msg, ppp_msg_set(BROADCAST_NCP, PPP_LINKUP));
 			break;
 		case PPP_TIMEOUT:
 			pkt = _pap_payload(pap);
-			sent_pkt = pkt_build(GNRC_NETTYPE_PAP, 1, ++pap->id, pkt);
-			gnrc_ppp_send(protocol->pppdev, sent_pkt);
-			timer_msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
-			timer_msg->content.value = (ID_PAP<<8) | PPP_TIMEOUT;		
-			xtimer_set_msg(xtimer, 5000000, timer_msg, thread_getpid());
+			send_pap_request(protocol->pppdev, ++pap->id, pkt);
+			send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(ID_PAP,PPP_TIMEOUT), 5000000);
 			break;
 		default:
 			DEBUG("PAP: Received unknown msg\n");
