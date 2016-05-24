@@ -12,13 +12,14 @@
 extern "C" {
 #endif
 
-#define UPPER_LAYER(cp) (cp->targets & 0xffff)
-#define LOWER_LAYER(cp) ((cp->targets >> 8) & 0xffff)
-
 typedef enum {
 	PROTOCOL_DOWN,
 	PROTOCOL_UP
 } ppp_protocol_state_t;
+
+typedef uint16_t ppp_msg_t;
+typedef uint8_t ppp_target_t;
+typedef uint8_t ppp_event_t;
 
 typedef struct ppp_protocol_t
 {
@@ -27,11 +28,9 @@ typedef struct ppp_protocol_t
 	msg_t msg;
 	struct gnrc_pppdev_t *pppdev;
 	ppp_protocol_state_t state;
+	ppp_target_t upper_layer;
+	ppp_target_t lower_layer;
 } ppp_protocol_t;
-
-typedef uint16_t ppp_msg_t;
-typedef uint8_t ppp_target_t;
-typedef uint8_t ppp_event_t;
 
 static inline ppp_msg_t ppp_msg_set(ppp_target_t target, ppp_event_t ppp_event)
 {

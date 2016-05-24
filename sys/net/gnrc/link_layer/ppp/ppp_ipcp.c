@@ -103,7 +103,8 @@ int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *ipcp)
 	ipcp->prottype = GNRC_NETTYPE_IPCP;
 	ipcp->restart_timer = IPCP_RESTART_TIMER;
 	ipcp->get_conf_by_code = &ipcp_get_conf_by_code;
-	ipcp->targets = ((ID_LCP << 8) & 0xffff) | (ID_IPV4 & 0xffff);
+	((ppp_protocol_t*) ipcp)->lower_layer = ID_LCP;
+	((ppp_protocol_t*) ipcp)->upper_layer = ID_IPV4;
 	((ipcp_t*) ipcp)->ip_id = 123420;
 	return 0;
 }

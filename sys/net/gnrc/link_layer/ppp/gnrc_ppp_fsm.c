@@ -261,6 +261,15 @@ static void print_transition(int state, uint8_t event, int next_state)
 }
 #endif
 
+ppp_target_t _fsm_upper_layer(ppp_fsm_t *cp)
+{
+	return ((ppp_protocol_t*) cp)->upper_layer;
+}
+
+ppp_target_t _fsm_lower_layer(ppp_fsm_t *cp)
+{
+	return ((ppp_protocol_t*) cp)->lower_layer;
+}
 void tlu(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
@@ -270,7 +279,7 @@ void tlu(ppp_fsm_t *cp, void *args)
 	if(cp->on_layer_up){
 		cp->on_layer_up(cp);
 	}
-	send_ppp_event(&((ppp_protocol_t*)cp)->msg, ppp_msg_set(UPPER_LAYER(cp), PPP_LINKUP));
+	send_ppp_event(&((ppp_protocol_t*)cp)->msg, ppp_msg_set(_fsm_upper_layer(cp), PPP_LINKUP));
 	(void) cp;
 }
 
@@ -283,7 +292,7 @@ void tld(ppp_fsm_t *cp, void *args)
 	if(cp->on_layer_down){
 		cp->on_layer_down(cp);
 	}
-	send_ppp_event(&((ppp_protocol_t*) cp)->msg, ppp_msg_set(UPPER_LAYER(cp), PPP_LINKDOWN));
+	send_ppp_event(&((ppp_protocol_t*) cp)->msg, ppp_msg_set(_fsm_upper_layer(cp), PPP_LINKDOWN));
 	(void) cp;
 }
 
@@ -292,7 +301,7 @@ void tls(ppp_fsm_t *cp, void *args)
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  This layer started\n");
 	_reset_cp_conf(cp->conf);
-	send_ppp_event(&((ppp_protocol_t*) cp)->msg, ppp_msg_set(LOWER_LAYER(cp), PPP_UL_STARTED));
+	send_ppp_event(&((ppp_protocol_t*) cp)->msg, ppp_msg_set(_fsm_lower_layer(cp), PPP_UL_STARTED));
 	(void) cp;
 }
 
@@ -300,7 +309,7 @@ void tlf(ppp_fsm_t *cp, void *args)
 {
 	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
 	DEBUG(">  This layer finished\n");
-	send_ppp_event(&((ppp_protocol_t*) cp)->msg, ppp_msg_set(LOWER_LAYER(cp), PPP_UL_FINISHED));
+	send_ppp_event(&((ppp_protocol_t*) cp)->msg, ppp_msg_set(_fsm_lower_layer(cp), PPP_UL_FINISHED));
 	(void) cp;
 }
 
@@ -457,7 +466,7 @@ void ser(ppp_fsm_t *cp, void *args)
 	}
 
 	/*Send PPP_LINK_ALIVE to lower layer*/
-	send_ppp_event(&((ppp_protocol_t*) cp)->msg, ppp_msg_set(LOWER_LAYER(cp), PPP_LINK_ALIVE));
+	send_ppp_event(&((ppp_protocol_t*) cp)->msg, ppp_msg_set(_fsm_lower_layer(cp), PPP_LINK_ALIVE));
 }
 
 /* Call functions depending on function flag*/
@@ -842,7 +851,7 @@ int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void 
 			break;
 		case PPP_UL_STARTED:
 			if(target->state == S_OPENED)
-				send_ppp_event(&protocol->msg, ppp_msg_set(UPPER_LAYER(target), PPP_LINKUP));
+				send_ppp_event(&protocol->msg, ppp_msg_set(_fsm_upper_layer(target), PPP_LINKUP));
 			break;
 		case PPP_TIMEOUT:
 			if(target->restart_counter)

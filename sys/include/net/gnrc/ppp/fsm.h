@@ -124,7 +124,6 @@ typedef struct ppp_fsm_t{
 	uint8_t tr_sent_identifier;
 	cp_conf_t* (*get_conf_by_code)(ppp_fsm_t *cp, uint8_t code);
 	cp_conf_t *conf;
-	uint16_t targets;
 	void (*on_layer_up)(ppp_fsm_t *cp);
 	void (*on_layer_down)(ppp_fsm_t *cp);
 } ppp_fsm_t;

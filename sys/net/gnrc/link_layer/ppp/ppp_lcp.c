@@ -150,7 +150,7 @@ void lcp_auth_set(ppp_fsm_t *lcp, ppp_option_t *opt, uint8_t peer)
 	lcp_t *l = (lcp_t*) lcp;
 	if(peer)
 	{
-		lcp->targets = (lcp->targets & 0xFF00) | (ID_PAP & 0xFF);
+		((ppp_protocol_t*) lcp)->upper_layer = ID_PAP;
 		l->local_auth = 1;	
 	}
 	else
@@ -205,7 +205,7 @@ int lcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 	}
 	else if(ppp_event == PPP_UL_FINISHED)
 	{
-		send_ppp_event(&protocol->msg, ppp_msg_set(LOWER_LAYER(lcp), PPP_UL_FINISHED));
+		send_ppp_event(&protocol->msg, ppp_msg_set(protocol->lower_layer, PPP_UL_FINISHED));
 		return 0;
 	}
 	else
@@ -225,7 +225,8 @@ int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
 	lcp->prottype = GNRC_NETTYPE_LCP;
 	lcp->restart_timer = LCP_RESTART_TIMER;
 	lcp->get_conf_by_code = &lcp_get_conf_by_code;
-	lcp->targets = ((ID_PPPDEV & 0xffff) << 8) | (BROADCAST_NCP & 0xffff);
+	((ppp_protocol_t*) lcp)->lower_layer = ID_PPPDEV;
+	((ppp_protocol_t*) lcp)->upper_layer = BROADCAST_NCP;
 	((lcp_t*) lcp)->mru = 1500;
 	((lcp_t*) lcp)->peer_mru = 1500;
 	((lcp_t*) lcp)->remote_auth = 0;
