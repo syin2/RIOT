@@ -27,9 +27,14 @@ int main(void)
 	tunnel_addr.u8[1] = 254;
 	tunnel_addr.u8[2] = 204;
 	tunnel_addr.u8[3] = 66;
+
+	char apn_user[] = "test";
+	char apn_pass[] = "test";
 	gnrc_netapi_set(netifs[1], NETOPT_APN_NAME, 0, apn, sizeof(apn)-1);
 	gnrc_netapi_set(netifs[1], NETOPT_TUNNEL_IPV4_ADDRESS, 0, (void*) &tunnel_addr , sizeof(ipv4_addr_t));
 	gnrc_netapi_set(netifs[1], NETOPT_TUNNEL_UDP_PORT, 0, (void*) &port , sizeof(uint16_t));
+	gnrc_netapi_set(netifs[1], NETOPT_APN_USER, 0, apn_user, sizeof(apn_user)-1);
+	gnrc_netapi_set(netifs[1], NETOPT_APN_PASS, 0, apn_pass, sizeof(apn_pass)-1);
 
 	msg_t msg;
 	gnrc_ppp_dial_up(&msg, netifs[1]);
