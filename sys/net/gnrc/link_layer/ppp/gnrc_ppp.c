@@ -304,7 +304,6 @@ int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 		print_pkt(hdr, pkt, pkt->next);
 	}
 	
-	DEBUG("Hdr: %p\n", dev);
 	if(gnrc_pkt_len(hdr) > ((lcp_t*) &dev->l_lcp)->peer_mru)
 	{
 		DEBUG("Sending exceeds peer MRU. Dropping packet.\n");
@@ -384,7 +383,6 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 {
 	uint8_t target = (ppp_msg & 0xFF00)>>8;
 	uint8_t event = ppp_msg & 0xFF;
-	DEBUG("Receiving a PPP_NETTYPE msg with target %i and event %i\n", target, event);
 	int ppp_state;
 	(void) ppp_state;
 	gnrc_pktsnip_t *pkt = NULL;
@@ -399,7 +397,6 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, int ppp_msg)
 			return -EBADMSG;
 		}
 		ppp_state = gnrc_ppp_get_state(dev);
-		DEBUG("PPP STATE IS: %i\n", ppp_state);
 		/*
 		if(!_pkt_allowed(ppp_state, target))
 		{
@@ -473,16 +470,13 @@ int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
 	switch(opt)
 	{
 		case NETOPT_APN_NAME:
-			DEBUG("Setting APN!\n");
 			res = dev->netdev->driver->set(dev->netdev, PPPOPT_APN_NAME, value, value_len);
 			break;
 		case NETOPT_TUNNEL_IPV4_ADDRESS:
-			DEBUG("Setting tunnel IPv4 address\n");
 			dev->l_ipv4.tunnel_addr = *((ipv4_addr_t*) value);
 			res = 0;
 			break;
 		case NETOPT_TUNNEL_UDP_PORT:
-			DEBUG("Setting tunnel UDP port\n");
 			dev->l_ipv4.tunnel_port = *((uint16_t*) value);
 			res = 0;
 			break;
@@ -500,8 +494,6 @@ void *_gnrc_ppp_thread(void *args)
 	DEBUG("gnrc_ppp_trhead started\n");
 	gnrc_pppdev_t *pppdev = (gnrc_pppdev_t*) args;
 	gnrc_netif_add(thread_getpid());
-	//ipv6_addr_t ipv6;
-	//gnrc_ipv6_netif_add_addr(thread_getpid(), ipv6_addr_from_str(&ipv6, "ffee::01"), 1, 0);
 	pppdev_t *d = pppdev->netdev;
     d->driver->init(d);
 
@@ -530,7 +522,6 @@ void *_gnrc_ppp_thread(void *args)
 				msg_reply(&msg, &reply);
 				break;
 			case GNRC_NETAPI_MSG_TYPE_GET:
-				DEBUG("Received GET msg\n");
 				opt = (gnrc_netapi_opt_t*) msg.content.ptr;
 				res = gnrc_ppp_get_opt(pppdev, opt->opt, opt->data, opt->data_len);
 				reply.type = GNRC_NETAPI_MSG_TYPE_ACK;
@@ -538,9 +529,7 @@ void *_gnrc_ppp_thread(void *args)
 				msg_reply(&msg, &reply);
 				break;
             case GNRC_NETAPI_MSG_TYPE_SND:
-                DEBUG("gnrc_pppdev: GNRC_NETAPI_MSG_TYPE_SND received\n");
-                gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t *)msg.content.ptr;
-                ppp_ipv4_send(pppdev, pkt);
+                ppp_ipv4_send(pppdev, (gnrc_pktsnip_t*) msg.content.ptr);
                 break;
 			default:
 				DEBUG("Received an unknown thread msg: %i\n", msg.type);

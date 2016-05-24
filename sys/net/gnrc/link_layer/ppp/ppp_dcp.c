@@ -15,18 +15,18 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 	switch(ppp_event)
 	{
 		case PPP_UL_STARTED:
-			DEBUG("Driver: PPP_UL_STARTED\n");
+			DEBUG("gnrc_ppp: dcp: PPP_UL_STARTED\n");
 			break;
 
 		case PPP_UL_FINISHED:
-			DEBUG("Driver: PPP_UL_FINISHED\n");
+			DEBUG("gnrc_ppp:: dcp: PPP_UL_FINISHED\n");
 			/*Remove timer*/
 			xtimer_remove(xtimer);
 			pppdev->driver->link_down(pppdev);
 			break;
 
 		case PPP_LINKUP:
-			DEBUG("Driver: PPP_LINKUP\n");
+			DEBUG("gnrc_ppp: dcp: PPP_LINKUP\n");
 			send_ppp_event(msg, ppp_msg_set(ID_LCP, PPP_LINKUP));
 #if ENABLE_MONITOR
 			/*Start monitor*/
@@ -36,7 +36,7 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			break;
 
 		case PPP_LINKDOWN:
-			DEBUG("Driver: PPP_LINKDOWN\n");
+			DEBUG("gnrc_ppp: dcp: PPP_LINKDOWN\n");
 			protocol->state = PROTOCOL_DOWN;
 			send_ppp_event(msg, ppp_msg_set(ID_LCP, PPP_LINKDOWN));
 			break;

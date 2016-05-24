@@ -78,7 +78,6 @@ uint8_t lcp_mru_build_nak_opts(uint8_t *buf)
 
 void lcp_mru_set(ppp_fsm_t *lcp, ppp_option_t *opt, uint8_t peer)
 {
-	DEBUG("Called LCP MRU set, but still not implemented!\n");
 	if(peer)
 	{
 		((lcp_t*) lcp)->peer_mru = byteorder_ntohs(*((network_uint16_t*) ppp_opt_get_payload(opt)));
@@ -105,7 +104,6 @@ uint8_t lcp_accm_build_nak_opts(uint8_t *buf)
 void lcp_accm_set(ppp_fsm_t *lcp, ppp_option_t *opt, uint8_t peer)
 {
 	gnrc_pppdev_t *dev = ((ppp_protocol_t*) lcp)->pppdev;
-	DEBUG("Setting ACCM\n");
 	if(peer)
 		dev->netdev->driver->set(dev->netdev, PPPOPT_ACCM_RX, (void*) ppp_opt_get_payload(opt), 4);
 	else
@@ -119,7 +117,6 @@ uint8_t lcp_auth_is_valid(ppp_option_t *opt)
 	uint16_t val = byteorder_ntohs(*u16);
 
 	/*Only accept PAP*/
-	DEBUG("Auth is %04x\n", val);
 	if(val == 0xc023)
 		return true;
 
@@ -145,10 +142,8 @@ uint8_t lcp_auth_build_nak_opts(uint8_t *buf)
 void lcp_auth_set(ppp_fsm_t *lcp, ppp_option_t *opt, uint8_t peer)
 {
 	lcp_t *l = (lcp_t*) lcp;
-	DEBUG("Setting Auth (to PAP for the moment) \n");
 	if(peer)
 	{
-		DEBUG("Setting target\n");
 		lcp->targets = (lcp->targets & 0xFF00) | (ID_PAP & 0xFF);
 		l->local_auth = 1;	
 	}

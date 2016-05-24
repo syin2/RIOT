@@ -771,7 +771,6 @@ static int handle_conf_pkt(ppp_fsm_t *cp, int type, gnrc_pktsnip_t *pkt)
 			return -EBADMSG;
 			break;
 	}
-	DEBUG("Event is: %i\n", event);
 	return event;
 }
 

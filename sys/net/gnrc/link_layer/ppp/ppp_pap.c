@@ -19,12 +19,9 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 	gnrc_pktsnip_t *pkt, *sent_pkt;
 	xtimer_t *xtimer = &pap->xtimer;
 	msg_t *timer_msg = &pap->timer_msg;
-	gnrc_pktsnip_t *recv_pkt = (gnrc_pktsnip_t*) args;
-	ppp_hdr_t *hdr;
 	switch(ppp_event)
 	{
 		case PPP_LINKUP:
-			DEBUG("Starting PAP\n");
 			pkt = _pap_payload(pap);
 			sent_pkt = pkt_build(GNRC_NETTYPE_PAP, 1, ++pap->id, pkt);
 			gnrc_ppp_send(protocol->pppdev, sent_pkt);
@@ -38,18 +35,6 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			msg_send(msg, thread_getpid());
 			break;
 		case PPP_RECV:
-			hdr = (ppp_hdr_t*) recv_pkt->data;
-			DEBUG("Received: %i\n", ppp_hdr_get_code(hdr));
-			DEBUG("HEX: ");
-			for(int i=0;i<4;i++)
-			{
-				DEBUG("%02x ", *(((uint8_t*) recv_pkt->next->data)+i));
-			}
-			for(int j=0;j<recv_pkt->size;j++)
-			{
-				DEBUG("%02x ", *(((uint8_t*) recv_pkt->data)+j));
-			}
-			DEBUG("\n");
 			xtimer_remove(xtimer);
 			msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
 			msg->content.value = (BROADCAST_NCP << 8) | (PPP_LINKUP & 0xFFFF);
