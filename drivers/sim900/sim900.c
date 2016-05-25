@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include "sim900.h"
+#include "net/eui64.h"
 
 #define PPPINITFCS16    0xffff
 #define PPPGOODFCS16    0xf0b8
@@ -52,6 +53,7 @@
 #define SIM900_DATAMODE_DELAY (1000000U)
 #define SIM900_LINKDOWN_DELAY (1000000U)
 
+#define DUMMY_ADDR_LEN (6)
 
 void pdp_netattach_timeout(sim900_t *dev);
 void pdp_netattach(sim900_t *dev);
@@ -328,7 +330,7 @@ void dial_up(sim900_t *dev)
     at_timeout(dev, SIM900_DATAMODE_DELAY, &check_device_status);
 }
 
-int sim900_set(pppdev_t *dev, uint8_t opt, void *value, size_t value_len)
+int sim900_set(pppdev_t *dev, netopt_t opt, void *value, size_t value_len)
 {
     sim900_t *d = (sim900_t *) dev;
     network_uint32_t *nu32;
@@ -348,6 +350,8 @@ int sim900_set(pppdev_t *dev, uint8_t opt, void *value, size_t value_len)
             memcpy(d->apn, value, value_len);
             d->apn_len = value_len;
             break;
+		default:
+			return -ENOTSUP;
     }
     return 0;
 }
@@ -404,9 +408,40 @@ void driver_events(pppdev_t *d, uint8_t event)
     }
 }
 
-int sim900_get(pppdev_t *dev, uint8_t opt, void *value, size_t max_lem)
+static int _get_iid(pppdev_t *pppdev, eui64_t *value, size_t max_len)
 {
-    return 0;
+    if (max_len < sizeof(eui64_t)) {
+        return -EOVERFLOW;
+    }
+
+    uint8_t addr[DUMMY_ADDR_LEN];
+    pppdev->driver->get(pppdev, NETOPT_ADDRESS, addr, DUMMY_ADDR_LEN);
+    value->uint8[0] = addr[0] ^ 0x02;
+    value->uint8[1] = addr[1];
+    value->uint8[2] = addr[2];
+    value->uint8[3] = 0xff;
+    value->uint8[4] = 0xfe;
+    value->uint8[5] = addr[3];
+    value->uint8[6] = addr[4];
+    value->uint8[7] = addr[5];
+
+    return sizeof(eui64_t);
+}
+
+int sim900_get(pppdev_t *dev, netopt_t opt, void *value, size_t max_lem)
+{
+	/*Fake values*/
+	uint8_t mac[] = {38, 53, 143, 233, 6, 93};
+	switch(opt)
+	{
+		case NETOPT_ADDRESS:
+			memcpy(value, mac, 6);
+			return 6;
+		case NETOPT_IPV6_IID:
+			return _get_iid(dev, value, DUMMY_ADDR_LEN);
+		default:
+			return -ENOTSUP;
+	}
 }
 
 int sim900_dialup(pppdev_t *dev)

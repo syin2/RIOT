@@ -32,7 +32,6 @@
 #include "net/gnrc/ppp/pap.h"
 #include "net/hdlc/hdr.h"
 #include "net/ppp/hdr.h"
-#include "net/eui64.h"
 #include <errno.h>
 #include <string.h>
 
@@ -382,40 +381,13 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 }
 
 
-static int _get_iid(pppdev_t *pppdev, eui64_t *value, size_t max_len)
-{
-    if (max_len < sizeof(eui64_t)) {
-        return -EOVERFLOW;
-    }
-
-    uint8_t addr[DUMMY_ADDR_LEN];
-    pppdev->driver->get(pppdev, NETOPT_ADDRESS, addr, DUMMY_ADDR_LEN);
-    value->uint8[0] = addr[0] ^ 0x02;
-    value->uint8[1] = addr[1];
-    value->uint8[2] = addr[2];
-    value->uint8[3] = 0xff;
-    value->uint8[4] = 0xfe;
-    value->uint8[5] = addr[3];
-    value->uint8[6] = addr[4];
-    value->uint8[7] = addr[5];
-
-    return sizeof(eui64_t);
-}
 int gnrc_ppp_get_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value_len)
 {
 	int res;
-	/*Fake values*/
-	uint8_t mac[] = {38, 53, 143, 233, 6, 93};
 	switch(opt)
 	{
-		case NETOPT_ADDRESS:
-			memcpy(value, mac, 6);
-			return 6;
-		case NETOPT_IPV6_IID:
-			return _get_iid(dev->netdev, value, DUMMY_ADDR_LEN);
-			return 8;
 		default:
-			res = -ENOTSUP;
+			res = dev->netdev->driver->get(dev->netdev, opt, value, value_len);
 			break;
 	}
 	return res;
@@ -426,9 +398,6 @@ int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
 	int res;
 	switch(opt)
 	{
-		case NETOPT_APN_NAME:
-			res = dev->netdev->driver->set(dev->netdev, NETOPT_APN_NAME, value, value_len);
-			break;
 		case NETOPT_TUNNEL_IPV4_ADDRESS:
 			dev->l_ipv4.tunnel_addr = *((ipv4_addr_t*) value);
 			res = 0;
@@ -448,8 +417,7 @@ int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
 			res = 0;
 			break;
 		default:
-			DEBUG("Unknown option\n");
-			res = -ENOTSUP;
+			res = dev->netdev->driver->set(dev->netdev, opt, value, value_len);
 			break;
 	}
 	return res;
