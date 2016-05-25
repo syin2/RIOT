@@ -27,6 +27,16 @@
 #define FOR_EACH_CONF(conf, head) \
 	for(cp_conf_t *conf = head; conf != NULL; conf = conf->next)
 
+ppp_hdr_t *_get_ppp_hdr(gnrc_pktsnip_t *pkt)
+{
+	return pkt->type == GNRC_NETTYPE_UNDEF ? (ppp_hdr_t*) pkt->next->data : (ppp_hdr_t*) pkt->data;
+}
+
+int _pkt_has_payload(ppp_hdr_t *hdr)
+{
+	return ppp_hdr_get_length(hdr) > sizeof(ppp_hdr_t);
+}
+
 void set_timeout(ppp_fsm_t *cp, uint32_t time)
 {
 	ppp_target_t self = ((ppp_protocol_t*)cp)->id;
@@ -364,9 +374,9 @@ void sca(ppp_fsm_t *cp, void *args)
 	ppp_hdr_t *recv_ppp_hdr;
 
 	gnrc_pktsnip_t *opts = NULL;
-	int has_options = _pkt_get_ppp_header(pkt, &recv_ppp_hdr);
+	recv_ppp_hdr = _get_ppp_hdr(pkt);
 
-	if(has_options)
+	if(_pkt_has_payload(recv_ppp_hdr))
 	{
 		opts = gnrc_pktbuf_add(NULL, pkt->data, pkt->size, GNRC_NETTYPE_UNDEF);
 	}
@@ -418,9 +428,8 @@ void sta(ppp_fsm_t *cp, void *args)
 	DEBUG(">  Sending Terminate Ack\n");
 	gnrc_pktsnip_t *recv_pkt = NULL;
 
-	ppp_hdr_t *recv_ppp_hdr;
-	int has_data = _pkt_get_ppp_header(pkt, &recv_ppp_hdr);
-	if(has_data)
+	ppp_hdr_t *recv_ppp_hdr = _get_ppp_hdr(pkt);
+	if(_pkt_has_payload(recv_ppp_hdr))
 	{
 		recv_pkt = gnrc_pktbuf_add(NULL, pkt->data, pkt->size, GNRC_NETTYPE_UNDEF);	
 	}
@@ -533,19 +542,6 @@ static int _opt_is_ack(ppp_fsm_t *cp, ppp_option_t *opt)
 	cp_conf_t *curr_conf=NULL;
 	curr_conf = cp->get_conf_by_code(cp, ppp_opt_get_type(opt));
 	return curr_conf && curr_conf->is_valid(opt);
-}
-
-int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr) {
-	if(pkt->type == GNRC_NETTYPE_UNDEF)
-	{
-		*ppp_hdr = (ppp_hdr_t*) pkt->next->data;
-		return true;
-	}
-	else
-	{
-		*ppp_hdr = (ppp_hdr_t*) pkt->data;
-		return false;
-	}
 }
 
 int handle_rcr(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
