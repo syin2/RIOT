@@ -32,6 +32,7 @@
 #include "net/gnrc/ppp/pap.h"
 #include "net/hdlc/hdr.h"
 #include "net/ppp/hdr.h"
+#include "net/eui64.h"
 #include <errno.h>
 #include <string.h>
 
@@ -44,6 +45,7 @@
 #endif
 
 #define dump_hex 1
+#define DUMMY_ADDR_LEN (6)
 
 
 void send_ppp_event(msg_t *msg, ppp_msg_t ppp_msg)
@@ -380,19 +382,37 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 }
 
 
+static int _get_iid(pppdev_t *pppdev, eui64_t *value, size_t max_len)
+{
+    if (max_len < sizeof(eui64_t)) {
+        return -EOVERFLOW;
+    }
+
+    uint8_t addr[DUMMY_ADDR_LEN];
+    pppdev->driver->get(pppdev, NETOPT_ADDRESS, addr, DUMMY_ADDR_LEN);
+    value->uint8[0] = addr[0] ^ 0x02;
+    value->uint8[1] = addr[1];
+    value->uint8[2] = addr[2];
+    value->uint8[3] = 0xff;
+    value->uint8[4] = 0xfe;
+    value->uint8[5] = addr[3];
+    value->uint8[6] = addr[4];
+    value->uint8[7] = addr[5];
+
+    return sizeof(eui64_t);
+}
 int gnrc_ppp_get_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value_len)
 {
 	int res;
 	/*Fake values*/
 	uint8_t mac[] = {38, 53, 143, 233, 6, 93};
-	uint8_t iid[] = {38, 53, 143, 233, 6, 93, 35, 87};
 	switch(opt)
 	{
 		case NETOPT_ADDRESS:
 			memcpy(value, mac, 6);
 			return 6;
 		case NETOPT_IPV6_IID:
-			memcpy(value, iid, 8);
+			return _get_iid(dev->netdev, value, DUMMY_ADDR_LEN);
 			return 8;
 		default:
 			res = -ENOTSUP;
