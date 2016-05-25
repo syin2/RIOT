@@ -42,10 +42,6 @@
 extern "C" {
 #endif
 
-#define PPPOPT_ACCM_RX (1)
-#define PPPOPT_ACCM_TX (2)
-#define PPPOPT_APN_NAME (3)
-
 #define GNRC_PPP_MSG_QUEUE 64
 
 #define PPP_HDLC_ADDRESS (0xFF)

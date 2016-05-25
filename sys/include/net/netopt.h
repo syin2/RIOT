@@ -213,6 +213,8 @@ typedef enum {
 	NETOPT_ACCM,
 	NETOPT_TUNNEL_IPV4_ADDRESS,
 	NETOPT_TUNNEL_UDP_PORT,
+	NETOPT_PPP_ACCM_RX,
+	NETOPT_PPP_ACCM_TX,
 
     /* add more options if needed */
 

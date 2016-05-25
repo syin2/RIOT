@@ -109,9 +109,9 @@ void lcp_accm_set(ppp_fsm_t *lcp, ppp_option_t *opt, uint8_t peer)
 	uint8_t *payload;
 	ppp_opt_get_payload(opt, (void**) &payload);
 	if(peer)
-		dev->netdev->driver->set(dev->netdev, PPPOPT_ACCM_RX, (void*) payload, sizeof(uint32_t));
+		dev->netdev->driver->set(dev->netdev, NETOPT_PPP_ACCM_RX, (void*) payload, sizeof(uint32_t));
 	else
-		dev->netdev->driver->set(dev->netdev, PPPOPT_ACCM_TX, (void*) payload, sizeof(uint32_t));
+		dev->netdev->driver->set(dev->netdev, NETOPT_PPP_ACCM_TX, (void*) payload, sizeof(uint32_t));
 }
 
 uint8_t lcp_auth_is_valid(ppp_option_t *opt)

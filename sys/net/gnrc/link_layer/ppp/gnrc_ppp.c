@@ -427,7 +427,7 @@ int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
 	switch(opt)
 	{
 		case NETOPT_APN_NAME:
-			res = dev->netdev->driver->set(dev->netdev, PPPOPT_APN_NAME, value, value_len);
+			res = dev->netdev->driver->set(dev->netdev, NETOPT_APN_NAME, value, value_len);
 			break;
 		case NETOPT_TUNNEL_IPV4_ADDRESS:
 			dev->l_ipv4.tunnel_addr = *((ipv4_addr_t*) value);

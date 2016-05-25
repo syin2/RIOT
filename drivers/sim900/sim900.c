@@ -335,13 +335,13 @@ int sim900_set(pppdev_t *dev, uint8_t opt, void *value, size_t value_len)
 
     nu32 = (network_uint32_t *) value;
     switch (opt) {
-        case PPPOPT_ACCM_RX:
+        case NETOPT_PPP_ACCM_RX:
             d->rx_accm = byteorder_ntohl(*nu32);
             break;
-        case PPPOPT_ACCM_TX:
+        case NETOPT_PPP_ACCM_TX:
             d->tx_accm = byteorder_ntohl(*nu32);
             break;
-        case PPPOPT_APN_NAME:
+        case NETOPT_APN_NAME:
             if (value_len > SIM900_APN_SIZE) {
                 return -1;
             }
