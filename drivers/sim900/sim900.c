@@ -23,6 +23,7 @@
 
 #include "sim900.h"
 #include "net/eui64.h"
+#include "periph/cpuid.h"
 
 #define PPPINITFCS16    0xffff
 #define PPPGOODFCS16    0xf0b8
@@ -428,15 +429,42 @@ static int _get_iid(pppdev_t *pppdev, eui64_t *value, size_t max_len)
     return sizeof(eui64_t);
 }
 
+static void _set_mac_address(sim900_t *dev)
+{
+	uint8_t len;
+#if CPUID_LEN
+#	if CPUID_LEN < DUMMY_ADDR_LEN
+	uint8_t cpuid[DUMMY_ADDR_LEN];
+	len = DUMMY_ADDR_LEN;
+#	else
+	uint8_t cpuid[CPUID_LEN];
+	len = CPUID_LEN;
+#endif
+#endif
+
+	memset(&dev->mac_addr, 0, DUMMY_ADDR_LEN);
+#if CPUID_LEN
+	memset(cpuid, 0, len);
+	cpuid_get(cpuid);
+	memcpy(&dev->mac_addr, cpuid, len);
+	for(int i=0;i<DUMMY_ADDR_LEN-len;i++)
+	{
+		dev->mac_addr[len+i] = cpuid[0] ^ cpuid[i%len];
+	}
+
+#endif
+	dev->mac_addr[0] &= ~(0x01);
+	dev->mac_addr[0] |= 0x02;
+}
+
 int sim900_get(pppdev_t *dev, netopt_t opt, void *value, size_t max_lem)
 {
 	/*Fake values*/
-	uint8_t mac[] = {38, 53, 143, 233, 6, 93};
 	switch(opt)
 	{
 		case NETOPT_ADDRESS:
-			memcpy(value, mac, 6);
-			return 6;
+			memcpy(value, ((sim900_t*) dev)->mac_addr, DUMMY_ADDR_LEN);
+			return DUMMY_ADDR_LEN;
 		case NETOPT_IPV6_IID:
 			return _get_iid(dev, value, DUMMY_ADDR_LEN);
 		default:
@@ -477,5 +505,6 @@ void sim900_setup(sim900_t *dev, const sim900_params_t *params)
     dev->uart = (uart_t) params->uart;
 	dev->rx_buf = (uint8_t*) params->buf;
 	dev->rx_len = (uint16_t) params->buf_len;
+	_set_mac_address(dev);
     mutex_init(&dev->out_mutex);
 }

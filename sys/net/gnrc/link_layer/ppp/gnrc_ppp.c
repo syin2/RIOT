@@ -44,7 +44,6 @@
 #endif
 
 #define dump_hex 1
-#define DUMMY_ADDR_LEN (6)
 
 
 void send_ppp_event(msg_t *msg, ppp_msg_t ppp_msg)
