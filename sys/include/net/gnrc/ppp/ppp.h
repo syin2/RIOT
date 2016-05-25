@@ -49,7 +49,6 @@ extern "C" {
 
 
 #define AUTH_PAP (1)
-#define ID_UNDEF (0)
 
 #define PPP_CONF_REQ (1)
 #define PPP_CONF_ACK (2)
@@ -82,6 +81,7 @@ extern "C" {
 #define FLAG_TIME_REM (1<<12)
 
 
+#define ID_UNDEF (0)
 #define ID_LCP (1)
 #define ID_IPCP (2)
 #define ID_IPV4 (3)

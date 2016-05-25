@@ -313,6 +313,16 @@ int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 	return res;
 }
 
+static int _pkt_is_ppp(gnrc_pktsnip_t *pkt)
+{
+	return (pkt->type == PPPTYPE_NCP_IPV4 || pkt->type == PPPTYPE_PAP || pkt->type == PPPTYPE_LCP);
+}
+
+static int _ppp_pkt_is_valid(gnrc_pktsnip_t *pkt)
+{
+	ppp_hdr_t *hdr = pkt->data;
+	return ppp_hdr_get_length(hdr) < pkt->size;
+}
 int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 {
 	ppp_target_t target = ppp_msg_get_target(ppp_msg);
@@ -375,6 +385,13 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 			return -1;
 			break;
 	}
+
+	if(_pkt_is_ppp(pkt) && !_ppp_pkt_is_valid(pkt))
+	{
+		gnrc_pktbuf_release(pkt);
+		DEBUG("gnrc_ppp: Invalid ppp packet. Dropping.\n");
+	}
+
 	target_prot->handler(target_prot, event, pkt);
 	return 0;
 }
