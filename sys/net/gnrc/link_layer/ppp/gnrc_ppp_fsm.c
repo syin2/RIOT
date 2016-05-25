@@ -839,6 +839,7 @@ int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void 
 			break;
 		case PPP_LINKUP:
 			DEBUG("Event: PPP_LINKUP\n");
+			protocol->state = PROTOCOL_STARTING;
 			trigger_fsm_event(target, E_UP, NULL);
 			break;
 		case PPP_LINKDOWN:

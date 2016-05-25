@@ -14,6 +14,7 @@ extern "C" {
 
 typedef enum {
 	PROTOCOL_DOWN,
+	PROTOCOL_STARTING,
 	PROTOCOL_UP
 } ppp_protocol_state_t;
 

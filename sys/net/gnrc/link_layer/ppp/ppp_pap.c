@@ -34,15 +34,18 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			if(local_auth == AUTH_PAP)
 			{
 				pkt = _pap_payload(pap);
+				protocol->state = PROTOCOL_STARTING;
 				send_pap_request(protocol->pppdev, ++pap->id, pkt);
 				send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(ID_PAP,PPP_TIMEOUT), 5000000);
 			}
 			else
 			{
+				protocol->state = PROTOCOL_UP;
 				send_ppp_event(msg, ppp_msg_set(BROADCAST_NCP, PPP_LINKUP));
 			}
 			break;
 		case PPP_LINKDOWN:
+			protocol->state = PROTOCOL_DOWN;
 			send_ppp_event(msg, ppp_msg_set(BROADCAST_NCP, PPP_LINKDOWN));
 			break;
 		case PPP_RECV:
