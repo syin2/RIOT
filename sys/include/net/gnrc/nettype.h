@@ -250,6 +250,28 @@ static inline uint8_t gnrc_nettype_to_protnum(gnrc_nettype_t type)
     }
 }
 
+static inline gnrc_nettype_t gnrc_nettype_from_ppp_protnum(uint16_t protnum)
+{
+	switch(protnum)
+	{
+		case PPPTYPE_LCP:
+			return GNRC_NETTYPE_LCP;
+		case PPPTYPE_NCP_IPV4:
+			return GNRC_NETTYPE_IPCP;
+#ifdef MODULE_GNRC_IPV6
+		case PPPTYPE_IPV6:
+			return GNRC_NETTYPE_IPV6;
+#endif
+//#ifdef MODULE_GNRC_IPV4
+		case PPPTYPE_IPV4:
+			return GNRC_NETTYPE_IPV4;
+		case PPPTYPE_PAP:
+			return GNRC_NETTYPE_PAP;
+//#endif
+		default:
+			return GNRC_NETTYPE_UNDEF;
+	}
+}
 static inline uint16_t gnrc_nettype_to_ppp_protnum(gnrc_nettype_t type)
 {
 	switch(type)

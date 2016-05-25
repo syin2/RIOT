@@ -339,7 +339,6 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 		}
 	
 		hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t*) result->data;
-
 		target = _get_target_from_protocol(hdlc_hdr_get_protocol(hdlc_hdr));
 		if(!target)
 		{
@@ -350,15 +349,15 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 			send_protocol_reject(dev, dev->l_lcp.pr_id++, rp);
 			return -EBADMSG;
 		}
+		/*Drop packet if exceeds MRU*/
+		if(gnrc_pkt_len(pkt) > ((lcp_t*) &dev->l_lcp)->mru)
+		{
+			DEBUG("gnrc_ppp: Exceeded MRU of device. Dropping packet.\n");
+			gnrc_pktbuf_release(pkt);
+			return -EBADMSG;
+		}
 	}
 
-	/*Drop packet if exceeds MRU*/
-	if(gnrc_pkt_len(pkt) > ((lcp_t*) &dev->l_lcp)->mru)
-	{
-		DEBUG("gnrc_ppp: Exceeded MRU of device. Dropping packet.\n");
-		gnrc_pktbuf_release(pkt);
-		return -EBADMSG;
-	}
 
 	ppp_protocol_t *target_prot;
 	switch(target)
