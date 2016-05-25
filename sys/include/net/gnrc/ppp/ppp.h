@@ -52,6 +52,9 @@ extern "C" {
 #define PPP_HDLC_CONTROL (0x03)
 
 
+#define AUTH_PAP (1)
+#define ID_UNDEF (0)
+
 #define PPP_CONF_REQ (1)
 #define PPP_CONF_ACK (2)
 #define PPP_CONF_NAK (3)

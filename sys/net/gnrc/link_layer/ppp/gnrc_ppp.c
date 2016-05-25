@@ -75,17 +75,8 @@ gnrc_pktsnip_t * pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gn
 	return ppp_pkt;
 }
 
-int mark_ppp_pkt(gnrc_pktsnip_t *pkt)
+ppp_target_t _get_target_from_protocol(uint16_t protocol)
 {
-	gnrc_pktsnip_t *result = gnrc_pktbuf_mark(pkt, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
-	if (!result) {
-		DEBUG("gnrc_ppp: no space left in packet buffer\n");
-		return -ENOBUFS;
-	}
-	
-	hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t*) result->data;
-
-	uint16_t protocol = hdlc_hdr_get_protocol(hdlc_hdr);
 	switch(protocol)
 	{
 		case PPPTYPE_LCP:
@@ -101,7 +92,7 @@ int mark_ppp_pkt(gnrc_pktsnip_t *pkt)
 		default:
 			DEBUG("Unknown PPP protocol: %i\n", protocol);
 	}
-	return 0;
+	return ID_UNDEF;
 }
 gnrc_pktsnip_t *retrieve_pkt(pppdev_t *dev)
 {
@@ -322,64 +313,24 @@ int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 	return res;
 }
 
-int gnrc_ppp_get_state(gnrc_pppdev_t *dev)
-{
-	ppp_fsm_t *lcp = (ppp_fsm_t*) &dev->l_lcp;
-	switch(lcp->state)
-	{
-		case S_INITIAL:
-		case S_STARTING:
-			return PPP_LINK_DEAD;
-			break;
-		case S_CLOSED:
-		case S_STOPPED:
-		case S_CLOSING:
-		case S_STOPPING:
-			return PPP_TERMINATION;
-		case S_REQ_SENT:
-		case S_ACK_RCVD:
-		case S_ACK_SENT:
-			return PPP_LINK_ESTABLISHED;
-		case S_OPENED:
-			return PPP_NETWORK;
-			break;
-		default:
-			break;
-	}
-	DEBUG("gnrc_ppp_get_state: Shouldn't be here!\n");
-	return 0;
-}
-
-uint8_t _pkt_allowed(uint8_t state, uint8_t target)
-{
-	switch(target)
-	{
-		case ID_LCP:
-			return state == PPP_LINK_ESTABLISHED || state == PPP_AUTHENTICATION || state == PPP_NETWORK || state == PPP_TERMINATION;
-		case ID_IPCP:
-		case ID_IPV4:
-			return state == PPP_NETWORK;
-		case ID_PAP:
-			return state == PPP_AUTHENTICATION;
-		default:
-			DEBUG("Pkt not allowed in this PPP state. Discard\n"); 
-			break;
-	}
-	return 0;
-}
-
 int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 {
 	ppp_target_t target = ppp_msg_get_target(ppp_msg);
 	ppp_event_t event = ppp_msg_get_event(ppp_msg);
-	int ppp_state;
-	(void) ppp_state;
 	gnrc_pktsnip_t *pkt = NULL;
 
 	if(event == PPP_RECV)
 	{
 		pkt = retrieve_pkt(dev->netdev);
-		target = mark_ppp_pkt(pkt);
+		gnrc_pktsnip_t *result = gnrc_pktbuf_mark(pkt, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
+		if (!result) {
+			DEBUG("gnrc_ppp: no space left in packet buffer\n");
+			return -ENOBUFS;
+		}
+	
+		hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t*) result->data;
+
+		target = _get_target_from_protocol(hdlc_hdr_get_protocol(hdlc_hdr));
 		if(!target)
 		{
 			/* Remove hdlc header */
@@ -389,13 +340,6 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 			send_protocol_reject(dev, dev->l_lcp.pr_id++, rp);
 			return -EBADMSG;
 		}
-		ppp_state = gnrc_ppp_get_state(dev);
-		/*
-		if(!_pkt_allowed(ppp_state, target))
-		{
-			gnrc_pktbuf_release(pkt);
-			return -EBADMSG;
-		}*/
 	}
 
 	/*Drop packet if exceeds MRU*/

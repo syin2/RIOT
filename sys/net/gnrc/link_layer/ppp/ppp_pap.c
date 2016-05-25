@@ -26,12 +26,21 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 	ppp_hdr_t *hdr = (ppp_hdr_t*) recv_pkt->data;
 	xtimer_t *xtimer = &pap->xtimer;
 	msg_t *timer_msg = &pap->timer_msg;
+	lcp_t *lcp = &protocol->pppdev->l_lcp;
+	uint8_t local_auth = lcp->local_auth;
 	switch(ppp_event)
 	{
 		case PPP_LINKUP:
-			pkt = _pap_payload(pap);
-			send_pap_request(protocol->pppdev, ++pap->id, pkt);
-			send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(ID_PAP,PPP_TIMEOUT), 5000000);
+			if(local_auth == AUTH_PAP)
+			{
+				pkt = _pap_payload(pap);
+				send_pap_request(protocol->pppdev, ++pap->id, pkt);
+				send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(ID_PAP,PPP_TIMEOUT), 5000000);
+			}
+			else
+			{
+				send_ppp_event(msg, ppp_msg_set(BROADCAST_NCP, PPP_LINKUP));
+			}
 			break;
 		case PPP_LINKDOWN:
 			send_ppp_event(msg, ppp_msg_set(BROADCAST_NCP, PPP_LINKDOWN));
