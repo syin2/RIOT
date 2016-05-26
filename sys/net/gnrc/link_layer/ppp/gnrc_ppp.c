@@ -329,6 +329,22 @@ static int _ppp_pkt_is_valid(gnrc_pktsnip_t *pkt)
 	ppp_hdr_t *hdr = pkt->data;
 	return ppp_hdr_get_length(hdr) < pkt->size;
 }
+
+int _prot_is_allowed(ppp_protocol_t **protocols, uint16_t protocol)
+{
+	switch(protocol)
+	{
+		case PPPTYPE_LCP:
+			return protocols[PROT_LCP]->state == PROTOCOL_STARTING || protocols[PROT_LCP]->state == PROTOCOL_UP;
+		case PPPTYPE_NCP_IPV4:
+			return protocols[PROT_IPCP]->state == PROTOCOL_STARTING || protocols[PROT_IPCP]->state == PROTOCOL_UP;
+		case PPPTYPE_PAP:
+			return protocols[PROT_AUTH]->state == PROTOCOL_STARTING;
+		case PPPTYPE_IPV4:
+			return protocols[PROT_IPV4]->state == PROTOCOL_UP;
+	}
+	return 0;
+}
 int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 {
 	ppp_target_t target = ppp_msg_get_target(ppp_msg);
@@ -344,8 +360,17 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 			return -ENOBUFS;
 		}
 	
+		/*Drop packet if exceeds MRU*/
+		if(gnrc_pkt_len(pkt) > ((lcp_t*) dev->protocol[PROT_LCP])->mru)
+		{
+			DEBUG("gnrc_ppp: Exceeded MRU of device. Dropping packet.\n");
+			gnrc_pktbuf_release(pkt);
+			return -EBADMSG;
+		}
+
 		hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t*) result->data;
 		target = _get_target_from_protocol(hdlc_hdr_get_protocol(hdlc_hdr));
+
 		if(!target)
 		{
 			/* Remove hdlc header */
@@ -355,13 +380,20 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 			send_protocol_reject(dev, ((lcp_t*) dev->protocol[PROT_LCP])->pr_id++, rp);
 			return -EBADMSG;
 		}
-		/*Drop packet if exceeds MRU*/
-		if(gnrc_pkt_len(pkt) > ((lcp_t*) dev->protocol[PROT_LCP])->mru)
+
+		if(!_prot_is_allowed(dev->protocol, hdlc_hdr_get_protocol(hdlc_hdr)))
 		{
-			DEBUG("gnrc_ppp: Exceeded MRU of device. Dropping packet.\n");
+			DEBUG("gnrc_ppp: Received a ppp packet that's not allowed in current ppp state. Drop packet\n");
 			gnrc_pktbuf_release(pkt);
-			return -EBADMSG;
+			return -1;
 		}
+
+		if(_pkt_is_ppp(pkt) && !_ppp_pkt_is_valid(pkt))
+		{
+			gnrc_pktbuf_release(pkt);
+			DEBUG("gnrc_ppp: Invalid ppp packet. Dropping.\n");
+		}
+
 	}
 
 
@@ -372,14 +404,14 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 			target_prot = (ppp_protocol_t*) dev->protocol[PROT_LCP];
 			break;
 		case ID_IPCP:
-		case 0xFE:
+		case BROADCAST_NCP:
 			target_prot = (ppp_protocol_t*) dev->protocol[PROT_IPCP];
 			break;
 		case ID_IPV4:
 			target_prot = (ppp_protocol_t*) dev->protocol[PROT_IPV4];
 			break;
 		case ID_PPPDEV:
-		case 0xFF:
+		case BROADCAST_LCP:
 			target_prot = (ppp_protocol_t*) dev->protocol[PROT_DCP];
 			break;
 		case ID_PAP:
@@ -389,12 +421,6 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 			DEBUG("Unrecognized target\n");
 			return -1;
 			break;
-	}
-
-	if(_pkt_is_ppp(pkt) && !_ppp_pkt_is_valid(pkt))
-	{
-		gnrc_pktbuf_release(pkt);
-		DEBUG("gnrc_ppp: Invalid ppp packet. Dropping.\n");
 	}
 
 	target_prot->handler(target_prot, event, pkt);
