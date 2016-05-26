@@ -81,13 +81,6 @@ extern "C" {
 #define FLAG_TIME_REM (1<<12)
 
 
-#define ID_UNDEF (0)
-#define ID_LCP (1)
-#define ID_IPCP (2)
-#define ID_IPV4 (3)
-#define ID_PAP (4)
-#define ID_PPPDEV (0xee)
-
 #define BROADCAST_LCP (0xff)
 #define BROADCAST_NCP (0xfe)
 

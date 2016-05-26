@@ -19,6 +19,7 @@ typedef enum {
 } ppp_protocol_state_t;
 
 typedef enum {
+	PROT_UNDEF,
 	PROT_DCP,
 	PROT_LCP,
 	PROT_AUTH,

@@ -98,7 +98,7 @@ static void ipcp_config_init(ppp_fsm_t *ipcp)
 
 int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *protocol)
 {
-	ppp_protocol_init(protocol, ppp_dev, fsm_handle_ppp_msg, ID_IPCP);
+	ppp_protocol_init(protocol, ppp_dev, fsm_handle_ppp_msg, PROT_IPCP);
 	fsm_init(ppp_dev, (ppp_fsm_t*) protocol);
 	ipcp_config_init((ppp_fsm_t*) protocol);
 
@@ -109,8 +109,8 @@ int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *protocol)
 	ipcp_fsm->prottype = GNRC_NETTYPE_IPCP;
 	ipcp_fsm->restart_timer = IPCP_RESTART_TIMER;
 	ipcp_fsm->get_conf_by_code = &ipcp_get_conf_by_code;
-	protocol->lower_layer = ID_LCP;
-	protocol->upper_layer = ID_IPV4;
+	protocol->lower_layer = PROT_LCP;
+	protocol->upper_layer = PROT_IPV4;
 	ipcp->ip_id = 123420;
 	return 0;
 }

@@ -80,19 +80,19 @@ ppp_target_t _get_target_from_protocol(uint16_t protocol)
 	switch(protocol)
 	{
 		case PPPTYPE_LCP:
-			return ID_LCP;
+			return PROT_LCP;
 			break;
 		case PPPTYPE_NCP_IPV4:
-			return ID_IPCP;
+			return PROT_IPCP;
 			break;
 		case PPPTYPE_IPV4:
-			return ID_IPV4;
+			return PROT_IPV4;
 		case PPPTYPE_PAP:
-			return ID_PAP;
+			return PROT_AUTH;
 		default:
 			DEBUG("Unknown PPP protocol: %i\n", protocol);
 	}
-	return ID_UNDEF;
+	return PROT_UNDEF;
 }
 gnrc_pktsnip_t *retrieve_pkt(pppdev_t *dev)
 {
@@ -400,21 +400,21 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 	ppp_protocol_t *target_prot;
 	switch(target)
 	{
-		case ID_LCP:
+		case PROT_LCP:
 			target_prot = (ppp_protocol_t*) dev->protocol[PROT_LCP];
 			break;
-		case ID_IPCP:
+		case PROT_IPCP:
 		case BROADCAST_NCP:
 			target_prot = (ppp_protocol_t*) dev->protocol[PROT_IPCP];
 			break;
-		case ID_IPV4:
+		case PROT_IPV4:
 			target_prot = (ppp_protocol_t*) dev->protocol[PROT_IPV4];
 			break;
-		case ID_PPPDEV:
+		case PROT_DCP:
 		case BROADCAST_LCP:
 			target_prot = (ppp_protocol_t*) dev->protocol[PROT_DCP];
 			break;
-		case ID_PAP:
+		case PROT_AUTH:
 			target_prot = (ppp_protocol_t*) dev->protocol[PROT_AUTH];
 			break;
 		default:
@@ -423,8 +423,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 			break;
 	}
 
-	target_prot->handler(target_prot, event, pkt);
-	return 0;
+	return target_prot->handler(target_prot, event, pkt);
 }
 
 
@@ -543,7 +542,7 @@ void gnrc_ppp_dispatch_pkt(msg_t *msg, kernel_pid_t pid)
 
 void gnrc_ppp_dial_up(msg_t *msg, kernel_pid_t pid)
 {
-	gnrc_ppp_trigger_event(msg, pid, ID_PPPDEV, PPP_DIALUP);
+	gnrc_ppp_trigger_event(msg, pid, PROT_DCP, PPP_DIALUP);
 }
 
 kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,

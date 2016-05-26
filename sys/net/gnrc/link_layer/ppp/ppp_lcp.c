@@ -216,7 +216,7 @@ int lcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *protocol)
 {
 	ppp_fsm_t *lcp = (ppp_fsm_t*) protocol;
-	ppp_protocol_init((ppp_protocol_t*) lcp, ppp_dev, lcp_handler, ID_LCP);
+	ppp_protocol_init((ppp_protocol_t*) lcp, ppp_dev, lcp_handler, PROT_LCP);
 	fsm_init(ppp_dev, lcp);
 	lcp_config_init(lcp);
 
@@ -225,8 +225,8 @@ int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *protocol)
 	lcp->prottype = GNRC_NETTYPE_LCP;
 	lcp->restart_timer = LCP_RESTART_TIMER;
 	lcp->get_conf_by_code = &lcp_get_conf_by_code;
-	((ppp_protocol_t*) lcp)->lower_layer = ID_PPPDEV;
-	((ppp_protocol_t*) lcp)->upper_layer = ID_PAP;
+	((ppp_protocol_t*) lcp)->lower_layer = PROT_DCP;
+	((ppp_protocol_t*) lcp)->upper_layer = PROT_AUTH;
 	((lcp_t*) lcp)->mru = 1500;
 	((lcp_t*) lcp)->peer_mru = 1500;
 	((lcp_t*) lcp)->remote_auth = 0;

@@ -36,7 +36,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 				pkt = _pap_payload(pap);
 				protocol->state = PROTOCOL_STARTING;
 				send_pap_request(protocol->pppdev, ++pap->id, pkt);
-				send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(ID_PAP,PPP_TIMEOUT), 5000000);
+				send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(PROT_AUTH,PPP_TIMEOUT), 5000000);
 			}
 			else
 			{
@@ -52,7 +52,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			xtimer_remove(xtimer);
 			if(ppp_hdr_get_code(hdr) != PPP_CONF_ACK) {
 				DEBUG("gnrc_ppp: pap: Wrong APN auth. Closing link.\n");
-				send_ppp_event(msg, ppp_msg_set(ID_LCP, PPP_LINKDOWN));
+				send_ppp_event(msg, ppp_msg_set(PROT_LCP, PPP_LINKDOWN));
 			}
 			else {
 				send_ppp_event(msg, ppp_msg_set(BROADCAST_NCP, PPP_LINKUP));
@@ -61,7 +61,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 		case PPP_TIMEOUT:
 			pkt = _pap_payload(pap);
 			send_pap_request(protocol->pppdev, ++pap->id, pkt);
-			send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(ID_PAP,PPP_TIMEOUT), 5000000);
+			send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(PROT_AUTH,PPP_TIMEOUT), 5000000);
 			break;
 		default:
 			DEBUG("gnrc_ppp: pap: Received unknown msg\n");
