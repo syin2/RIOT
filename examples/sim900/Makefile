@@ -30,6 +30,8 @@ USEMODULE += gnrc_netdev_default
 USEMODULE += auto_init_gnrc_netif
 USEMODULE += gnrc_ipv6_default
 USEMODULE += gnrc_icmpv6_echo
+USEMODULE += gnrc_sixlowpan_border_router_default
+USEMODULE += fib
 
 
 include $(RIOTBASE)/Makefile.include
