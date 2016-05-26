@@ -27,10 +27,10 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 
 		case PPP_LINKUP:
 			DEBUG("gnrc_ppp: dcp: PPP_LINKUP\n");
+			protocol->state = PROTOCOL_UP;
 			send_ppp_event(msg, ppp_msg_set(ID_LCP, PPP_LINKUP));
 #if ENABLE_MONITOR
 			/*Start monitor*/
-			protocol->state = PROTOCOL_UP;
 			send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(ID_PPPDEV, PPP_MONITOR), 5000000);
 #endif
 			break;
@@ -62,6 +62,7 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 
 		case PPP_DIALUP:
 			DEBUG("Dialing device driver\n");
+			//gnrc_ppp_setup(protocol->pppdev, pppdev);
 			pppdev->driver->dial_up(pppdev);
 			DEBUG("Break\n");
 			break;
