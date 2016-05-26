@@ -4,7 +4,7 @@
 #define ENABLE_DEBUG    (1)
 #include "debug.h"
 
-
+static pap_t static_pap;
 gnrc_pktsnip_t *_pap_payload(pap_t *pap)
 {
 	gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, 2+pap->user_size+pap->pass_size, GNRC_NETTYPE_UNDEF);
@@ -71,8 +71,9 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 	return 0;
 }
 
-int pap_init(struct gnrc_pppdev_t *ppp_dev, pap_t *pap)
+int pap_init(struct gnrc_pppdev_t *ppp_dev, ppp_protocol_t *protocol)
 {
+	pap_t *pap = (pap_t*) protocol;
 	pap->user_size = 0;
 	pap->pass_size = 0;
 	ppp_protocol_init((ppp_protocol_t*) pap, ppp_dev, pap_handler, 241);
@@ -80,3 +81,7 @@ int pap_init(struct gnrc_pppdev_t *ppp_dev, pap_t *pap)
 	return 0;
 }
 
+ppp_protocol_t *pap_get_static_pointer(void)
+{
+	return (ppp_protocol_t*) &static_pap;
+}

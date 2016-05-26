@@ -34,7 +34,7 @@
 /* For PRIu16 etc. */
 #include <inttypes.h>
 #endif
-
+static lcp_t static_lcp;
 static cp_conf_t *lcp_get_conf_by_code(ppp_fsm_t *cp, uint8_t code)
 {
 	switch(code)
@@ -213,8 +213,9 @@ int lcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 	}
 }
 
-int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
+int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *protocol)
 {
+	ppp_fsm_t *lcp = (ppp_fsm_t*) protocol;
 	ppp_protocol_init((ppp_protocol_t*) lcp, ppp_dev, lcp_handler, ID_LCP);
 	fsm_init(ppp_dev, lcp);
 	lcp_config_init(lcp);
@@ -232,4 +233,9 @@ int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *lcp)
 	((lcp_t*) lcp)->local_auth = 0;
 	((lcp_t*) lcp)->monitor_id = 0;
 	return 0;
+}
+
+ppp_protocol_t *lcp_get_static_pointer(void)
+{
+	return (ppp_protocol_t*) &static_lcp;
 }

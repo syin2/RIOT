@@ -41,7 +41,8 @@ typedef struct lcp_t
 struct gnrc_pppdev_t;
 struct ppp_fsm_t;
 
-int lcp_init(struct gnrc_pppdev_t *ppp_dev, struct ppp_fsm_t *lcp);
+int lcp_init(struct gnrc_pppdev_t *ppp_dev, struct ppp_protocol_t *lcp);
+ppp_protocol_t *lcp_get_static_pointer(void);
 
 #ifdef __cplusplus
 }

@@ -4,6 +4,7 @@
 #define ENABLE_MONITOR (1)
 #include "debug.h"
 
+static dcp_t static_dcp;
 int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
 	msg_t *msg = &protocol->msg;
@@ -77,4 +78,9 @@ int dcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *dcp)
 	ppp_protocol_init(dcp, ppp_dev, dcp_handler, ID_PPPDEV); 
 	((dcp_t*) dcp)->dead_counter = DCP_DEAD_COUNTER;
 	return 0;
+}
+
+ppp_protocol_t *dcp_get_static_pointer(void)
+{
+	return (ppp_protocol_t*) &static_dcp;
 }

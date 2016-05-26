@@ -255,17 +255,17 @@ int gnrc_ppp_setup(gnrc_pppdev_t *dev, pppdev_t *netdev)
 	dev->netdev = netdev;
 	dev->state = PPP_LINK_DEAD;
 
-	dcp_init(dev, (ppp_protocol_t*) &dev->l_dcp);
-	lcp_init(dev, (ppp_fsm_t*) &dev->l_lcp);
-	ipcp_init(dev, (ppp_fsm_t*) &dev->l_ipcp);
-	ppp_ipv4_init(dev, (ppp_ipv4_t*) &dev->l_ipv4, (ipcp_t*) &dev->l_ipcp, dev);
-	pap_init(dev, (pap_t*) &dev->l_pap);
+	dev->protocol[PROT_DCP] = dcp_get_static_pointer();
+	dev->protocol[PROT_LCP] = lcp_get_static_pointer();
+	dev->protocol[PROT_IPCP] = ipcp_get_static_pointer();
+	dev->protocol[PROT_AUTH] = pap_get_static_pointer();
+	dev->protocol[PROT_IPV4] = ipv4_get_static_pointer();
 
-	dev->protocol[PROT_DCP] = (ppp_protocol_t*) &dev->l_dcp;
-	dev->protocol[PROT_LCP] = (ppp_protocol_t*) &dev->l_lcp;
-	dev->protocol[PROT_IPCP] = (ppp_protocol_t*) &dev->l_ipcp;
-	dev->protocol[PROT_AUTH] = (ppp_protocol_t*) &dev->l_pap;
-	dev->protocol[PROT_IPV4] = (ppp_protocol_t*) &dev->l_ipv4;
+	dcp_init(dev, dev->protocol[PROT_DCP]);
+	lcp_init(dev, dev->protocol[PROT_LCP]);
+	ipcp_init(dev, dev->protocol[PROT_IPCP]);
+	ppp_ipv4_init(dev, dev->protocol[PROT_IPV4], (ipcp_t*) dev->protocol[PROT_IPCP], dev);
+	pap_init(dev, dev->protocol[PROT_AUTH]);
 
 	trigger_fsm_event((ppp_fsm_t*) dev->protocol[PROT_LCP], E_OPEN, NULL);
 	trigger_fsm_event((ppp_fsm_t*) dev->protocol[PROT_IPCP], E_OPEN, NULL);

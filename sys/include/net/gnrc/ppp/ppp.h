@@ -160,14 +160,8 @@ typedef struct dcp_t
 
 /* PPP device */
 typedef struct gnrc_pppdev_t{
-	dcp_t l_dcp;
-	lcp_t l_lcp;
-	ipcp_t l_ipcp;
-	ppp_ipv4_t l_ipv4;
-	pap_t l_pap;
 	ppp_protocol_t *protocol[NUM_OF_PROTS];
 	pppdev_t *netdev;
-
 	uint8_t state;
 } gnrc_pppdev_t;
 
@@ -186,6 +180,7 @@ int _pkt_get_ppp_header(gnrc_pktsnip_t *pkt, ppp_hdr_t **ppp_hdr);
 void *_gnrc_ppp_thread(void *args);
 int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args); 
 int dcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *dcp);
+ppp_protocol_t *dcp_get_static_pointer(void);
 
 void gnrc_ppp_link_up(msg_t *msg, kernel_pid_t pid);
 void gnrc_ppp_link_down(msg_t *msg, kernel_pid_t pid);

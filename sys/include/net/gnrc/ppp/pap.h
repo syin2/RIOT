@@ -22,7 +22,9 @@ typedef struct pap_t
 	msg_t timer_msg;
 } pap_t;
 
-int pap_init(struct gnrc_pppdev_t *ppp_dev, pap_t *pap);
+int pap_init(struct gnrc_pppdev_t *ppp_dev, ppp_protocol_t *pap);
+ppp_protocol_t *pap_get_static_pointer(void);
+
 #ifdef __cplusplus
 }
 #endif
