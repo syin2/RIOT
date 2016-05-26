@@ -836,6 +836,7 @@ int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void 
 			if(event > 0)
 				trigger_fsm_event(target, event, pkt);
 			gnrc_pktbuf_release(pkt);
+			return event < 0 ? event : 0;
 			break;
 		case PPP_LINKUP:
 			DEBUG("Event: PPP_LINKUP\n");

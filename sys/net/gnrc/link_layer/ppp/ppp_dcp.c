@@ -4,6 +4,8 @@
 #define ENABLE_MONITOR (1)
 #include "debug.h"
 
+#define MONITOR_TIMEOUT (5000000)
+
 static dcp_t static_dcp;
 int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
@@ -32,7 +34,7 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			send_ppp_event(msg, ppp_msg_set(PROT_LCP, PPP_LINKUP));
 #if ENABLE_MONITOR
 			/*Start monitor*/
-			send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(PROT_DCP, PPP_MONITOR), 5000000);
+			send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(PROT_DCP, PPP_MONITOR), MONITOR_TIMEOUT);
 #endif
 			break;
 
@@ -45,8 +47,9 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 		case PPP_MONITOR:
 			if(dcp->dead_counter)
 			{
+				DEBUG("gnrc_ppp: dcp: No response from modem. Send echo request.\n");
 				send_ppp_event(msg, ppp_msg_set(PROT_LCP, PPP_MONITOR));
-				send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(PROT_DCP, PPP_MONITOR), 5000000);
+				send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(PROT_DCP, PPP_MONITOR), MONITOR_TIMEOUT);
 				dcp->dead_counter -= 1;
 			}
 			else
@@ -57,18 +60,15 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			break;
 
 		case PPP_LINK_ALIVE:
-			DEBUG("Received ECHO request! Link working! :)\n");
+			DEBUG("gnrc_ppp: received echo reply. Link is working.\n");
 			dcp->dead_counter = DCP_DEAD_COUNTER;
 			break;
 
 		case PPP_DIALUP:
-			DEBUG("Dialing device driver\n");
-			//gnrc_ppp_setup(protocol->pppdev, pppdev);
 			pppdev->driver->dial_up(pppdev);
-			DEBUG("Break\n");
 			break;
 		default:
-			DEBUG("DCP: Receive unknown message\n");
+			DEBUG("gnrc_ppp: dcp: Receive unknown message\n");
 			break;
 	}
 	return 0;

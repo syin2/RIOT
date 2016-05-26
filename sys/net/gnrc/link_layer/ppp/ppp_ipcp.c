@@ -199,7 +199,6 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 	(void) ipcp;
 
 	gnrc_pppdev_t *pppdev = protocol->pppdev;
-	gnrc_pktsnip_t *pkt;
 	gnrc_pktsnip_t *recv_pkt = (gnrc_pktsnip_t*) args;
 	(void) recv_pkt;
 
@@ -209,7 +208,6 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			DEBUG("Msg: Obtained IP address! \n");
 			DEBUG("Ip address is %i.%i.%i.%i\n",ipcp->ip.u8[0],ipcp->ip.u8[1],ipcp->ip.u8[2],ipcp->ip.u8[3]);	
 			protocol->state = PROTOCOL_UP;
-			(void) pkt;
 			break;
 		case PPP_LINKDOWN:
 			DEBUG("IPv4 down\n");

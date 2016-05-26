@@ -65,8 +65,6 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			break;
 		default:
 			DEBUG("gnrc_ppp: pap: Received unknown msg\n");
-
-
 	}
 	return 0;
 }
