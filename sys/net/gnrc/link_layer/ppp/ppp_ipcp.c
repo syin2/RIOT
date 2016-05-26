@@ -245,7 +245,7 @@ static gnrc_pktsnip_t *_encapsulate_pkt(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *pkt)
 
 int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 {
-	int ipv4_ready = ((ppp_protocol_t*) ppp_dev->protocol[PROT_IPCP])->state == PROTOCOL_UP;
+	int ipv4_ready = ((ppp_protocol_t*) ppp_dev->protocol[PROT_IPV4])->state == PROTOCOL_UP;
 	if(!ipv4_ready)
 	{
 		DEBUG("gnrc_ppp: IPCP down. Dropping packet.\n");
