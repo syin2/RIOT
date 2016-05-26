@@ -261,8 +261,14 @@ int gnrc_ppp_setup(gnrc_pppdev_t *dev, pppdev_t *netdev)
 	ppp_ipv4_init(dev, (ppp_ipv4_t*) &dev->l_ipv4, (ipcp_t*) &dev->l_ipcp, dev);
 	pap_init(dev, (pap_t*) &dev->l_pap);
 
-	trigger_fsm_event((ppp_fsm_t*) &dev->l_lcp, E_OPEN, NULL);
-	trigger_fsm_event((ppp_fsm_t*) &dev->l_ipcp, E_OPEN, NULL);
+	dev->protocol[PROT_DCP] = (ppp_protocol_t*) &dev->l_dcp;
+	dev->protocol[PROT_LCP] = (ppp_protocol_t*) &dev->l_lcp;
+	dev->protocol[PROT_IPCP] = (ppp_protocol_t*) &dev->l_ipcp;
+	dev->protocol[PROT_AUTH] = (ppp_protocol_t*) &dev->l_pap;
+	dev->protocol[PROT_IPV4] = (ppp_protocol_t*) &dev->l_ipv4;
+
+	trigger_fsm_event((ppp_fsm_t*) dev->protocol[PROT_LCP], E_OPEN, NULL);
+	trigger_fsm_event((ppp_fsm_t*) dev->protocol[PROT_IPCP], E_OPEN, NULL);
 	return 0;
 }
 
@@ -294,7 +300,7 @@ int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 		print_pkt(hdr, pkt, pkt->next);
 	}
 	
-	if(gnrc_pkt_len(hdr) > ((lcp_t*) &dev->l_lcp)->peer_mru)
+	if(gnrc_pkt_len(hdr) > ((lcp_t*) dev->protocol[PROT_LCP])->peer_mru)
 	{
 		DEBUG("Sending exceeds peer MRU. Dropping packet.\n");
 		gnrc_pktbuf_release(hdr);
@@ -346,11 +352,11 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 			network_uint16_t protocol = byteorder_htons(hdlc_hdr_get_protocol(pkt->next->data));
 			gnrc_pktbuf_remove_snip(pkt, pkt->next);
 			gnrc_pktsnip_t *rp = gnrc_pktbuf_add(pkt, &protocol, 2, GNRC_NETTYPE_UNDEF);
-			send_protocol_reject(dev, dev->l_lcp.pr_id++, rp);
+			send_protocol_reject(dev, ((lcp_t*) dev->protocol[PROT_LCP])->pr_id++, rp);
 			return -EBADMSG;
 		}
 		/*Drop packet if exceeds MRU*/
-		if(gnrc_pkt_len(pkt) > ((lcp_t*) &dev->l_lcp)->mru)
+		if(gnrc_pkt_len(pkt) > ((lcp_t*) dev->protocol[PROT_LCP])->mru)
 		{
 			DEBUG("gnrc_ppp: Exceeded MRU of device. Dropping packet.\n");
 			gnrc_pktbuf_release(pkt);
@@ -363,21 +369,21 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 	switch(target)
 	{
 		case ID_LCP:
-			target_prot = (ppp_protocol_t*) &dev->l_lcp;
+			target_prot = (ppp_protocol_t*) dev->protocol[PROT_LCP];
 			break;
 		case ID_IPCP:
 		case 0xFE:
-			target_prot = (ppp_protocol_t*) &dev->l_ipcp;
+			target_prot = (ppp_protocol_t*) dev->protocol[PROT_IPCP];
 			break;
 		case ID_IPV4:
-			target_prot = (ppp_protocol_t*) &dev->l_ipv4;
+			target_prot = (ppp_protocol_t*) dev->protocol[PROT_IPV4];
 			break;
 		case ID_PPPDEV:
 		case 0xFF:
-			target_prot = (ppp_protocol_t*) &dev->l_dcp;
+			target_prot = (ppp_protocol_t*) dev->protocol[PROT_DCP];
 			break;
 		case ID_PAP:
-			target_prot = (ppp_protocol_t*) &dev->l_pap;
+			target_prot = (ppp_protocol_t*) dev->protocol[PROT_AUTH];
 			break;
 		default:
 			DEBUG("Unrecognized target\n");
@@ -414,21 +420,21 @@ int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
 	switch(opt)
 	{
 		case NETOPT_TUNNEL_IPV4_ADDRESS:
-			dev->l_ipv4.tunnel_addr = *((ipv4_addr_t*) value);
+			((ppp_ipv4_t*) dev->protocol[PROT_IPV4])->tunnel_addr = *((ipv4_addr_t*) value);
 			res = 0;
 			break;
 		case NETOPT_TUNNEL_UDP_PORT:
-			dev->l_ipv4.tunnel_port = *((uint16_t*) value);
+			((ppp_ipv4_t*) dev->protocol[PROT_IPV4])->tunnel_port = *((uint16_t*) value);
 			res = 0;
 			break;
 		case NETOPT_APN_USER:
-			memcpy(dev->l_pap.username, value, value_len);
-			dev->l_pap.user_size = value_len;
+			memcpy(((pap_t*) dev->protocol[PROT_AUTH])->username, value, value_len);
+			((pap_t*) dev->protocol[PROT_AUTH])->user_size = value_len;
 			res = 0;
 			break;
 		case NETOPT_APN_PASS:
-			memcpy(dev->l_pap.password, value, value_len);
-			dev->l_pap.pass_size = value_len;
+			memcpy(((pap_t*) dev->protocol[PROT_AUTH])->password, value, value_len);
+			((pap_t*) dev->protocol[PROT_AUTH])->pass_size = value_len;
 			res = 0;
 			break;
 		default:

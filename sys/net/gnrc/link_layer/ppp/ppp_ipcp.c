@@ -146,13 +146,14 @@ gnrc_pktsnip_t *gen_ip_pkt(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *payload, uint8_t pr
 	ipv4_hdr_t *hdr = pkt->data;	
 	
 	ipv4_addr_t dst = ipv4->tunnel_addr;
-	ipv4_addr_t src = ((ppp_protocol_t*) ipv4)->pppdev->l_ipcp.ip;
+	ipcp_t *ipcp = (ipcp_t*) (((ppp_protocol_t*) ipv4)->pppdev->protocol[PROT_IPCP]);
+	ipv4_addr_t src = ipcp->ip;
 
 	ipv4_hdr_set_version(hdr);
 	ipv4_hdr_set_ihl(hdr, 5);
 	ipv4_hdr_set_ts(hdr, 0);
 	ipv4_hdr_set_tl(hdr, gnrc_pkt_len(pkt));
-	ipv4_hdr_set_id(hdr, ++((ppp_protocol_t*) ipv4)->pppdev->l_ipcp.ip_id);
+	ipv4_hdr_set_id(hdr, ++(ipcp->ip_id));
 	ipv4_hdr_set_flags(hdr, 0);
 	ipv4_hdr_set_fo(hdr, 0);
 	ipv4_hdr_set_ttl(hdr, 64);
@@ -173,7 +174,8 @@ gnrc_pktsnip_t *_build_udp(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *pkt)
 	gnrc_pktsnip_t *udp = gnrc_pktbuf_add(pkt, NULL, sizeof(udp_hdr_t), GNRC_NETTYPE_UNDEF);
 
 	ipv4_addr_t dst = ipv4->tunnel_addr;
-	ipv4_addr_t src = ((ppp_protocol_t*) ipv4)->pppdev->l_ipcp.ip;
+	ipcp_t *ipcp = (ipcp_t*) (((ppp_protocol_t*) ipv4)->pppdev->protocol[PROT_IPCP]);
+	ipv4_addr_t src = ipcp->ip;
 
 	udp_hdr_t *udp_hdr = (udp_hdr_t*) udp->data;
 	udp_hdr->src_port = byteorder_htons(53209);
@@ -187,7 +189,7 @@ gnrc_pktsnip_t *_build_udp(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *pkt)
 
 int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
-	ipcp_t *ipcp = &protocol->pppdev->l_ipcp;
+	ipcp_t *ipcp = (ipcp_t*) protocol->pppdev->protocol[PROT_IPCP];
 	(void) ipcp;
 
 	gnrc_pppdev_t *pppdev = protocol->pppdev;
@@ -236,7 +238,7 @@ static gnrc_pktsnip_t *_encapsulate_pkt(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *pkt)
 
 int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 {
-	int ipv4_ready = ((ppp_protocol_t*) &ppp_dev->l_ipcp)->state == PROTOCOL_UP;
+	int ipv4_ready = ((ppp_protocol_t*) ppp_dev->protocol[PROT_IPCP])->state == PROTOCOL_UP;
 	if(!ipv4_ready)
 	{
 		DEBUG("gnrc_ppp: IPCP down. Dropping packet.\n");
@@ -247,7 +249,7 @@ int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 	/* Remove netif*/
 	pkt = gnrc_pktbuf_remove_snip(pkt, pkt);
 
-	gnrc_pktsnip_t *send_pkt = _encapsulate_pkt(&ppp_dev->l_ipv4, pkt);
+	gnrc_pktsnip_t *send_pkt = _encapsulate_pkt((ppp_ipv4_t*) ppp_dev->protocol[PROT_IPV4], pkt);
 	gnrc_ppp_send(ppp_dev, send_pkt);
 	return 0;
 }

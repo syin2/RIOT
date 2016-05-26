@@ -165,6 +165,7 @@ typedef struct gnrc_pppdev_t{
 	ipcp_t l_ipcp;
 	ppp_ipv4_t l_ipv4;
 	pap_t l_pap;
+	ppp_protocol_t *protocol[NUM_OF_PROTS];
 	pppdev_t *netdev;
 
 	uint8_t state;

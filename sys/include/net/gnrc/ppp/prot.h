@@ -18,6 +18,15 @@ typedef enum {
 	PROTOCOL_UP
 } ppp_protocol_state_t;
 
+typedef enum {
+	PROT_DCP,
+	PROT_LCP,
+	PROT_AUTH,
+	PROT_IPCP,
+	PROT_IPV4,
+	NUM_OF_PROTS
+} ppp_protocol_id;
+
 typedef uint16_t ppp_msg_t;
 typedef uint8_t ppp_target_t;
 typedef uint8_t ppp_event_t;
