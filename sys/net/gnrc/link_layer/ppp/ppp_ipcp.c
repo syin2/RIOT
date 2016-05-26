@@ -205,12 +205,12 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 	switch(ppp_event)
 	{
 		case PPP_LINKUP:
-			DEBUG("Msg: Obtained IP address! \n");
+			DEBUG("gnrc_ppp: Obtained IP address! \n");
 			DEBUG("Ip address is %i.%i.%i.%i\n",ipcp->ip.u8[0],ipcp->ip.u8[1],ipcp->ip.u8[2],ipcp->ip.u8[3]);	
 			protocol->state = PROTOCOL_UP;
 			break;
 		case PPP_LINKDOWN:
-			DEBUG("IPv4 down\n");
+			DEBUG("gnrc_ppp: IPv4 down\n");
 			protocol->state = PROTOCOL_DOWN;
 			break;
 		case PPP_RECV:
@@ -284,7 +284,7 @@ int ppp_ipv4_recv(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 
 	 /* throw away packet if no one is interested */
     if (!gnrc_netapi_dispatch_receive(GNRC_NETTYPE_IPV6, GNRC_NETREG_DEMUX_CTX_ALL, pkt)) {
-        DEBUG("gnrc_netdev2: unable to forward packet of type %i\n", pkt->type);
+        DEBUG("gnrc_ppp: unable to forward packet of type %i\n", pkt->type);
         gnrc_pktbuf_release(pkt);
         return 0;
     }	

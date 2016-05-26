@@ -282,8 +282,6 @@ ppp_target_t _fsm_lower_layer(ppp_fsm_t *cp)
 }
 void tlu(ppp_fsm_t *cp, void *args)
 {
-	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
-	DEBUG("> This layer up (a.k.a Successfully negotiated Link)\n");
 	_reset_cp_conf(cp->conf);
 	((ppp_protocol_t*) cp)->state = PROTOCOL_UP;
 	if(cp->on_layer_up){
@@ -295,8 +293,6 @@ void tlu(ppp_fsm_t *cp, void *args)
 
 void tld(ppp_fsm_t *cp, void *args)
 {
-	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
-	DEBUG("> This layer down\n");
 	_reset_cp_conf(cp->conf);
 	((ppp_protocol_t*) cp)->state = PROTOCOL_DOWN;
 	if(cp->on_layer_down){
@@ -308,8 +304,6 @@ void tld(ppp_fsm_t *cp, void *args)
 
 void tls(ppp_fsm_t *cp, void *args)
 {
-	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
-	DEBUG(">  This layer started\n");
 	_reset_cp_conf(cp->conf);
 	send_ppp_event(&((ppp_protocol_t*) cp)->msg, ppp_msg_set(_fsm_lower_layer(cp), PPP_UL_STARTED));
 	(void) cp;
@@ -317,16 +311,12 @@ void tls(ppp_fsm_t *cp, void *args)
 
 void tlf(ppp_fsm_t *cp, void *args)
 {
-	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
-	DEBUG(">  This layer finished\n");
 	send_ppp_event(&((ppp_protocol_t*) cp)->msg, ppp_msg_set(_fsm_lower_layer(cp), PPP_UL_FINISHED));
 	(void) cp;
 }
 
 void irc(ppp_fsm_t *cp, void *args)
 {
-	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
-	DEBUG(">  Init Restart Counter\n");
 
 	uint8_t cr = *((int*) args) & F_SCR; 
 
@@ -335,8 +325,6 @@ void irc(ppp_fsm_t *cp, void *args)
 
 void zrc(ppp_fsm_t *cp, void *args)
 {
-	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
-	DEBUG(">  Zero restart counter\n ");
 	cp->restart_counter = 0;
 	set_timeout(cp, cp->restart_timer);
 }
@@ -344,8 +332,6 @@ void zrc(ppp_fsm_t *cp, void *args)
 
 void scr(ppp_fsm_t *cp, void *args)
 {
-	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
-	DEBUG(">  Sending Configure Request\n");
 
 	/* Decrement configure counter */
 	cp->restart_counter -= 1;
@@ -368,8 +354,6 @@ void scr(ppp_fsm_t *cp, void *args)
 void sca(ppp_fsm_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
-	DEBUG(">  Sending Configure Ack\n");
 
 	ppp_hdr_t *recv_ppp_hdr;
 
@@ -387,8 +371,6 @@ void sca(ppp_fsm_t *cp, void *args)
 void scn(ppp_fsm_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
-	DEBUG(">  Sending Configure Nak/Rej\n");
 
 	gnrc_pktsnip_t *opts;
 
@@ -408,15 +390,13 @@ void scn(ppp_fsm_t *cp, void *args)
 			send_configure_rej(((ppp_protocol_t*) cp)->pppdev, cp->prottype, ppp_hdr_get_id((ppp_hdr_t*) pkt->next->data), opts);
 			break;
 		default:
-			DEBUG("Shouldn't be here...\n");
+			DEBUG("gnrc_ppp: shouldn't be here...\n");
 			break;
 	}
 }
 
 void str(ppp_fsm_t *cp, void *args)
 {
-	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
-	DEBUG(">  Sending Terminate Request\n");
 
 	send_terminate_req(((ppp_protocol_t*) cp)->pppdev, cp->prottype, cp->tr_sent_identifier++);
 }
@@ -424,8 +404,6 @@ void str(ppp_fsm_t *cp, void *args)
 void sta(ppp_fsm_t *cp, void *args)
 { 
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
-	DEBUG(">  Sending Terminate Ack\n");
 	gnrc_pktsnip_t *recv_pkt = NULL;
 
 	ppp_hdr_t *recv_ppp_hdr = _get_ppp_hdr(pkt);
@@ -438,16 +416,12 @@ void sta(ppp_fsm_t *cp, void *args)
 void scj(ppp_fsm_t *cp, void *args)
 {
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
-	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
-	DEBUG(">  Sending Code Rej\n");
 
 	gnrc_pktsnip_t *payload = gnrc_pktbuf_add(NULL, pkt->data, pkt->size, cp->prottype);
 	send_code_rej(((ppp_protocol_t*) cp)->pppdev, cp->prottype, cp->cr_sent_identifier++, payload);
 }
 void ser(ppp_fsm_t *cp, void *args)
 {
-	DEBUG("%i", ((ppp_protocol_t*) cp)->id);
-
 	gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) args;
 	gnrc_pktsnip_t *ppp_hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), cp->prottype);
 	ppp_hdr_t *hdr = ppp_hdr->data;
@@ -463,14 +437,11 @@ void ser(ppp_fsm_t *cp, void *args)
 	switch(code)
 	{
 		case PPP_ECHO_REQ:
-			DEBUG(">  Sending Echo Reply\n");
 			send_echo_reply(((ppp_protocol_t*) cp)->pppdev, cp->prottype, id, data);
 			break;
 		case PPP_ECHO_REP:
-			DEBUG(">  Received echo reply. Nothing to do\n");
 			break;
 		case PPP_DISC_REQ:
-			DEBUG(">  Received Discard Request. Nothing to do\n");
 			break;
 	}
 
@@ -520,7 +491,7 @@ int trigger_fsm_event(ppp_fsm_t *cp, int event, gnrc_pktsnip_t *pkt)
 	}
 	else
 	{
-		DEBUG("Received illegal transition!\n");
+		DEBUG("gnrc_ppp: fsm received illegal transition. \n");
 	}
 	/*Check if next state doesn't have a running timer*/
 	if (cp->state < S_CLOSING || cp->state == S_OPENED)
@@ -594,7 +565,7 @@ int handle_rcr(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
 		if(curr_conf)
 			curr_conf->set(cp, opt, true);
 		else
-			DEBUG("handle_rcr inconsistency in pkt. Shouldn't happen\n");
+			DEBUG("gnrc_ppp: fsm: handle_rcr inconsistency in pkt. Shouldn't be here\n");
 	}
 
 	return E_RCRp;
@@ -631,7 +602,7 @@ int handle_rca(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 			if(!conf)
 			{
 				/*Received invalid ACK*/
-				DEBUG("Peer sent inconsistent ACK\n");
+				DEBUG("gnrc_ppp: fsm: Peer sent inconsistent ACK\n");
 				return -EBADMSG;
 			}
 			conf->set(cp, opt, false);
@@ -645,21 +616,21 @@ int handle_rcn_nak(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 	if(!pkt)
 	{
 		/* If the packet doesn't have options, it's considered as invalid. */
-		DEBUG("Received NAK packet without options. Discard\n");
+		DEBUG("gnrc_ppp: fsm: Received NAK packet without options. Discard\n");
 		return -EBADMSG;
 	}
 
 	/* Check if options are valid */
 	if (ppp_conf_opts_valid(pkt, pkt->size) <= 0)
 	{
-		DEBUG("Received NAK pkt with invalid options. Discard\n");
+		DEBUG("gnrc_ppp: fsm: Received NAK pkt with invalid options. Discard\n");
 		return -EBADMSG;
 	}
 
 
 	if (ppp_hdr_get_id(hdr) != cp->cr_sent_identifier)
 	{
-		DEBUG("ID Mismatch in NAK packet\n");
+		DEBUG("gnrc_ppp: fsm: ID Mismatch in NAK packet\n");
 		return -EBADMSG;
 	}
 
@@ -714,7 +685,7 @@ int handle_rcn_rej(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 		curr_conf = cp->get_conf_by_code(cp, ppp_opt_get_type(opt));
 		if(curr_conf == NULL)
 		{
-			DEBUG("This shouldn't happen...\n");
+			DEBUG("gnrc_ppp: Shouldn't be here\n");
 			return -EBADMSG;
 		}
 		curr_conf->flags &= ~OPT_ENABLED;
@@ -839,12 +810,10 @@ int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void 
 			return event < 0 ? event : 0;
 			break;
 		case PPP_LINKUP:
-			DEBUG("Event: PPP_LINKUP\n");
 			protocol->state = PROTOCOL_STARTING;
 			trigger_fsm_event(target, E_UP, NULL);
 			break;
 		case PPP_LINKDOWN:
-			DEBUG("Event: PPP_LINKDOWN\n");
 			trigger_fsm_event(target, E_DOWN, NULL);
 			break;
 		case PPP_UL_STARTED:
@@ -854,12 +823,10 @@ int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void 
 		case PPP_TIMEOUT:
 			if(target->restart_counter)
 			{
-				DEBUG("Event: TO+\n");
 				trigger_fsm_event(target, E_TOp, NULL);
 			}
 			else
 			{
-				DEBUG("Event: TO-\n");
 				trigger_fsm_event(target, E_TOm, NULL);
 			}
 			break;

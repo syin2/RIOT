@@ -90,7 +90,7 @@ ppp_target_t _get_target_from_protocol(uint16_t protocol)
 		case PPPTYPE_PAP:
 			return PROT_AUTH;
 		default:
-			DEBUG("Unknown PPP protocol: %i\n", protocol);
+			DEBUG("gnrc_ppp: Received unknown PPP protocol. Discard.\n");
 	}
 	return PROT_UNDEF;
 }
@@ -114,6 +114,8 @@ void print_protocol(uint16_t protocol)
 		case PPPTYPE_NCP_IPV4:
 			DEBUG("IPCP");
 			break;
+		case PPPTYPE_PAP:
+			DEBUG("PAP");
 		default:
 			DEBUG("UNKNOWN_PROTOCOL");
 			break;
@@ -302,7 +304,7 @@ int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 	
 	if(gnrc_pkt_len(hdr) > ((lcp_t*) dev->protocol[PROT_LCP])->peer_mru)
 	{
-		DEBUG("Sending exceeds peer MRU. Dropping packet.\n");
+		DEBUG("gnrc_ppp: Sending exceeds peer MRU. Dropping packet.\n");
 		gnrc_pktbuf_release(hdr);
 		return -EBADMSG;
 	}
@@ -383,7 +385,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 
 		if(!_prot_is_allowed(dev->protocol, hdlc_hdr_get_protocol(hdlc_hdr)))
 		{
-			DEBUG("gnrc_ppp: Received a ppp packet that's not allowed in current ppp state. Drop packet\n");
+			DEBUG("gnrc_ppp: Received a ppp packet that's not allowed in current ppp state. Discard packet\n");
 			gnrc_pktbuf_release(pkt);
 			return -1;
 		}
@@ -391,7 +393,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 		if(_pkt_is_ppp(pkt) && !_ppp_pkt_is_valid(pkt))
 		{
 			gnrc_pktbuf_release(pkt);
-			DEBUG("gnrc_ppp: Invalid ppp packet. Dropping.\n");
+			DEBUG("gnrc_ppp: Invalid ppp packet. Discard.\n");
 		}
 
 	}

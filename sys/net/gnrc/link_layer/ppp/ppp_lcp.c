@@ -34,6 +34,7 @@
 /* For PRIu16 etc. */
 #include <inttypes.h>
 #endif
+
 static lcp_t static_lcp;
 static cp_conf_t *lcp_get_conf_by_code(ppp_fsm_t *cp, uint8_t code)
 {
@@ -63,7 +64,7 @@ uint8_t lcp_mru_is_valid(ppp_option_t *opt)
 
 uint8_t lcp_mru_build_nak_opts(uint8_t *buf)
 {
-	uint8_t len = 4;
+	uint8_t len = OPT_SIZE_MRU;
 	ppp_option_t *opt = (ppp_option_t*) buf;
 	network_uint16_t mru = byteorder_htons(LCP_DEFAULT_MRU);
 	if(opt)
@@ -131,16 +132,13 @@ uint8_t lcp_auth_build_nak_opts(uint8_t *buf)
 {
 	uint8_t len = 4;
 	ppp_option_t *opt = (ppp_option_t*) buf;
-
-	uint8_t *payload;
-	ppp_opt_get_payload(opt, (void**) &payload);
+	network_uint16_t protnum = byteorder_htons(PPPTYPE_PAP);
 
 	if(opt)
 	{
 		ppp_opt_set_type(opt, 3);	
 		ppp_opt_set_length(opt, len);
-		*payload = (0xC0);
-		*(payload+1) = 0x23;
+		ppp_opt_set_payload(opt, &protnum, sizeof(network_uint16_t));
 	}
 	return len;
 }
@@ -197,7 +195,7 @@ int lcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 	if(ppp_event == PPP_MONITOR)
 	{
 		/*Send Echo Request*/
-		DEBUG("Sending echo request");
+		DEBUG("gnrc_ppp: Sending echo request (link monitor)");
 		gnrc_pktsnip_t *pkt = pkt_build(GNRC_NETTYPE_LCP, PPP_ECHO_REQ, ((lcp_t*) lcp)->monitor_id++, NULL);
 		gnrc_ppp_send(protocol->pppdev, pkt);
 		return 0;
