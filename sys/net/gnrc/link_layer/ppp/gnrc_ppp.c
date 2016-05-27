@@ -268,6 +268,21 @@ int gnrc_ppp_get_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
 	int res;
 	switch(opt)
 	{
+		case NETOPT_PPP_LCP_STATE:
+			*((uint8_t*) value) = dev->protocol[PROT_LCP]->state;
+			res = 0;
+			break;
+		case NETOPT_PPP_AUTH_STATE:
+			*((uint8_t*) value) = dev->protocol[PROT_AUTH]->state;
+			res = 0;
+			break;
+		case NETOPT_PPP_IPCP_STATE:
+			*((uint8_t*) value) = dev->protocol[PROT_IPCP]->state;
+			res = 0;
+			break;
+		case NETOPT_PPP_IS_IPV6_READY:
+			res = dev->protocol[PROT_IPV4]->state == PROTOCOL_UP;
+			break;
 		default:
 			res = dev->netdev->driver->get(dev->netdev, opt, value, value_len);
 			break;

@@ -13,6 +13,32 @@
 
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
+
+int ppp_cmd(int argc, char **argv)
+{
+	if(argc < 2) {
+		printf("usage: %s [set|get|status|dial_up]\n", argv[0]);
+		return 1;
+	}
+
+	if(strcmp(argv[1],"dial_up") == 0) 
+	{
+		if (argc < 3)
+		{
+			printf("usage: %s, dial_up <if>\n", argv[0]);
+			return 1;
+		}
+		msg_t msg;
+		printf("Dialing up PPP\n");
+		gnrc_ppp_dial_up(&msg, atoi(argv[2]));
+	}
+	return 0;
+}
+
+static const shell_command_t shell_commands[] = {
+    { "ppp", "gnrc_ppp CLI.", ppp_cmd},
+    { NULL, NULL, NULL }
+};
 int main(void)
 {
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
@@ -36,14 +62,13 @@ int main(void)
 	gnrc_netapi_set(netifs[1], NETOPT_APN_USER, 0, apn_user, sizeof(apn_user)-1);
 	gnrc_netapi_set(netifs[1], NETOPT_APN_PASS, 0, apn_pass, sizeof(apn_pass)-1);
 
-	msg_t msg;
-	gnrc_ppp_dial_up(&msg, netifs[1]);
-
 #if ENABLE_SHELL
 	char line_buf[SHELL_DEFAULT_BUFSIZE];
-	shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
+	shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
 #else
-	while(1){}
+	while(1){
+
+	}
 #endif
 
     return 0;
