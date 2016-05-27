@@ -20,6 +20,7 @@ QUIET ?= 1
 
 GNRC_NETIF_NUMOF := 2
 
+USEMODULE = ipv4_addr
 USEMODULE += shell
 USEMODULE += shell_commands
 USEMODULE += ps

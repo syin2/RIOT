@@ -16,8 +16,8 @@ static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
 int ppp_cmd(int argc, char **argv)
 {
-	if(argc < 2) {
-		printf("usage: %s [apn|tunnel|status|dial_up]\n", argv[0]);
+	if(argc < 3) {
+		printf("usage: %s <if> [apn|tunnel|status|dial_up]\n", argv[0]);
 		return 1;
 	}
 
@@ -43,15 +43,47 @@ int ppp_cmd(int argc, char **argv)
 		printf("setting apn to %s\n", argv[3]);
 		if(argc > 4)
 		{
-			gnrc_netapi_set(netifs[1], NETOPT_APN_USER, 0, argv[4], strlen(argv[4]));;
+			gnrc_netapi_set(atoi(argv[2]), NETOPT_APN_USER, 0, argv[4], strlen(argv[4]));;
 			printf("setting apn username to %s\n", argv[4]);
 		}
 		if(argc > 5)
 		{
-			gnrc_netapi_set(netifs[1], NETOPT_APN_PASS, 0, argv[5], strlen(argv[5]));;
+			gnrc_netapi_set(atoi(argv[2]), NETOPT_APN_PASS, 0, argv[5], strlen(argv[5]));;
 			printf("setting apn password to %s\n", argv[5]);
 		}
 	}
+	else if (strcmp(argv[1], "tunnel") == 0)
+	{
+		if(argc < 4)
+		{
+			printf("usage: %s tunnel <if> <tunnel_ipv4_address> <udp port>", argv[0]);
+			return 1;
+		}
+		ipv4_addr_t tunnel_addr;
+		if(ipv4_addr_from_str(&tunnel_addr, argv[3]) == NULL)
+		{
+			printf("malformed tunnel IP address.\n");
+			return 1;
+		}
+		uint32_t port = atoi(argv[4]);
+		if(port > 0xFFFF || port == 0)
+		{
+			printf("invalid port number");
+		}
+
+		uint16_t p16 = port;
+		gnrc_netapi_set(atoi(argv[2]), NETOPT_TUNNEL_IPV4_ADDRESS, 0, (void*) &tunnel_addr , sizeof(ipv4_addr_t));
+		gnrc_netapi_set(atoi(argv[2]), NETOPT_TUNNEL_UDP_PORT, 0, (void*) &p16 , sizeof(uint16_t));
+		printf("Setting IP address to %s and UDP port to %s\n", argv[3], argv[4]);
+	}
+	else
+	{
+		if(argc < 3) {
+			printf("usage: %s  [apn|tunnel|status|dial_up]\n", argv[0]);
+			return 1;
+		}
+	}
+	
 	return 0;
 }
 
@@ -59,24 +91,10 @@ static const shell_command_t shell_commands[] = {
     { "ppp", "gnrc_ppp CLI.", ppp_cmd},
     { NULL, NULL, NULL }
 };
+
 int main(void)
 {
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
-	kernel_pid_t netifs[GNRC_NETIF_NUMOF];
-
-	DEBUG("Number of interfaces: %i\n", gnrc_netif_get(netifs));
-
-	ipv4_addr_t tunnel_addr;
-	uint16_t port = 9876;
-	tunnel_addr.u8[0] = 51;
-	tunnel_addr.u8[1] = 254;
-	tunnel_addr.u8[2] = 204;
-	tunnel_addr.u8[3] = 66;
-
-	char apn_user[] = "test";
-	char apn_pass[] = "test";
-	gnrc_netapi_set(netifs[1], NETOPT_TUNNEL_IPV4_ADDRESS, 0, (void*) &tunnel_addr , sizeof(ipv4_addr_t));
-	gnrc_netapi_set(netifs[1], NETOPT_TUNNEL_UDP_PORT, 0, (void*) &port , sizeof(uint16_t));
 
 #if ENABLE_SHELL
 	char line_buf[SHELL_DEFAULT_BUFSIZE];
