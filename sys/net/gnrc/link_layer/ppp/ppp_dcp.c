@@ -23,11 +23,13 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 		case PPP_UL_FINISHED:
 			/*Remove timer*/
 			xtimer_remove(xtimer);
+			dcp->dead_counter = DCP_DEAD_COUNTER;
 			pppdev->driver->link_down(pppdev);
 			break;
 
 		case PPP_LINKUP:
 			protocol->state = PROTOCOL_UP;
+			dcp->dead_counter = DCP_DEAD_COUNTER;
 			send_ppp_event(msg, ppp_msg_set(PROT_LCP, PPP_LINKUP));
 #if ENABLE_MONITOR
 			/*Start monitor*/
@@ -51,7 +53,6 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 			else
 			{
 				send_ppp_event(msg, ppp_msg_set(PROT_DCP, PPP_UL_FINISHED));
-				dcp->dead_counter = DCP_DEAD_COUNTER;
 			}
 			break;
 

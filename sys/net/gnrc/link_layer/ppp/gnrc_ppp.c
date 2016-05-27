@@ -282,6 +282,10 @@ int gnrc_ppp_get_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
 			break;
 		case NETOPT_PPP_IS_IPV6_READY:
 			res = dev->protocol[PROT_IPV4]->state == PROTOCOL_UP;
+			*((uint8_t*) value) = res;
+			break;
+		case NETOPT_IS_PPP_IF:
+			res = 1;
 			break;
 		default:
 			res = dev->netdev->driver->get(dev->netdev, opt, value, value_len);
@@ -394,6 +398,11 @@ void gnrc_ppp_dispatch_pkt(msg_t *msg, kernel_pid_t pid)
 void gnrc_ppp_dial_up(msg_t *msg, kernel_pid_t pid)
 {
 	gnrc_ppp_trigger_event(msg, pid, PROT_DCP, PPP_DIALUP);
+}
+
+void gnrc_ppp_disconnect(msg_t *msg, kernel_pid_t pid)
+{
+	gnrc_ppp_trigger_event(msg, pid, PROT_DCP, PPP_LINKDOWN);
 }
 
 kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,

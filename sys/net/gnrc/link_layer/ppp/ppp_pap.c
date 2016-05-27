@@ -60,6 +60,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 				send_ppp_event(msg, ppp_msg_set(PROT_LCP, PPP_LINKDOWN));
 			}
 			else {
+				protocol->state = PROTOCOL_UP;
 				send_ppp_event(msg, ppp_msg_set(BROADCAST_NCP, PPP_LINKUP));
 			}
 			break;

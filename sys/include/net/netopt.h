@@ -219,6 +219,7 @@ typedef enum {
 	NETOPT_PPP_AUTH_STATE,
 	NETOPT_PPP_IPCP_STATE,
 	NETOPT_PPP_IS_IPV6_READY,
+	NETOPT_IS_PPP_IF,
 
     /* add more options if needed */
 

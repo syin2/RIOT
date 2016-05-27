@@ -32,7 +32,7 @@
 #include "net/inet_csum.h"
 #include <errno.h>
 
-#define ENABLE_DEBUG    (1)
+#define ENABLE_DEBUG    (0)
 #include "debug.h"
 
 #if ENABLE_DEBUG
@@ -247,6 +247,10 @@ static gnrc_pktsnip_t *_encapsulate_pkt(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *pkt)
 	return sent_pkt;
 }
 
+int _tunnel_is_set(ppp_ipv4_t *ipv4)
+{
+	return byteorder_ntohl(ipv4->tunnel_addr.u32) != DEFAULT_TUNNEL_ADDRESS && ipv4->tunnel_port != DEFAULT_TUNNEL_PORT;
+}
 int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 {
 	int ipv4_ready = ((ppp_protocol_t*) ppp_dev->protocol[PROT_IPV4])->state == PROTOCOL_UP;
@@ -256,6 +260,14 @@ int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 		gnrc_pktbuf_release(pkt);
 		return -1;
 	}
+	
+	if(!_tunnel_is_set((ppp_ipv4_t*) ppp_dev->protocol[PROT_IPV4]))
+	{
+		printf("please add tunnel address and port\n");
+		gnrc_pktbuf_release(pkt);
+		return -1;
+	}
+	
 
 	/* Remove netif*/
 	pkt = gnrc_pktbuf_remove_snip(pkt, pkt);

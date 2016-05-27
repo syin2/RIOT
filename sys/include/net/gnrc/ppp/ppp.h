@@ -179,6 +179,7 @@ void gnrc_ppp_link_up(msg_t *msg, kernel_pid_t pid);
 void gnrc_ppp_link_down(msg_t *msg, kernel_pid_t pid);
 void gnrc_ppp_dispatch_pkt(msg_t *msg, kernel_pid_t pid);
 void gnrc_ppp_dial_up(msg_t *msg, kernel_pid_t pid);
+void gnrc_ppp_disconnect(msg_t *msg, kernel_pid_t pid);
 int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value_len);
 
 kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,
