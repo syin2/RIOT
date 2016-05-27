@@ -35,7 +35,7 @@
 #include <errno.h>
 #include <string.h>
 
-#define ENABLE_DEBUG    (1)
+#define ENABLE_DEBUG    (0)
 #include "debug.h"
 
 #if ENABLE_DEBUG
@@ -103,155 +103,6 @@ gnrc_pktsnip_t *retrieve_pkt(pppdev_t *dev)
 		return pkt;
 }
 
-#if ENABLE_DEBUG
-void print_protocol(uint16_t protocol)
-{
-	switch(protocol)
-	{
-		case PPPTYPE_LCP:
-			DEBUG("LCP");
-			break;
-		case PPPTYPE_NCP_IPV4:
-			DEBUG("IPCP");
-			break;
-		case PPPTYPE_PAP:
-			DEBUG("PAP");
-		default:
-			DEBUG("UNKNOWN_PROTOCOL");
-			break;
-	}
-}
-void print_ppp_code(uint8_t code)
-{
-	switch(code)
-	{
-		case PPP_CONF_REQ:
-			DEBUG("Configure Request");
-			break;
-		case PPP_CONF_ACK:
-			DEBUG("Configure Ack");
-			break;
-		case PPP_CONF_NAK:
-			DEBUG("Configure Nak");
-			break;
-		case PPP_CONF_REJ:
-			DEBUG("Configure Rej");
-			break;
-		case PPP_TERM_REQ:
-			DEBUG("Terminate Request");
-			break;
-		case PPP_TERM_ACK:
-			DEBUG("Terminate Ack");
-			break;
-		case PPP_CODE_REJ:
-			DEBUG("Code Reject");
-			break;
-		case PPP_PROT_REJ:
-			DEBUG("Protocol Reject");
-			break;
-		case PPP_ECHO_REQ:
-			DEBUG("Echo Request");
-			break;
-		case PPP_ECHO_REP:
-			DEBUG("Echo Reply");
-			break;
-		case PPP_DISC_REQ:
-			DEBUG("Discard Request");
-			break;
-		case PPP_IDENT:
-			DEBUG("Identification");
-			break;
-		case PPP_TIME_REM:
-			DEBUG("Time Remaining");
-			break;
-		case PPP_UNKNOWN_CODE:
-			DEBUG("Unknown");
-			break;
-	}
-}
-void print_opts(gnrc_pktsnip_t *payload)
-{
-	DEBUG("OPTS:<");
-	ppp_option_t *head = payload->data;
-	ppp_option_t *curr_opt = head;
-	uint8_t type, length;
-	uint8_t *p;
-	if(payload)
-	{
-		while(curr_opt)
-		{
-			type = ppp_opt_get_type(curr_opt);
-			length = ppp_opt_get_length(curr_opt);
-			DEBUG("\n\t[TYPE:%i, LENGTH:%i, VALUE:<",type, length);
-			ppp_opt_get_payload(curr_opt, (void**) &p);
-			for(int i=0;i<length-2; i++)
-			{
-				DEBUG(" %02x ", *(p+i));
-			}
-			DEBUG(">]");
-			curr_opt = ppp_opt_get_next(curr_opt, head, payload->size);
-			if(curr_opt)
-				DEBUG(",");
-		}
-	}
-	else
-	{
-		DEBUG("None");
-	}
-	DEBUG(">");
-}
-#endif
-void print_pkt(gnrc_pktsnip_t *hdlc_hdr, gnrc_pktsnip_t *ppp_hdr, gnrc_pktsnip_t *payload)
-{
-#if ENABLE_DEBUG
-	hdlc_hdr_t *hdlc = (hdlc_hdr_t*) hdlc_hdr->data;
-	DEBUG("[");
-	print_protocol(hdlc_hdr_get_protocol(hdlc));
-	DEBUG(": ");
-
-	ppp_hdr_t *ppp = (ppp_hdr_t*) ppp_hdr->data;
-	uint8_t code = ppp_hdr_get_code(ppp);
-	print_ppp_code(code);
-	DEBUG(",ID:%i,SIZE:%i,", ppp_hdr_get_id(ppp), ppp_hdr_get_length(ppp));
-	if(code >= PPP_CONF_REQ && code <= PPP_CONF_REJ && (ppp_hdr->type == GNRC_NETTYPE_LCP || ppp_hdr->type == GNRC_NETTYPE_IPCP))
-	{
-		print_opts(payload);
-	}
-	else
-	{
-		DEBUG("DATA:<");
-		if(payload)
-		{
-			for(int i=0;i<payload->size;i++)
-			{
-				DEBUG(" %02x ", (int)*(((uint8_t*)payload->data)+i));
-			}
-		}
-	}
-	DEBUG("] ");
-	int i;
-	DEBUG("HEX: <");
-	for(i=0;i<4;i++)
-	{
-		DEBUG("%02x ", *(((uint8_t*)hdlc_hdr->data)+i));
-	}
-	for(i=0;i<4;i++)
-	{
-		DEBUG("%02x ", *(((uint8_t*)ppp_hdr->data)+i));
-	}
-	int payload_len;
-	if(payload)
-	{
-		payload_len = payload->size;
-		for(i=0;i<payload_len;i++)
-		{
-			DEBUG("%02x ", *(((uint8_t*)payload->data)+i));
-		}
-	}
-	DEBUG(">\n");
-#endif
-}
-
 int gnrc_ppp_setup(gnrc_pppdev_t *dev, pppdev_t *netdev)
 {
 	dev->netdev = netdev;
@@ -284,24 +135,7 @@ int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 	hdlc_hdr_set_protocol(&hdlc_hdr, gnrc_nettype_to_ppp_protnum(pkt->type));
 
 	gnrc_pktsnip_t *hdr = gnrc_pktbuf_add(pkt, (void*) &hdlc_hdr, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
-	DEBUG(">>>>>>>>>> SEND:");
 
-	if(hdlc_hdr_get_protocol(&hdlc_hdr) == PPPTYPE_IPV4)
-	{
-		DEBUG("HDLC's IPV4: <");
-		for(gnrc_pktsnip_t *p=hdr;p!=NULL;p=p->next)
-		{
-			for(int i=0;i<p->size;i++)
-			{
-				DEBUG("%02x ", *(((uint8_t*) p->data)+i));
-			}
-		}
-	}
-	else
-	{
-		print_pkt(hdr, pkt, pkt->next);
-	}
-	
 	if(gnrc_pkt_len(hdr) > ((lcp_t*) dev->protocol[PROT_LCP])->peer_mru)
 	{
 		DEBUG("gnrc_ppp: Sending exceeds peer MRU. Dropping packet.\n");

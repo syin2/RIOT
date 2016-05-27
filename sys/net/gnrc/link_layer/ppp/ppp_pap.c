@@ -1,8 +1,13 @@
 #include "net/gnrc/ppp/pap.h"
 #include "net/gnrc/ppp/ppp.h"
 
-#define ENABLE_DEBUG    (1)
+#define ENABLE_DEBUG    (0)
 #include "debug.h"
+
+#define PAP_TIMEOUT (5000000)
+#define DEFAULT_PAP_COUNTER (3)
+#define DEFAULT_APN_USER_SIZE (0)
+#define DEFAULT_APN_PASS_SIZE (0)
 
 static pap_t static_pap;
 gnrc_pktsnip_t *_pap_payload(pap_t *pap)
@@ -36,7 +41,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 				pkt = _pap_payload(pap);
 				protocol->state = PROTOCOL_STARTING;
 				send_pap_request(protocol->pppdev, ++pap->id, pkt);
-				send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(PROT_AUTH,PPP_TIMEOUT), 5000000);
+				send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(PROT_AUTH,PPP_TIMEOUT), PAP_TIMEOUT);
 			}
 			else
 			{
@@ -61,7 +66,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 		case PPP_TIMEOUT:
 			pkt = _pap_payload(pap);
 			send_pap_request(protocol->pppdev, ++pap->id, pkt);
-			send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(PROT_AUTH,PPP_TIMEOUT), 5000000);
+			send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(PROT_AUTH,PPP_TIMEOUT), PAP_TIMEOUT);
 			break;
 		default:
 			DEBUG("gnrc_ppp: pap: Received unknown msg\n");
@@ -72,10 +77,10 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 int pap_init(struct gnrc_pppdev_t *ppp_dev, ppp_protocol_t *protocol)
 {
 	pap_t *pap = (pap_t*) protocol;
-	pap->user_size = 0;
-	pap->pass_size = 0;
-	ppp_protocol_init((ppp_protocol_t*) pap, ppp_dev, pap_handler, 241);
-	pap->counter = 3;
+	pap->user_size = DEFAULT_APN_USER_SIZE;
+	pap->pass_size = DEFAULT_APN_PASS_SIZE;
+	ppp_protocol_init((ppp_protocol_t*) pap, ppp_dev, pap_handler, PROT_AUTH);
+	pap->counter = DEFAULT_PAP_COUNTER;
 	return 0;
 }
 

@@ -40,6 +40,12 @@
 #include <inttypes.h>
 #endif
 
+#define IPCP_OPT_SIZE_ADDRESS (4)
+#define IPV4_DEFAULT_ID (1234)
+#define DEFAULT_TUNNEL_PORT (0)
+#define DEFAULT_TUNNEL_ADDRESS (0)
+#define PPP_ADDRESS_LEN (6)
+
 typedef struct __attribute__((packed))
 {
 	ipv4_addr_t src;
@@ -86,9 +92,9 @@ static void ipcp_config_init(ppp_fsm_t *ipcp)
 {
 	ipcp->conf = IPCP_NUMOPTS ? ((ipcp_t*) ipcp)->ipcp_opts : NULL;
 
-	ipcp->conf[IPCP_IPADDRESS].type = 3;
+	ipcp->conf[IPCP_IPADDRESS].type = IPCP_OPT_IP_ADDRESS;
 	ipcp->conf[IPCP_IPADDRESS].default_value = byteorder_htonl(0);
-	ipcp->conf[IPCP_IPADDRESS].size = 4;
+	ipcp->conf[IPCP_IPADDRESS].size = IPCP_OPT_SIZE_ADDRESS;
 	ipcp->conf[IPCP_IPADDRESS].flags = OPT_ENABLED;
 	ipcp->conf[IPCP_IPADDRESS].next = NULL;
 	ipcp->conf[IPCP_IPADDRESS].is_valid = &ipcp_ipaddress_is_valid;
@@ -111,7 +117,7 @@ int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *protocol)
 	ipcp_fsm->get_conf_by_code = &ipcp_get_conf_by_code;
 	protocol->lower_layer = PROT_LCP;
 	protocol->upper_layer = PROT_IPV4;
-	ipcp->ip_id = 123420;
+	ipcp->ip_id = IPV4_DEFAULT_ID;
 	return 0;
 }
 
@@ -227,9 +233,9 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *protocol, ipcp_t *ipcp, gnrc_pppdev_t *pppdev)
 {
 	ppp_ipv4_t *ipv4 = (ppp_ipv4_t*) protocol;
-	ppp_protocol_init(protocol, ppp_dev, handle_ipv4, 240); 
-	ipv4->tunnel_addr.u32 = byteorder_htonl(0);
-	ipv4->tunnel_port = 0;
+	ppp_protocol_init(protocol, ppp_dev, handle_ipv4, PROT_IPV4); 
+	ipv4->tunnel_addr.u32 = byteorder_htonl(DEFAULT_TUNNEL_ADDRESS);
+	ipv4->tunnel_port = DEFAULT_TUNNEL_PORT;
 	return 0;
 }
 
@@ -237,7 +243,7 @@ static gnrc_pktsnip_t *_encapsulate_pkt(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *pkt)
 {
 	gnrc_pktsnip_t *sent_pkt;
 	sent_pkt = _build_udp(ipv4, pkt);
-	sent_pkt = gen_ip_pkt(ipv4, sent_pkt, 17);
+	sent_pkt = gen_ip_pkt(ipv4, sent_pkt, PROTNUM_UDP);
 	return sent_pkt;
 }
 
@@ -270,14 +276,14 @@ int ppp_ipv4_recv(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 	/* create netif header */
 	gnrc_pktsnip_t *netif_hdr;
 	netif_hdr = gnrc_pktbuf_add(NULL, NULL,
-			sizeof(gnrc_netif_hdr_t) + (2 * 6),
+			sizeof(gnrc_netif_hdr_t) + (2 * PPP_ADDRESS_LEN),
 			GNRC_NETTYPE_NETIF);
 
 	if (netif_hdr == NULL) {
 		goto safe_out;
 	}
 
-	gnrc_netif_hdr_init(netif_hdr->data, 6, 6);
+	gnrc_netif_hdr_init(netif_hdr->data, PPP_ADDRESS_LEN, PPP_ADDRESS_LEN);
 	((gnrc_netif_hdr_t *)netif_hdr->data)->if_pid = thread_getpid();
 
 	LL_APPEND(pkt, netif_hdr);

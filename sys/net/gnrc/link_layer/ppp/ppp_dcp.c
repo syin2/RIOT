@@ -1,6 +1,6 @@
 #include "net/gnrc/ppp/ppp.h"
 
-#define ENABLE_DEBUG    (1)
+#define ENABLE_DEBUG    (0)
 #define ENABLE_MONITOR (1)
 #include "debug.h"
 
@@ -43,10 +43,10 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 		case PPP_MONITOR:
 			if(dcp->dead_counter)
 			{
-				DEBUG("gnrc_ppp: dcp: No response from modem. Send echo request.\n");
 				send_ppp_event(msg, ppp_msg_set(PROT_LCP, PPP_MONITOR));
 				send_ppp_event_xtimer(timer_msg, xtimer, ppp_msg_set(PROT_DCP, PPP_MONITOR), MONITOR_TIMEOUT);
-				dcp->dead_counter -= 1;
+				if(dcp->dead_counter-- != DCP_DEAD_COUNTER)
+					DEBUG("gnrc_ppp: dcp: No response from modem. Send echo request.\n");
 			}
 			else
 			{

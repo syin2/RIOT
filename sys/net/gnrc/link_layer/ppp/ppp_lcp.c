@@ -27,13 +27,18 @@
 #include <errno.h>
 #include "net/gnrc/ppp/fsm.h"
 
-#define ENABLE_DEBUG    (1)
+#define ENABLE_DEBUG    (0)
 #include "debug.h"
 
 #if ENABLE_DEBUG
 /* For PRIu16 etc. */
 #include <inttypes.h>
 #endif
+
+#define OPT_HDR_SIZE (2)
+#define OPT_SIZE_MRU (2)
+#define OPT_SIZE_AUTH_PAP (2)
+#define OPT_SIZE_ACCM (4)
 
 static lcp_t static_lcp;
 static cp_conf_t *lcp_get_conf_by_code(ppp_fsm_t *cp, uint8_t code)
@@ -64,12 +69,12 @@ uint8_t lcp_mru_is_valid(ppp_option_t *opt)
 
 uint8_t lcp_mru_build_nak_opts(uint8_t *buf)
 {
-	uint8_t len = OPT_SIZE_MRU;
+	uint8_t len = OPT_HDR_SIZE+OPT_SIZE_MRU;
 	ppp_option_t *opt = (ppp_option_t*) buf;
 	network_uint16_t mru = byteorder_htons(LCP_DEFAULT_MRU);
 	if(opt)
 	{
-		ppp_opt_set_type(opt, 1);	
+		ppp_opt_set_type(opt, LCP_OPT_MRU);	
 		ppp_opt_set_length(opt, len);
 		ppp_opt_set_payload(opt, &mru, sizeof(network_uint16_t));
 	}
@@ -122,7 +127,7 @@ uint8_t lcp_auth_is_valid(ppp_option_t *opt)
 	uint16_t val = byteorder_ntohs(*u16);
 
 	/*Only accept PAP*/
-	if(val == 0xc023)
+	if(val == PPPTYPE_PAP)
 		return true;
 
 	return false;
@@ -130,13 +135,13 @@ uint8_t lcp_auth_is_valid(ppp_option_t *opt)
 
 uint8_t lcp_auth_build_nak_opts(uint8_t *buf)
 {
-	uint8_t len = 4;
+	uint8_t len = OPT_HDR_SIZE+OPT_SIZE_AUTH_PAP;
 	ppp_option_t *opt = (ppp_option_t*) buf;
 	network_uint16_t protnum = byteorder_htons(PPPTYPE_PAP);
 
 	if(opt)
 	{
-		ppp_opt_set_type(opt, 3);	
+		ppp_opt_set_type(opt, LCP_OPT_AUTH);	
 		ppp_opt_set_length(opt, len);
 		ppp_opt_set_payload(opt, &protnum, sizeof(network_uint16_t));
 	}
@@ -161,8 +166,8 @@ static void lcp_config_init(ppp_fsm_t *lcp)
 	lcp->conf = LCP_NUMOPTS ? ((lcp_t*) lcp)->lcp_opts : NULL;
 
 	lcp->conf[LCP_MRU].type = LCP_OPT_MRU;
-	lcp->conf[LCP_MRU].default_value = byteorder_htonl(3500);
-	lcp->conf[LCP_MRU].size = 2;
+	lcp->conf[LCP_MRU].default_value = byteorder_htonl(LCP_DEFAULT_MRU);
+	lcp->conf[LCP_MRU].size = OPT_SIZE_MRU;
 	lcp->conf[LCP_MRU].flags = 0;
 	lcp->conf[LCP_MRU].next = &lcp->conf[LCP_ACCM];
 	lcp->conf[LCP_MRU].is_valid = &lcp_mru_is_valid;
@@ -170,8 +175,8 @@ static void lcp_config_init(ppp_fsm_t *lcp)
 	lcp->conf[LCP_MRU].set = &lcp_mru_set;
 
 	lcp->conf[LCP_ACCM].type = LCP_OPT_ACCM;
-	lcp->conf[LCP_ACCM].default_value = byteorder_htonl(0xFFFFFFFF);
-	lcp->conf[LCP_ACCM].size = 4;
+	lcp->conf[LCP_ACCM].default_value = byteorder_htonl(LCP_DEFAULT_ACCM);
+	lcp->conf[LCP_ACCM].size = OPT_SIZE_ACCM;
 	lcp->conf[LCP_ACCM].flags = 0;
 	lcp->conf[LCP_ACCM].next = &lcp->conf[LCP_AUTH];
 	lcp->conf[LCP_ACCM].is_valid = &lcp_accm_is_valid;
@@ -179,8 +184,8 @@ static void lcp_config_init(ppp_fsm_t *lcp)
 	lcp->conf[LCP_ACCM].set = &lcp_accm_set;
 
 	lcp->conf[LCP_AUTH].type = LCP_OPT_AUTH;
-	lcp->conf[LCP_AUTH].default_value = byteorder_htonl(0xFFFFFFFF);
-	lcp->conf[LCP_AUTH].size = 2;
+	lcp->conf[LCP_AUTH].default_value = byteorder_htonl(LCP_DEFAULT_AUTH);
+	lcp->conf[LCP_AUTH].size = OPT_SIZE_AUTH_PAP;
 	lcp->conf[LCP_AUTH].flags = 0;
 	lcp->conf[LCP_AUTH].next = NULL;
 	lcp->conf[LCP_AUTH].is_valid = &lcp_auth_is_valid;
@@ -225,8 +230,8 @@ int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *protocol)
 	lcp->get_conf_by_code = &lcp_get_conf_by_code;
 	((ppp_protocol_t*) lcp)->lower_layer = PROT_DCP;
 	((ppp_protocol_t*) lcp)->upper_layer = PROT_AUTH;
-	((lcp_t*) lcp)->mru = 1500;
-	((lcp_t*) lcp)->peer_mru = 1500;
+	((lcp_t*) lcp)->mru = LCP_DEFAULT_MRU;
+	((lcp_t*) lcp)->peer_mru = LCP_DEFAULT_MRU;
 	((lcp_t*) lcp)->remote_auth = 0;
 	((lcp_t*) lcp)->local_auth = 0;
 	((lcp_t*) lcp)->monitor_id = 0;

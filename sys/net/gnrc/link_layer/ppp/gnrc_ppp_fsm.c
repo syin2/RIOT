@@ -13,7 +13,7 @@
 #include <errno.h>
 #include <string.h>
 
-#define ENABLE_DEBUG    (1)
+#define ENABLE_DEBUG    (0)
 #include "debug.h"
 
 #if ENABLE_DEBUG
@@ -727,8 +727,6 @@ static int handle_conf_pkt(ppp_fsm_t *cp, int type, gnrc_pktsnip_t *pkt)
 {
 	gnrc_pktsnip_t *ppp_hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), cp->prottype);
 	gnrc_pktsnip_t *payload = ppp_hdr == pkt ? NULL : pkt;
-	print_pkt(ppp_hdr->next, ppp_hdr, payload);
-
 	ppp_hdr_t *hdr = (ppp_hdr_t*) ppp_hdr->data;
 
 	int event;
@@ -765,7 +763,6 @@ int fsm_event_from_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
 
 	int event;
 
-	DEBUG("<<<<<<<<<< RECV:");
 	switch(type){
 		case PPP_CONF_REQ:
 		case PPP_CONF_ACK:

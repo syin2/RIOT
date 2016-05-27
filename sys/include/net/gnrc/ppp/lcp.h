@@ -13,6 +13,8 @@ extern "C" {
 
 #define LCP_MAX_MRU (2000)
 #define LCP_DEFAULT_MRU (1500)
+#define LCP_DEFAULT_ACCM (0xFFFFFFFF)
+#define LCP_DEFAULT_AUTH (PPPTYPE_PAP)
 
 #define LCP_MRU_EN (1)
 #define LCP_RESTART_TIMER (3000000U)
