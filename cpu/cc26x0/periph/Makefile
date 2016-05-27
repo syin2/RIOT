@@ -1,3 +1,1 @@
-MODULE = libfixmath-unittests
-
 include $(RIOTBASE)/Makefile.base

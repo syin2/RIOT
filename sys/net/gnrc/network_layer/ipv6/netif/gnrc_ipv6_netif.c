@@ -863,7 +863,7 @@ void gnrc_ipv6_netif_init_by_dev(void)
              * gnrc_ipv6_netif_add() */
         }
 
-        if (gnrc_netapi_get(ifs[i], NETOPT_IS_WIRED, 0, &tmp, sizeof(int)) > 0) {
+        if (gnrc_netapi_get(ifs[i], NETOPT_IS_WIRED, 0, NULL, 0) > 0) {
             ipv6_if->flags |= GNRC_IPV6_NETIF_FLAGS_IS_WIRED;
         }
         else {
@@ -896,6 +896,14 @@ void gnrc_ipv6_netif_init_by_dev(void)
 #endif
     }
 }
+
+#ifdef MODULE_NETSTATS_IPV6
+netstats_t *gnrc_ipv6_netif_get_stats(kernel_pid_t pid)
+{
+    gnrc_ipv6_netif_t *iface = gnrc_ipv6_netif_get(pid);
+    return &(iface->stats);
+}
+#endif
 
 /**
  * @}

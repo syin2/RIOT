@@ -1,3 +1,1 @@
-MODULE = libfixmath
-
 include $(RIOTBASE)/Makefile.base

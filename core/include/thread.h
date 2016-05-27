@@ -22,7 +22,6 @@
 #ifndef THREAD_H
 #define THREAD_H
 
-#include "priority_queue.h"
 #include "clist.h"
 #include "cib.h"
 #include "msg.h"
@@ -89,7 +88,7 @@ struct _thread {
     void *wait_data;                /**< used by msg and thread flags   */
 #endif
 #if defined(MODULE_CORE_MSG)
-    priority_queue_t msg_waiters;   /**< threads waiting on message     */
+    list_node_t msg_waiters;        /**< threads waiting on message     */
     cib_t msg_queue;                /**< message queue                  */
     msg_t *msg_array;               /**< memory holding messages        */
 #endif
@@ -103,29 +102,47 @@ struct _thread {
 #endif
 };
 
- /**
+/**
  * @def THREAD_STACKSIZE_DEFAULT
  * @brief A reasonable default stack size that will suffice most smaller tasks
+ *
+ * @note This value must be defined by the CPU specific implementation, please
+ *       take a look at @c cpu/$CPU/include/cpu_conf.h
  */
 #ifndef THREAD_STACKSIZE_DEFAULT
 #error THREAD_STACKSIZE_DEFAULT must be defined per CPU
+#endif
+#ifdef DOXYGEN
+#define THREAD_STACKSIZE_DEFAULT
 #endif
 
 /**
  * @def THREAD_STACKSIZE_IDLE
  * @brief Size of the idle task's stack in bytes
+ *
+ * @note This value must be defined by the CPU specific implementation, please
+ *       take a look at @c cpu/$CPU/include/cpu_conf.h
  */
 #ifndef THREAD_STACKSIZE_IDLE
 #error THREAD_STACKSIZE_IDLE must be defined per CPU
+#endif
+#ifdef DOXYGEN
+#define THREAD_STACKSIZE_IDLE
 #endif
 
 /**
  * @def THREAD_EXTRA_STACKSIZE_PRINTF
  * @ingroup conf
  * @brief Size of the task's printf stack in bytes
+ *
+ * @note This value must be defined by the CPU specific implementation, please
+ *       take a look at @c cpu/$CPU/include/cpu_conf.h
  */
 #ifndef THREAD_EXTRA_STACKSIZE_PRINTF
 #error THREAD_EXTRA_STACKSIZE_PRINTF must be defined per CPU
+#endif
+#ifdef DOXYGEN
+#define THREAD_EXTRA_STACKSIZE_PRINTF
 #endif
 
 /**
@@ -192,7 +209,8 @@ struct _thread {
  *
  * Creating a new thread is done in two steps:
  * 1. the new thread's stack is initialized depending on the platform
- * 2. the new thread is added to the scheduler to be run
+ * 2. the new thread is added to the scheduler and the scheduler is run (if not
+ *    indicated otherwise)
  *
  * As RIOT is using a fixed priority scheduling algorithm, threads are
  * scheduled based on their priority. The priority is fixed for every thread
@@ -203,6 +221,17 @@ struct _thread {
  *
  * The lowest possible priority is *THREAD_PRIORITY_IDLE - 1*. The value is depending
  * on the platforms architecture, e.g. 30 in 32-bit systems, 14 in 16-bit systems.
+ *
+ * @note Assigning the same priority to two or more threads is usually not a
+ *       good idea. A thread in RIOT may run until it yields (@ref
+ *       thread_yield) or another thread with higher priority is runnable (@ref
+ *       STATUS_ON_RUNQUEUE) again. Having multiple threads with the same
+ *       priority may make it difficult to determine when which of them gets
+ *       scheduled and how much CPU time they will get. In most applications,
+ *       the number of threads in application is significantly smaller than the
+ *       number of available priorities, so assigning distinct priorities per
+ *       thread should not be a problem. Only assign the same priority to
+ *       multiple threads if you know what you are doing!
  *
  *
  * In addition to the priority, the *flags* argument can be used to alter the

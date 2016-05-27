@@ -168,7 +168,7 @@ typedef enum {
      * If the interface is wireless this function will return -ENOTSUP, a
      * positive value otherwise.
      *
-     * @note Setting this option will always return -EONOTSUP.
+     * @note Setting this option will always return -ENOTSUP.
      */
     NETOPT_IS_WIRED,
 
@@ -207,19 +207,61 @@ typedef enum {
      */
     NETOPT_STATS,
 
+	/**
+	 * @brief set the APN name of a GSM network
+	 *
+	 * Expects a string containing APN name
+	 */
+
 	NETOPT_APN_NAME,
+
+	/**
+	 * @brief set the APN username
+	 *
+	 * Expects a string containing the APN username
+	 */
 	NETOPT_APN_USER,
+
+	/**
+	 * @brief set the APN password
+	 *
+	 * Expects a string containing the APN password
+	 */
 	NETOPT_APN_PASS,
-	NETOPT_PPP_ACCM,
+	/**
+	 * @brief set the PPP UDP tunnel address (IPv4)
+	 *
+	 * Expects a pointer to an ipv4_addr_t structure.
+	 */
 	NETOPT_TUNNEL_IPV4_ADDRESS,
+	/**
+	 * @brief set the UDP port of the tunnel server
+	 *
+	 * Expects a pointer to a uint16_t port.
+	 */
 	NETOPT_TUNNEL_UDP_PORT,
+	/**
+	 * @brief set the Async Control Character Map for reception in gnrc_ppp
+	 *
+	 * Expects a pointer to a network_uint32_t containing the ACCM
+	 */
 	NETOPT_PPP_ACCM_RX,
+	/**
+	 * @brief set the Async Control Character Map for transmission in gnrc_ppp
+	 *
+	 * Expects a pointer to a network_uint32_t containing the ACCM
+	 */
 	NETOPT_PPP_ACCM_TX,
 	NETOPT_PPP_LCP_STATE,
 	NETOPT_PPP_AUTH_STATE,
 	NETOPT_PPP_IPCP_STATE,
 	NETOPT_PPP_IS_IPV6_READY,
 	NETOPT_IS_PPP_IF,
+    /**
+     * @brief en/disable encryption.
+     */
+    NETOPT_ENCRYPTION,        /**< en/disable encryption */
+    NETOPT_ENCRYPTION_KEY,    /**< set encryption key */
 
     /* add more options if needed */
 
