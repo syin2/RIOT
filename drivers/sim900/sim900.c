@@ -59,6 +59,7 @@
 void pdp_netattach_timeout(sim900_t *dev);
 void pdp_netattach(sim900_t *dev);
 void pdp_check_netattach(sim900_t *dev);
+void dial_up(sim900_t *dev);
 
 static inline void _reset_at_status(sim900_t *dev)
 {
@@ -277,7 +278,7 @@ void check_data_mode(sim900_t *dev)
         puts("Failed to enter data mode");
 
         /* Force dial-up again */
-        _send_driver_event(&dev->msg, PPPDEV_LINK_DOWN_EVENT);
+		dial_up(dev);
     }
 }
 

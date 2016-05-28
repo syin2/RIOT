@@ -42,11 +42,29 @@ extern "C" {
 #define F_SCJ (1U<<11)
 #define F_SER (1U<<12)
 
+/* flags for setting FSM codes */
+#define FLAG_CONF_REQ (1<<0)
+#define FLAG_CONF_ACK (1<<1)
+#define FLAG_CONF_NAK (1<<2)
+#define FLAG_CONF_REJ (1<<3)
+#define FLAG_TERM_REQ (1<<4)
+#define FLAG_TERM_ACK (1<<5)
+#define FLAG_CODE_REJ (1<<6)
+#define FLAG_PROT_REJ (1<<7)
+#define FLAG_ECHO_REQ (1<<8)
+#define FLAG_ECHO_REP (1<<9)
+#define FLAG_DISC_REQ (1<<10)
+#define FLAG_IDENT (1<<11)
+#define FLAG_TIME_REM (1<<12)
+
+
 #define PPP_MAX_TERMINATE (3) /**< Maximum number of Terminate Request retransmission*/
 #define PPP_MAX_CONFIG (10) /**< Maximum number of Configure Request retransmission */
 
 #define OPT_PAYLOAD_BUF_SIZE (100) /**< Size of PPP packet payload (only for Auth, LCP, and NCP packets) */
 
+#define OPT_ENABLED (1) /**< FSM option enabled */
+#define OPT_REQUIRED (2) /**< FSM option is required */
 /**
  * @brief Option Negotiation Automaton FSM events
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Martine Lenders <mlenders@inf.fu-berlin.de>
+ * Copyright (C) 2015 José Ignacio Alamos <jialamos@uc.cl>
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -7,17 +7,14 @@
  */
 
 /**
- * @defgroup    net_gnrc_slip SLIP
- * @ingroup     net_gnrc
- * @brief       Provides a SLIP interface over UART utilizing
- *              @ref drivers_periph_uart.
+ * @defgroup    net_gnrc_ppp gnrc ppp definitions
+ * @ingroup     net_gnrc_ppp
  * @{
  *
  * @file
- * @brief       SLIP interface defintion
+ * @brief  Definitions and interface of gnrc ppp 
  *
- * @author      Martine Lenders <mlenders@inf.fu-berlin.de>
- * @author      Hauke Petersen <hauke.petersen@fu-berlin.de>
+ * @author  José Ignacio Alamos <jialamos@uc.cl>
  */
 
 #ifndef GNRC_PPP_H_
@@ -44,58 +41,36 @@ extern "C" {
 
 #define GNRC_PPP_MSG_QUEUE 64
 
-#define PPP_HDLC_ADDRESS (0xFF)
-#define PPP_HDLC_CONTROL (0x03)
+#define PPP_HDLC_ADDRESS (0xFF) /**< HDLC address field for PPP */
+#define PPP_HDLC_CONTROL (0x03) /**< HDLC control field for PPP */
 
 
-#define AUTH_PAP (1)
+#define AUTH_PAP (1) /**< Label of PAP authentication */
 
-#define PPP_CONF_REQ (1)
-#define PPP_CONF_ACK (2)
-#define PPP_CONF_NAK (3)
-#define PPP_CONF_REJ (4)
-#define PPP_TERM_REQ (5)
-#define PPP_TERM_ACK (6)
-#define PPP_CODE_REJ (7)
-#define PPP_PROT_REJ (8)
-#define PPP_ECHO_REQ (9)
-#define PPP_ECHO_REP (10)
-#define PPP_DISC_REQ (11)
-#define PPP_IDENT (12)
-#define PPP_TIME_REM (13)
-#define PPP_UNKNOWN_CODE (0)
+#define PPP_CONF_REQ (1) /**< Code of Configure Request packet */
+#define PPP_CONF_ACK (2) /**< Code of Configure Ack packet */
+#define PPP_CONF_NAK (3) /**< Code of Configure NAK packet */
+#define PPP_CONF_REJ (4) /**< Code of Configure Reject packet */
+#define PPP_TERM_REQ (5) /**< Code of Temrminate Request packet */
+#define PPP_TERM_ACK (6) /**< Code of Terminate ACK packet */
+#define PPP_CODE_REJ (7) /**< Code of Code Reject packet */
+#define PPP_PROT_REJ (8) /**< Code of Protocol Reject packet */
+#define PPP_ECHO_REQ (9) /**< Code of Echo Request packet */
+#define PPP_ECHO_REP (10) /**< Code of Echo Reply packet */
+#define PPP_DISC_REQ (11) /**< Code of Discard Request packet */
+#define PPP_IDENT (12) /**< Code of Identification (not used yet) */
+#define PPP_TIME_REM (13) /**< Code of Time Remaining /not used yet) */
+#define PPP_UNKNOWN_CODE (0) /**< Code for Unknown Code packet (internal use)*/
 
-
-#define FLAG_CONF_REQ (1<<0)
-#define FLAG_CONF_ACK (1<<1)
-#define FLAG_CONF_NAK (1<<2)
-#define FLAG_CONF_REJ (1<<3)
-#define FLAG_TERM_REQ (1<<4)
-#define FLAG_TERM_ACK (1<<5)
-#define FLAG_CODE_REJ (1<<6)
-#define FLAG_PROT_REJ (1<<7)
-#define FLAG_ECHO_REQ (1<<8)
-#define FLAG_ECHO_REP (1<<9)
-#define FLAG_DISC_REQ (1<<10)
-#define FLAG_IDENT (1<<11)
-#define FLAG_TIME_REM (1<<12)
-
-
-#define BROADCAST_LCP (0xff)
-#define BROADCAST_NCP (0xfe)
+#define BROADCAST_LCP (0xff) /**< Shortcut to LCP message */
+#define BROADCAST_NCP (0xfe) /**< Broadcast message to al NCP available */
 
 
 #define GNRC_PPP_MSG_QUEUE_SIZE (20)
 
 
-#define OPT_ENABLED (1)
-#define OPT_REQUIRED (2)
-
-/*TODO: Of course, change!*/
 #define PPPDEV_MSG_TYPE_EVENT (100)
 #define GNRC_PPPDEV_MSG_TYPE_EVENT (101)
-
-#define PPPDEV_LINK_DOWN_EVENT (10)
 
 #define DCP_MONITOR_INIT_DELAY (15000000)
 #define DCP_MONITOR_TIMEOUT (10000000)
