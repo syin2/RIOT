@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2016 José Ignacio Alamos <jialamos@uc.cl>
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
+/**
+ * @defgroup    net_gnrc_ppp Option Negotiation Automaton FSM header definitions
+ * @ingroup     net_gnrc_ppp
+ * @{
+ *
+ * @file
+ * @brief  Option Negotiation Automaton FSM definitions 
+ *
+ * @author  José Ignacio Alamos <jialamos@uc.cl>
+ */
 #ifndef PPP_FSM_H_
 #define PPP_FSM_H_
 
@@ -152,24 +170,79 @@ typedef struct ppp_fsm_t{
 	void (*on_layer_down)(ppp_fsm_t *cp); /**< Optional callback when current FSM is down */
 } ppp_fsm_t;
 
+/**
+ * @brief Data type or representing a PPP option
+ */
 typedef struct fsm_conf_t
 {
-	uint8_t type;
-	network_uint32_t value;
-	network_uint32_t default_value;
-	size_t size;
-	uint8_t flags;
+	uint8_t type; /**< Option type */
+	network_uint32_t value;/**< Current option value */
+	network_uint32_t default_value; /**< Default value of option (for resetting purposes). */
+	size_t size; /**< Number of bytes of current option */
+	/**
+	 * @brief flags of the current options.
+	 *
+	 * Set OPT_ENABLED flag for enabling or disabling the option. Set OPT_REQUIRED flag if option is mandatory
+	 */
+	uint8_t flags; 
+	/**
+	 * @brief hook for is_valid function for a received option in a Configure Request 
+	 *
+	 * @details This hook should return true if the option is valid. False otherwise
+	 */
 	uint8_t (*is_valid)(ppp_option_t *opt);
-	uint8_t (*build_nak_opts)(ppp_option_t *opt);
+	/**
+	 * @brief hook for build_nak_options function for a NAK'd option in a Configure Request 
+	 *
+	 * @details This hook should write the suggested options in buf. If buf is NULL, returns the size of the options.
+	 * Always returns the size of written buf.
+	 */
+	uint8_t (*build_nak_opts)(uint8_t *buf);
+	/**
+	 * @brief hook for set function for a ACK'd option in a Configure Request 
+	 *
+	 * @details This hook should do whatever is necessary after ACK'd an option.
+	 */
 	void (*set)(ppp_fsm_t *t, ppp_option_t *opt, uint8_t peer);
-	struct fsm_conf_t *next;
+	struct fsm_conf_t *next; /**< pointer to next configuration */
 } fsm_conf_t;
 
+/**
+ * @brief init the Option Negotiation Automaton FSM
+ *
+ * @param[in] ppp_dev pointer to GNRC pppdev object
+ * param[in] cp Pointer to the Option Negotiation Automaton FSM
+ *
+ * @return 0 for now.
+ */
 int fsm_init(struct gnrc_pppdev_t *ppp_dev, ppp_fsm_t *cp);
+/**
+ * @brief triggers an event in the FSM
+ * 
+ * @param cp Pointer to FSM
+ * @param event event of Option Negotiation Automaton
+ * @param pkt Pointer to a pkt. NULL if the event is not packet related
+ *
+ * @return -EBADMSG if there was an error in the packet
+ * @return 0
+ */
 int trigger_fsm_event(ppp_fsm_t *cp, int event, gnrc_pktsnip_t *pkt);
+/**
+ * @brief Protocol handler for an FSM.
+ *
+ * @param protocol pointer to FSM (base class)
+ * @param ppp_event event to be handled
+ * @param args args for handler
+ *
+ * @return 0
+ * @return Error code if something went wrong
+ */
 int fsm_handle_ppp_msg(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args); 
 
 #ifdef __cplusplus
 }
 #endif
 #endif
+/**
+ * @}
+ */
