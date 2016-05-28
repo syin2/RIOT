@@ -1,4 +1,23 @@
+/*
+ * Copyright (C) 2015 José Ignacio Alamos <jialaos@uc.cl>
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser General
+ * Public License v2.1. See the file LICENSE in the top level directory for
+ * more details.
+ */
 
+/**
+ * @defgroup    net_hdlc_fcs    FCS calculation
+ * @ingroup     net_hdlc
+ * @brief       FCS calculation routine 
+ *
+ * @{
+ *
+ * @file
+ * @brief       Routine for DCS calculation
+ *
+ * @author      José Ignacio Alamos <jialamos@uc.cl>
+ */
 #ifndef HDLC_FCS_H
 #define HDLC_FCS_H
 
@@ -9,6 +28,7 @@ extern "C" {
 #endif
 
 
+/* Table for fast calculation of fcs16 */
 static uint16_t fcstab[256] = {
       0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf,
       0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c, 0xdbe5, 0xe97e, 0xf8f7,
@@ -44,6 +64,17 @@ static uint16_t fcstab[256] = {
       0x7bc7, 0x6a4e, 0x58d5, 0x495c, 0x3de3, 0x2c6a, 0x1ef1, 0x0f78
    };
 
+/**
+ * @brief single iteration of a FCS calculation. 
+ *
+ * This function does only one iteration of the Frame Checksum Sequence calculation. It's pretended to be used when data
+ * arrives serially.
+ *
+ * @param fcs16 Accumulation of FCS
+ * @param c current byte for FCS calculation.
+ *
+ * @return Accumulation of FCS after current byte.
+ */
 static inline uint16_t fcs16_bit(uint16_t fcs16, uint8_t c)
 {
 	return (fcs16 >> 8) ^ fcstab[(fcs16 ^ c) & 0xFF];
@@ -53,4 +84,5 @@ static inline uint16_t fcs16_bit(uint16_t fcs16, uint8_t c)
 }
 #endif
 
-#endif
+#endif /* HDLC_FCS_H */
+/** @} */

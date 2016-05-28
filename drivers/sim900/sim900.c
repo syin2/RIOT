@@ -55,7 +55,7 @@
 #define SIM900_LINKDOWN_DELAY (1000000U)
 
 #define DUMMY_ADDR_LEN (6)
-
+#define DEFAULT_ACCM (0xffffffff)
 void pdp_netattach_timeout(sim900_t *dev);
 void pdp_netattach(sim900_t *dev);
 void pdp_check_netattach(sim900_t *dev);
@@ -366,8 +366,8 @@ int sim900_init(pppdev_t *d)
     dev->int_fcs = PPPINITFCS16;
     dev->_num_esc = 0;
     dev->_stream = 0;
-    dev->rx_accm = 0xffffffff;
-    dev->tx_accm = 0xffffffff;
+    dev->rx_accm = DEFAULT_ACCM;
+    dev->tx_accm = DEFAULT_ACCM;
     dev->mac_pid = thread_getpid();
     memset(dev->apn, 0, SIM900_APN_SIZE);
 

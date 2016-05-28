@@ -241,21 +241,50 @@ typedef enum {
 	 */
 	NETOPT_TUNNEL_UDP_PORT,
 	/**
-	 * @brief set the Async Control Character Map for reception in gnrc_ppp
+	 * @brief set the Async Control Character Map for reception
 	 *
 	 * Expects a pointer to a network_uint32_t containing the ACCM
 	 */
 	NETOPT_PPP_ACCM_RX,
 	/**
-	 * @brief set the Async Control Character Map for transmission in gnrc_ppp
+	 * @brief set the Async Control Character Map for transmission
 	 *
 	 * Expects a pointer to a network_uint32_t containing the ACCM
 	 */
 	NETOPT_PPP_ACCM_TX,
+	/**
+	 * @brief get the state of Link Control Protocol in GNRC PPP
+	 *
+	 * Expects a pointer to a uint8_t containing the state of the LCP. The state is represented according to the
+	 * ppp_protocol_state_t struct. Check the ppp example for usage.
+	 */
 	NETOPT_PPP_LCP_STATE,
+	/**
+	 * @brief get the state of authentication in GNRC PPP
+	 *
+	 * Expects a pointer to a uint8_t containing the state of the authentication. The state is represented according to the
+	 * ppp_protocol_state_t struct. Check the ppp example for usage.
+	 */
 	NETOPT_PPP_AUTH_STATE,
+	/**
+	 * @brief get the state of Internet Protocol Control Protocol in GNRC PPP
+	 *
+	 * Expects a pointer to a uint8_t containing the state of the IPCP. The state is represented according to the
+	 * ppp_protocol_state_t struct. Check the ppp example for usage.
+	 */
 	NETOPT_PPP_IPCP_STATE,
+	/**
+	 * @brief check if a ppp device is ready for transmitting IPv6 data
+	 *
+	 * Expects a pointer to an uint8_t struct, with positive value if IPv6 transmission is ready. The result of the
+	 * option is the same as the pointer.
+	 */
 	NETOPT_PPP_IS_IPV6_READY,
+	/**
+	 * @brief check if an interface type is PPP.
+	 *
+	 * Returns 1 if the interface type is PPP.
+	 */
 	NETOPT_IS_PPP_IF,
     /**
      * @brief en/disable encryption.

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Freie Universität Berlin
+ * Copyright (C) 2016 José Ignacio Alamos <jialamos@uc.cl>
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -8,7 +8,7 @@
 
 /**
  * @{
- * @ingroup     net_ppp
+ * @ingroup     net_gnrc_ppp
  * @file
  * @brief       Implementation of the PPP protocol
  *
@@ -42,8 +42,6 @@
 /* For PRIu16 etc. */
 #include <inttypes.h>
 #endif
-
-#define dump_hex 1
 
 
 void send_ppp_event(msg_t *msg, ppp_msg_t ppp_msg)

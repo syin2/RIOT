@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Freie Universität Berlin
+ * Copyright (C) 2016 José Ignacio Alamos
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -8,7 +8,7 @@
 
 /**
  * @{
- * @ingroup     ppp_lcp
+ * @ingroup     net_gnrc_ppp
  * @file
  * @brief       Implementation of PPP's LCP protocol
  *
@@ -41,7 +41,7 @@
 #define OPT_SIZE_ACCM (4)
 
 static lcp_t static_lcp;
-static cp_conf_t *lcp_get_conf_by_code(ppp_fsm_t *cp, uint8_t code)
+static fsm_conf_t *lcp_get_conf_by_code(ppp_fsm_t *cp, uint8_t code)
 {
 	switch(code)
 	{

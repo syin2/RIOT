@@ -1,3 +1,24 @@
+/*
+ * Copyright (C) 2015 José Ignacio Alamos <jialamos@uc.cl>
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
+/**
+ * @{
+ * @ingroup     net_gnrc_ppp
+ * @file
+ * @brief       Implementation of the Option Negotiation Automaton FSM
+ *
+ * @author      José Ignacio Alamos <jialamos@uc.cl>
+ *
+ * @see <a href="https://tools.ietf.org/html/rfc1661#page-11">
+ *				RFC 1661, page 11.
+ *		</a>
+ * @}
+ */
 #include <errno.h>
 
 #include "msg.h"
@@ -25,7 +46,7 @@
 	for(ppp_option_t *opt = (ppp_option_t*) buf; opt != NULL; opt = ppp_opt_get_next(opt, (ppp_option_t*) buf, size))
 
 #define FOR_EACH_CONF(conf, head) \
-	for(cp_conf_t *conf = head; conf != NULL; conf = conf->next)
+	for(fsm_conf_t *conf = head; conf != NULL; conf = conf->next)
 
 ppp_hdr_t *_get_ppp_hdr(gnrc_pktsnip_t *pkt)
 {
@@ -43,14 +64,14 @@ void set_timeout(ppp_fsm_t *cp, uint32_t time)
 	send_ppp_event_xtimer(&((ppp_protocol_t*) cp)->msg, &cp->xtimer, ppp_msg_set(self, PPP_TIMEOUT), cp->restart_timer);
 }
 
-void _reset_cp_conf(cp_conf_t *conf)
+void _reset_cp_conf(fsm_conf_t *conf)
 {
 	FOR_EACH_CONF(c, conf)
 	{
 		conf->value = conf->default_value;
 	}
 }
-size_t _opts_size(cp_conf_t *head_conf)
+size_t _opts_size(fsm_conf_t *head_conf)
 {
 	size_t size=0;
 	FOR_EACH_CONF(conf, head_conf)
@@ -63,7 +84,7 @@ size_t _opts_size(cp_conf_t *head_conf)
 	return size;
 }
 
-void _write_opts(cp_conf_t *head_conf, uint8_t *buf)
+void _write_opts(fsm_conf_t *head_conf, uint8_t *buf)
 {
 	int cursor=0;
 
@@ -96,7 +117,7 @@ static uint8_t get_scnpkt_data(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt, uint16_t *n)
 	uint8_t nak_size = 0;
 	uint8_t curr_type;
 
-	cp_conf_t *curr_conf;
+	fsm_conf_t *curr_conf;
 	uint8_t curr_size;
 
 	FOR_EACH_OPTION(opt, pkt->data, pkt->size)
@@ -127,7 +148,7 @@ static uint8_t get_scnpkt_data(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt, uint16_t *n)
 
 static void build_nak_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt, uint8_t *buf)
 {
-	cp_conf_t *curr_conf;
+	fsm_conf_t *curr_conf;
 	uint8_t curr_type;
 	uint8_t cursor = 0;
 
@@ -145,7 +166,7 @@ static void build_nak_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt, uint8_t *buf)
 
 static void build_rej_pkt(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt, uint8_t *buf)
 {
-	cp_conf_t *curr_conf;
+	fsm_conf_t *curr_conf;
 
 	uint8_t curr_type;
 	uint16_t curr_size;
@@ -510,7 +531,7 @@ int fsm_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *cp)
 
 static int _opt_is_ack(ppp_fsm_t *cp, ppp_option_t *opt)
 {
-	cp_conf_t *curr_conf=NULL;
+	fsm_conf_t *curr_conf=NULL;
 	curr_conf = cp->get_conf_by_code(cp, ppp_opt_get_type(opt));
 	return curr_conf && curr_conf->is_valid(opt);
 }
@@ -558,7 +579,7 @@ int handle_rcr(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
 	}
 
 	/* Valid options... set them before SCA */
-	cp_conf_t *curr_conf;
+	fsm_conf_t *curr_conf;
 	FOR_EACH_OPTION(opt, pkt->data, pkt->size)
 	{
 		curr_conf = cp->get_conf_by_code(cp, ppp_opt_get_type(opt));
@@ -595,7 +616,7 @@ int handle_rca(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 	/*Write options in corresponding devices*/
 	if (pkt)
 	{
-		cp_conf_t *conf;
+		fsm_conf_t *conf;
 		FOR_EACH_OPTION(opt, opts, pkt->size)
 		{
 			conf = cp->get_conf_by_code(cp, ppp_opt_get_type(opt));
@@ -635,7 +656,7 @@ int handle_rcn_nak(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 	}
 
 	/*Handle nak for each option*/
-	cp_conf_t *curr_conf;
+	fsm_conf_t *curr_conf;
 	network_uint32_t value;
 	uint8_t *payload;
 
@@ -679,7 +700,7 @@ int handle_rcn_rej(ppp_fsm_t *cp, ppp_hdr_t *hdr, gnrc_pktsnip_t *pkt)
 	}
 
 	/* Disable every REJ option */
-	cp_conf_t *curr_conf;
+	fsm_conf_t *curr_conf;
 	FOR_EACH_OPTION(opt, pkt->data, pkt->size)
 	{
 		curr_conf = cp->get_conf_by_code(cp, ppp_opt_get_type(opt));

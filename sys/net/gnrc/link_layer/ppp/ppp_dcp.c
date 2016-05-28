@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2015 José Ignacio Alamos <jialamos@uc.cl>
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
+/**
+ * @{
+ * @ingroup     net_gnrc_ppp
+ * @file
+ * @brief       Implementation of the Control Protocol for Driver interface.
+ *
+ * @author      José Ignacio Alamos <jialamos@uc.cl>
+ * @}
+ */
 #include "net/gnrc/ppp/ppp.h"
 
 #define ENABLE_DEBUG    (0)

@@ -24,10 +24,16 @@ extern "C" {
 #define F_SCJ (1U<<11)
 #define F_SER (1U<<12)
 
-#define PPP_MAX_TERMINATE (3)
-#define PPP_MAX_CONFIG (10)
+#define PPP_MAX_TERMINATE (3) /**< Maximum number of Terminate Request retransmission*/
+#define PPP_MAX_CONFIG (10) /**< Maximum number of Configure Request retransmission */
 
-#define OPT_PAYLOAD_BUF_SIZE (100)
+#define OPT_PAYLOAD_BUF_SIZE (100) /**< Size of PPP packet payload (only for Auth, LCP, and NCP packets) */
+
+/**
+ * @brief Option Negotiation Automaton FSM events
+ *
+ * @see https://tools.ietf.org/html/rfc1661#section-4.3
+ */
 typedef enum{
 	E_UP,
 	E_DOWN,
@@ -49,6 +55,11 @@ typedef enum{
 } fsm_event_t;
 
 
+/**
+ * @brief Option Negotiation Automaton FSM states
+ *
+ * @see https://tools.ietf.org/html/rfc1661#section-4.2
+ */
 typedef enum{
 	S_UNDEF=-1,
 	S_INITIAL=0,
@@ -65,7 +76,11 @@ typedef enum{
 } fsm_state_t;
 
 
-/* state transition for control layer FSM */
+/**
+ * @brief Option Negotiation Automaton FSM transitions
+ *
+ * @see https://tools.ietf.org/html/rfc1661#section-4.1
+ */
 static const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 {S_CLOSED,S_REQ_SENT,S_UNDEF,S_UNDEF,S_UNDEF,S_UNDEF,S_UNDEF,S_UNDEF,S_UNDEF,S_UNDEF},
 {S_UNDEF,S_UNDEF,S_INITIAL,S_STARTING,S_INITIAL,S_STARTING,S_STARTING,S_STARTING,S_STARTING,S_STARTING},
@@ -87,10 +102,14 @@ static const int8_t state_trans[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 
 
 typedef struct ppp_fsm_t ppp_fsm_t;
-typedef struct cp_conf_t cp_conf_t;
+typedef struct fsm_conf_t fsm_conf_t;
 
 
-/* Functions flags for each state */
+/**
+ * @brief Option Negotiation Automaton FSM actions
+ *
+ * @see https://tools.ietf.org/html/rfc1661#section-4.4
+ */
 static const uint16_t actions[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 {0,F_IRC | F_SCR,0,0,0,0,0,0,0,0},
 {0,0,0,F_TLS,0,0,0,0,0,F_TLD},
@@ -109,26 +128,31 @@ static const uint16_t actions[PPP_NUM_EVENTS][PPP_NUM_STATES] = {
 {0,0,F_TLF,F_TLF,F_TLF,F_TLF,F_TLF,F_TLF,F_TLF,F_TLD | F_IRC | F_STR},
 {0,0,0,0,0,0,0,0,0,F_SER}};
 
-/* Control Protocol struct*/
+/**
+ * @brief Representation of the Option Negotiation Automaton FSM
+ *
+ * @extends ppp_protocol_t
+ *
+ */
 typedef struct ppp_fsm_t{
-	ppp_protocol_t prot;
-	gnrc_nettype_t prottype;
-	uint16_t supported_codes;
-	uint8_t state;
-	uint8_t restart_counter;
-	uint32_t restart_timer;
-	xtimer_t xtimer;
-	uint8_t cr_sent_identifier;
-	uint8_t cr_sent_opts[OPT_PAYLOAD_BUF_SIZE];
-	uint16_t cr_sent_size;
-	uint8_t tr_sent_identifier;
-	cp_conf_t* (*get_conf_by_code)(ppp_fsm_t *cp, uint8_t code);
-	cp_conf_t *conf;
-	void (*on_layer_up)(ppp_fsm_t *cp);
-	void (*on_layer_down)(ppp_fsm_t *cp);
+	ppp_protocol_t prot; /**< base class of FSM */
+	gnrc_nettype_t prottype; /**< GNRC NETTYPE of FSM */
+	uint16_t supported_codes; /**< supported codes of current FSM */
+	uint8_t state; /**< current state of FSM */
+	uint8_t restart_counter; /**< restart counter value of FSM */
+	uint32_t restart_timer; /**< restart time value of FSM */
+	xtimer_t xtimer; /**< xtimer structure for timeout handling */
+	uint8_t cr_sent_identifier; /**< last configure request id sent */
+	uint8_t cr_sent_opts[OPT_PAYLOAD_BUF_SIZE]; /**< string of last options sent */
+	uint16_t cr_sent_size; /**< size of last options sent */
+	uint8_t tr_sent_identifier; /**< last terminate request id sent */
+	fsm_conf_t* (*get_conf_by_code)(ppp_fsm_t *cp, uint8_t code); /**< pointer to fsm's get_conf_by_code function. */
+	fsm_conf_t *conf;/**< configuration array of current FSM */
+	void (*on_layer_up)(ppp_fsm_t *cp); /**< Optional callback when current FSM is ready. */
+	void (*on_layer_down)(ppp_fsm_t *cp); /**< Optional callback when current FSM is down */
 } ppp_fsm_t;
 
-typedef struct cp_conf_t
+typedef struct fsm_conf_t
 {
 	uint8_t type;
 	network_uint32_t value;
@@ -138,8 +162,8 @@ typedef struct cp_conf_t
 	uint8_t (*is_valid)(ppp_option_t *opt);
 	uint8_t (*build_nak_opts)(ppp_option_t *opt);
 	void (*set)(ppp_fsm_t *t, ppp_option_t *opt, uint8_t peer);
-	struct cp_conf_t *next;
-} cp_conf_t;
+	struct fsm_conf_t *next;
+} fsm_conf_t;
 
 int fsm_init(struct gnrc_pppdev_t *ppp_dev, ppp_fsm_t *cp);
 int trigger_fsm_event(ppp_fsm_t *cp, int event, gnrc_pktsnip_t *pkt);

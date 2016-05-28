@@ -21,7 +21,7 @@ typedef struct ipcp_t
 	ppp_fsm_t fsm;
 	ipv4_addr_t local_ip;
 	ipv4_addr_t ip;
-	cp_conf_t ipcp_opts[IPCP_NUMOPTS];
+	fsm_conf_t ipcp_opts[IPCP_NUMOPTS];
 	int ip_id;
 } ipcp_t;
 

@@ -17,11 +17,17 @@ static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 static char *ppp_status[3] = {"DOWN","STARTING","UP"};
 static char *ipv6_status[2] = {"DOWN","READY"};
 
+void _print_usage(char* p_name)
+{
+	printf("usage: %s apn <if> <apn_address> [<apn_username> [<apn_pass>]]\n", p_name);
+	printf("usage: %s dial_up <if>\n", p_name);
+	printf("usage: %s tunnel <if> <tunnel_ipv4_address> <udp port>\n", p_name);
+}
 int ppp_cmd(int argc, char **argv)
 {
 	msg_t msg;
 	if(argc < 3) {
-		printf("usage: %s <if> [apn|tunnel|status|dial_up]\n", argv[0]);
+		_print_usage(argv[0]);
 		return 1;
 	}
 
@@ -104,7 +110,7 @@ int ppp_cmd(int argc, char **argv)
 	}
 	else
 	{
-		printf("usage: %s  [apn|tunnel|status|dial_up]\n", argv[0]);
+		_print_usage(argv[0]);
 		return 1;
 	}
 	
@@ -112,7 +118,7 @@ int ppp_cmd(int argc, char **argv)
 }
 
 static const shell_command_t shell_commands[] = {
-    { "ppp", "gnrc_ppp CLI.", ppp_cmd},
+    { "ppp", "gnrc_ppp command line interface.", ppp_cmd},
     { NULL, NULL, NULL }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Freie Universität Berlin
+ * Copyright (C) 2015 José Ignacio Alaos
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -8,7 +8,7 @@
 
 /**
  * @{
- * @ingroup     ppp_ipcp
+ * @ingroup     net_gnrc_ppp
  * @file
  * @brief       Implementation of PPP's IPCP protocol
  *
@@ -58,7 +58,7 @@ typedef struct __attribute__((packed))
 static ipcp_t static_ipcp;
 static ppp_ipv4_t static_ipv4;
 
-static cp_conf_t *ipcp_get_conf_by_code(ppp_fsm_t *cp, uint8_t code)
+static fsm_conf_t *ipcp_get_conf_by_code(ppp_fsm_t *cp, uint8_t code)
 {
 	switch(code)
 	{

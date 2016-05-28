@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2015 José Ignacio Alamos <jialamos@uc.cl>
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
+/**
+ * @{
+ * @ingroup     net_gnrc_ppp
+ * @file
+ * @brief       Functions for building PPP packets.
+ *
+ * @author      José Ignacio Alamos <jialamos@uc.cl>
+ * @}
+ */
 #include "net/gnrc/ppp/ppp.h"
 
 static void _send_ppp_pkt(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t code, uint8_t id, gnrc_pktsnip_t *payload)
