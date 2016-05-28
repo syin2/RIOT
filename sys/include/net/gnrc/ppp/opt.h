@@ -33,6 +33,7 @@
 extern "C" {
 #endif
 
+#define OPT_HDR_SIZE (2) /**< size of OPT hdr */
 typedef uint8_t ppp_option_t;
 
 

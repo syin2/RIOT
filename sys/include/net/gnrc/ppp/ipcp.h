@@ -26,8 +26,8 @@
 extern "C" {
 #endif
 
-#define IPCP_OPT_IP_ADDRESS (3)
-#define IPCP_RESTART_TIMER (3000000U)
+#define IPCP_OPT_IP_ADDRESS (3) /**< code of IP Address option */
+#define IPCP_RESTART_TIMER (3000000U) /**< restart time value for IPCP */
 
 
 /**

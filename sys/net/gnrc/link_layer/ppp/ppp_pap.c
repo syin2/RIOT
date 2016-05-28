@@ -21,10 +21,10 @@
 #define ENABLE_DEBUG    (0)
 #include "debug.h"
 
-#define PAP_TIMEOUT (5000000)
-#define DEFAULT_PAP_COUNTER (3)
-#define DEFAULT_APN_USER_SIZE (0)
-#define DEFAULT_APN_PASS_SIZE (0)
+#define PAP_TIMEOUT (5000000) /**< timeout of PAP configure request */
+#define DEFAULT_PAP_COUNTER (3) /**< max attempts of PAP configuration */
+#define DEFAULT_APN_USER_SIZE (0) /**< default APN user size (no user) */
+#define DEFAULT_APN_PASS_SIZE (0) /**< default APN password size (no password) */
 
 static pap_t static_pap;
 gnrc_pktsnip_t *_pap_payload(pap_t *pap)

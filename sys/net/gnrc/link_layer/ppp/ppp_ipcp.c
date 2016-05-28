@@ -40,11 +40,11 @@
 #include <inttypes.h>
 #endif
 
-#define IPCP_OPT_SIZE_ADDRESS (4)
-#define IPV4_DEFAULT_ID (1234)
-#define DEFAULT_TUNNEL_PORT (0)
-#define DEFAULT_TUNNEL_ADDRESS (0)
-#define PPP_ADDRESS_LEN (6)
+#define IPCP_OPT_SIZE_ADDRESS (4) /**< size of Address option */
+#define IPV4_DEFAULT_ID (1234) /**< initial ID for IP packet */
+#define DEFAULT_TUNNEL_PORT (0) /**< default tunnel port */
+#define DEFAULT_TUNNEL_ADDRESS (0) /**< default tunnel IPv4 address */
+#define PPP_ADDRESS_LEN (6) /**< length of PPP address */
 
 typedef struct __attribute__((packed))
 {

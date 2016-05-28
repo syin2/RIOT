@@ -35,10 +35,9 @@
 #include <inttypes.h>
 #endif
 
-#define OPT_HDR_SIZE (2)
-#define OPT_SIZE_MRU (2)
-#define OPT_SIZE_AUTH_PAP (2)
-#define OPT_SIZE_ACCM (4)
+#define OPT_SIZE_MRU (2) /**< size of MRU option */
+#define OPT_SIZE_AUTH_PAP (2) /**< size of PAP option */
+#define OPT_SIZE_ACCM (4) /**< size of ACCM option */
 
 static lcp_t static_lcp;
 static fsm_conf_t *lcp_get_conf_by_code(ppp_fsm_t *cp, uint8_t code)

@@ -21,7 +21,7 @@
 #define ENABLE_MONITOR (1)
 #include "debug.h"
 
-#define MONITOR_TIMEOUT (5000000)
+#define MONITOR_TIMEOUT (5000000) /**< timeout of PPP monitor */
 
 static dcp_t static_dcp;
 int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
