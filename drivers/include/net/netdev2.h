@@ -46,6 +46,7 @@ extern "C" {
 #include <stdint.h>
 #include <sys/uio.h>
 
+#include "net/netstats.h"
 #include "net/netopt.h"
 
 enum {
@@ -106,6 +107,9 @@ struct netdev2 {
     const struct netdev2_driver *driver;    /**< ptr to that driver's interface. */
     netdev2_event_cb_t event_callback;      /**< callback for device events */
     void *isr_arg;                          /**< argument to pass on isr event */
+#ifdef MODULE_NETSTATS_L2
+    netstats_t stats;                       /**< transceiver's statistics */
+#endif
 };
 
 /**
@@ -129,7 +133,10 @@ typedef struct netdev2_driver {
     /**
      * @brief Get a received frame
      *
-     * Supposed to be called from netdev2_event_handler().
+     * Supposed to be called from @ref netdev2_t::event_callback().
+     *
+     * If buf == NULL and len == 0, returns the packet size without dropping it.
+     * If buf == NULL and len > 0, drops the packet and returns the packet size.
      *
      * @param[in]   dev     network device descriptor
      * @param[out]  buf     buffer to write into or NULL
@@ -157,7 +164,7 @@ typedef struct netdev2_driver {
      * This function will be called from a network stack's loop when being notified
      * by netdev2_isr.
      *
-     * It is supposed to call netdev2_event_handler for each occuring event.
+     * It is supposed to call @ref netdev2_t::event_callback() for each occuring event.
      *
      * See receive packet flow description for details.
      *

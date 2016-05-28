@@ -21,12 +21,12 @@
 
 #include "pthread_cond.h"
 #include "thread.h"
-#include "vtimer.h"
+#include "xtimer.h"
 #include "sched.h"
 #include "irq.h"
 #include "debug.h"
 
-int pthread_cond_condattr_destroy(struct pthread_condattr_t *attr)
+int pthread_cond_condattr_destroy(pthread_condattr_t *attr)
 {
     if (attr != NULL) {
         DEBUG("pthread_cond_condattr_destroy: currently attributes are not supported.\n");
@@ -35,7 +35,7 @@ int pthread_cond_condattr_destroy(struct pthread_condattr_t *attr)
     return 0;
 }
 
-int pthread_cond_condattr_init(struct pthread_condattr_t *attr)
+int pthread_cond_condattr_init(pthread_condattr_t *attr)
 {
     if (attr != NULL) {
         DEBUG("pthread_cond_condattr_init: currently attributes are not supported.\n");
@@ -76,7 +76,7 @@ int pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clock_id)
     return 0;
 }
 
-int pthread_cond_init(struct pthread_cond_t *cond, struct pthread_condattr_t *attr)
+int pthread_cond_init(pthread_cond_t *cond, pthread_condattr_t *attr)
 {
     if (attr != NULL) {
         DEBUG("pthread_cond_init: currently attributes are not supported.\n");
@@ -86,13 +86,13 @@ int pthread_cond_init(struct pthread_cond_t *cond, struct pthread_condattr_t *at
     return 0;
 }
 
-int pthread_cond_destroy(struct pthread_cond_t *cond)
+int pthread_cond_destroy(pthread_cond_t *cond)
 {
     pthread_cond_init(cond, NULL);
     return 0;
 }
 
-int pthread_cond_wait(struct pthread_cond_t *cond, struct mutex_t *mutex)
+int pthread_cond_wait(pthread_cond_t *cond, mutex_t *mutex)
 {
     priority_queue_node_t n;
     n.priority = sched_active_thread->priority;
@@ -118,24 +118,24 @@ int pthread_cond_wait(struct pthread_cond_t *cond, struct mutex_t *mutex)
     return 0;
 }
 
-int pthread_cond_timedwait(struct pthread_cond_t *cond, struct mutex_t *mutex, const struct timespec *abstime)
+int pthread_cond_timedwait(pthread_cond_t *cond, mutex_t *mutex, const struct timespec *abstime)
 {
     timex_t now, then, reltime;
 
-    vtimer_now(&now);
+    xtimer_now_timex(&now);
     then.seconds = abstime->tv_sec;
     then.microseconds = abstime->tv_nsec / 1000u;
     reltime = timex_sub(then, now);
 
-    vtimer_t timer;
-    vtimer_set_wakeup(&timer, reltime, sched_active_pid);
+    xtimer_t timer;
+    xtimer_set_wakeup64(&timer, timex_uint64(reltime) , sched_active_pid);
     int result = pthread_cond_wait(cond, mutex);
-    vtimer_remove(&timer);
+    xtimer_remove(&timer);
 
     return result;
 }
 
-int pthread_cond_signal(struct pthread_cond_t *cond)
+int pthread_cond_signal(pthread_cond_t *cond)
 {
     unsigned old_state = irq_disable();
 
@@ -164,7 +164,7 @@ static int max_prio(int a, int b)
     return (a < 0) ? b : ((a < b) ? a : b);
 }
 
-int pthread_cond_broadcast(struct pthread_cond_t *cond)
+int pthread_cond_broadcast(pthread_cond_t *cond)
 {
     unsigned old_state = irq_disable();
 

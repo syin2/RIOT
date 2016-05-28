@@ -21,6 +21,7 @@
  * @}
  */
 
+#include <string.h>
 #include <assert.h>
 #include <errno.h>
 
@@ -69,13 +70,13 @@ static int _init(netdev2_t *netdev)
     at86rf2xx_t *dev = (at86rf2xx_t *)netdev;
 
     /* initialise GPIOs */
-    gpio_init(dev->cs_pin, GPIO_OUT);
-    gpio_set(dev->cs_pin);
-    gpio_init(dev->sleep_pin, GPIO_OUT);
-    gpio_clear(dev->sleep_pin);
-    gpio_init(dev->reset_pin, GPIO_OUT);
-    gpio_set(dev->reset_pin);
-    gpio_init_int(dev->int_pin, GPIO_IN, GPIO_RISING, _irq_handler, dev);
+    gpio_init(dev->params.cs_pin, GPIO_OUT);
+    gpio_set(dev->params.cs_pin);
+    gpio_init(dev->params.sleep_pin, GPIO_OUT);
+    gpio_clear(dev->params.sleep_pin);
+    gpio_init(dev->params.reset_pin, GPIO_OUT);
+    gpio_set(dev->params.reset_pin);
+    gpio_init_int(dev->params.int_pin, GPIO_IN, GPIO_RISING, _irq_handler, dev);
 
     /* make sure device is not sleeping, so we can query part number */
     at86rf2xx_assert_awake(dev);
@@ -87,6 +88,9 @@ static int _init(netdev2_t *netdev)
         return -1;
     }
 
+#ifdef MODULE_NETSTATS_L2
+    memset(&netdev->stats, 0, sizeof(netstats_t));
+#endif
     /* reset device to default values and put it into RX state */
     at86rf2xx_reset(dev);
 
@@ -105,10 +109,13 @@ static int _send(netdev2_t *netdev, const struct iovec *vector, int count)
     for (int i = 0; i < count; i++, ptr++) {
         /* current packet data + FCS too long */
         if ((len + ptr->iov_len + 2) > AT86RF2XX_MAX_PKT_LENGTH) {
-            printf("[at86rf2xx] error: packet too large (%u byte) to be send\n",
-                   (unsigned)len + 2);
+            DEBUG("[at86rf2xx] error: packet too large (%u byte) to be send\n",
+                  (unsigned)len + 2);
             return -EOVERFLOW;
         }
+#ifdef MODULE_NETSTATS_L2
+        netdev->stats.tx_bytes += len;
+#endif
         len = at86rf2xx_tx_load(dev, ptr->iov_base, ptr->iov_len, len);
     }
 
@@ -133,14 +140,18 @@ static int _recv(netdev2_t *netdev, char *buf, int len, void *info)
     /* get the size of the received packet */
     at86rf2xx_fb_read(dev, &phr, 1);
 
-    /* Ignore FCS for packet length */
-    pkt_len = phr - 2;
+    /* ignore MSB (refer p.80) and substract length of FCS field */
+    pkt_len = (phr & 0x7f) - 2;
 
     /* just return length when buf == NULL */
     if (buf == NULL) {
         at86rf2xx_fb_stop(dev);
         return pkt_len;
     }
+#ifdef MODULE_NETSTATS_L2
+    netdev->stats.rx_count++;
+    netdev->stats.rx_bytes += pkt_len;
+#endif
     /* not enough space in buf */
     if (pkt_len > len) {
         at86rf2xx_fb_stop(dev);
@@ -372,7 +383,7 @@ static int _set(netdev2_t *netdev, netopt_t opt, void *val, size_t len)
 {
     at86rf2xx_t *dev = (at86rf2xx_t *) netdev;
     uint8_t old_state = at86rf2xx_get_status(dev);
-    int res = 0;
+    int res = -ENOTSUP;
 
     if (dev == NULL) {
         return -ENODEV;
@@ -422,7 +433,7 @@ static int _set(netdev2_t *netdev, netopt_t opt, void *val, size_t len)
                 uint8_t chan = ((uint8_t *)val)[0];
                 if (chan < AT86RF2XX_MIN_CHANNEL ||
                     chan > AT86RF2XX_MAX_CHANNEL) {
-                    res = -ENOTSUP;
+                    res = -EINVAL;
                     break;
                 }
                 at86rf2xx_set_chan(dev, chan);
@@ -438,7 +449,7 @@ static int _set(netdev2_t *netdev, netopt_t opt, void *val, size_t len)
                 uint8_t page = ((uint8_t *)val)[0];
 #ifdef MODULE_AT86RF212B
                 if ((page != 0) && (page != 2)) {
-                    res = -ENOTSUP;
+                    res = -EINVAL;
                 }
                 else {
                     at86rf2xx_set_page(dev, page);
@@ -447,7 +458,7 @@ static int _set(netdev2_t *netdev, netopt_t opt, void *val, size_t len)
 #else
                 /* rf23x only supports page 0, no need to configure anything in the driver. */
                 if (page != 0) {
-                    res = -ENOTSUP;
+                    res = -EINVAL;
                 }
                 else {
                     res = sizeof(uint16_t);
@@ -538,11 +549,8 @@ static int _set(netdev2_t *netdev, netopt_t opt, void *val, size_t len)
                 (*((uint8_t *)val) > 5)) {
                 res = -EOVERFLOW;
             }
-            else if (!(dev->netdev.flags & AT86RF2XX_OPT_CSMA)) {
-                /* If CSMA is disabled, don't allow setting retries */
-                res = -ENOTSUP;
-            }
-            else {
+            else if (dev->netdev.flags & AT86RF2XX_OPT_CSMA) {
+                /* only set if CSMA is enabled */
                 at86rf2xx_set_csma_max_retries(dev, *((uint8_t *)val));
                 res = sizeof(uint8_t);
             }
@@ -559,7 +567,7 @@ static int _set(netdev2_t *netdev, netopt_t opt, void *val, size_t len)
             break;
 
         default:
-            res = -ENOTSUP;
+            break;
     }
 
     /* go back to sleep if were sleeping and state hasn't been changed */
@@ -613,9 +621,15 @@ static void _isr(netdev2_t *netdev)
         }
         else if (state == AT86RF2XX_STATE_TX_ARET_ON ||
                  state == AT86RF2XX_STATE_BUSY_TX_ARET) {
-            at86rf2xx_set_state(dev, dev->idle_state);
+            /* check for more pending TX calls and return to idle state if
+             * there are none */
+            assert(dev->pending_tx != 0);
+            if ((--dev->pending_tx) == 0) {
+                at86rf2xx_set_state(dev, dev->idle_state);
+                DEBUG("[at86rf2xx] return to state 0x%x\n", dev->idle_state);
+            }
+
             DEBUG("[at86rf2xx] EVT - TX_END\n");
-            DEBUG("[at86rf2xx] return to state 0x%x\n", dev->idle_state);
 
             if (netdev->event_callback && (dev->netdev.flags & AT86RF2XX_OPT_TELL_TX_END)) {
                 switch (trac_status) {
