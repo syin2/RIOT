@@ -230,7 +230,7 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 }
 
 
-int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *protocol, ipcp_t *ipcp, gnrc_pppdev_t *pppdev)
+int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *protocol, ipcp_t *ipcp)
 {
 	ppp_ipv4_t *ipv4 = (ppp_ipv4_t*) protocol;
 	ppp_protocol_init(protocol, ppp_dev, handle_ipv4, PROT_IPV4); 

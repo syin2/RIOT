@@ -115,7 +115,7 @@ int gnrc_ppp_setup(gnrc_pppdev_t *dev, pppdev_t *netdev)
 	dcp_init(dev, dev->protocol[PROT_DCP]);
 	lcp_init(dev, dev->protocol[PROT_LCP]);
 	ipcp_init(dev, dev->protocol[PROT_IPCP]);
-	ppp_ipv4_init(dev, dev->protocol[PROT_IPV4], (ipcp_t*) dev->protocol[PROT_IPCP], dev);
+	ppp_ipv4_init(dev, dev->protocol[PROT_IPV4], (ipcp_t*) dev->protocol[PROT_IPCP]);
 	pap_init(dev, dev->protocol[PROT_AUTH]);
 
 	trigger_fsm_event((ppp_fsm_t*) dev->protocol[PROT_LCP], E_OPEN, NULL);
