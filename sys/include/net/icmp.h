@@ -37,13 +37,12 @@ extern "C" {
  *          RFC 792, page 13
  *      </a>
  */
-typedef struct __attribute__((packed))
-{
-	uint8_t type; /**< message type */
-	uint8_t code; /**< message code */
-	network_uint16_t csum; /**< checksum */
-	network_uint16_t id; /**< identifier */
-	network_uint16_t sn; /**< sequence number */
+typedef struct __attribute__((packed)){
+    uint8_t type;           /**< message type */
+    uint8_t code;           /**< message code */
+    network_uint16_t csum;  /**< checksum */
+    network_uint16_t id;    /**< identifier */
+    network_uint16_t sn;    /**< sequence number */
 } icmp_echo_t;
 
 
