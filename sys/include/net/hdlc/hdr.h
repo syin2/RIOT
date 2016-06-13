@@ -9,7 +9,7 @@
 /**
  * @defgroup    net_hdlc_hdr    HDLC header
  * @ingroup     net_hdlc
- * @brief       HDLC header architecture 
+ * @brief       HDLC header architecture
  *
  * @{
  *
@@ -32,9 +32,9 @@ extern "C" {
  * @brief Data type to represent an HDLC header.
  */
 typedef struct __attribute__((packed)) {
-	uint8_t address; /**< Address field oh HDLC header */
-	uint8_t control; /**< Control field of HDLC header */
-	network_uint16_t protocol; /**< Protocol field of HDLC header */
+    uint8_t address;            /**< Address field oh HDLC header */
+    uint8_t control;            /**< Control field of HDLC header */
+    network_uint16_t protocol;  /**< Protocol field of HDLC header */
 } hdlc_hdr_t;
 
 /**
@@ -45,19 +45,19 @@ typedef struct __attribute__((packed)) {
  */
 static inline void hdlc_hdr_set_address(hdlc_hdr_t *hdr, uint8_t address)
 {
-	hdr->address = address;
+    hdr->address = address;
 }
 
 /**
  * @brief Gets the address field of HDLC header
  *
  * @param hdr pointer to HDLC header
- * 
+ *
  * @return address of HDLC header
  */
 static inline uint8_t hdlc_hdr_get_address(hdlc_hdr_t *hdr)
 {
-	return hdr->address;
+    return hdr->address;
 }
 
 /**
@@ -68,19 +68,19 @@ static inline uint8_t hdlc_hdr_get_address(hdlc_hdr_t *hdr)
  */
 static inline void hdlc_hdr_set_control(hdlc_hdr_t *hdr, uint8_t control)
 {
-	hdr->control = control;
+    hdr->control = control;
 }
 
 /**
  * @brief Gets the control field of HDLC header
  *
  * @param hdr pointer to HDLC header
- * 
+ *
  * @return control field of HDLC header
  */
 static inline uint8_t hdlc_hdr_get_control(hdlc_hdr_t *hdr)
 {
-	return hdr->control;
+    return hdr->control;
 }
 
 /**
@@ -91,19 +91,19 @@ static inline uint8_t hdlc_hdr_get_control(hdlc_hdr_t *hdr)
  */
 static inline void hdlc_hdr_set_protocol(hdlc_hdr_t *hdr, uint16_t protocol)
 {
-	hdr->protocol = byteorder_htons(protocol);
+    hdr->protocol = byteorder_htons(protocol);
 }
 
 /**
  * @brief Gets the protocol of HDLC header
  *
  * @param hdr pointer to HDLC header
- * 
+ *
  * @return protocol of HDLC header
  */
 static inline uint16_t hdlc_hdr_get_protocol(hdlc_hdr_t *hdr)
 {
-	return byteorder_ntohs(hdr->protocol);
+    return byteorder_ntohs(hdr->protocol);
 }
 
 #ifdef __cplusplus
