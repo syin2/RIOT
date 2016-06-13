@@ -30,51 +30,51 @@
 
 static void test_ppp_hdr_get_code(void)
 {
-    uint8_t val[] = {PPP_CODE};
+    uint8_t val[] = { PPP_CODE };
 
-    TEST_ASSERT_EQUAL_INT(PPP_CODE, ppp_hdr_get_code((ppp_hdr_t*) val));
+    TEST_ASSERT_EQUAL_INT(PPP_CODE, ppp_hdr_get_code((ppp_hdr_t *) val));
 }
 
 static void test_ppp_hdr_set_code(void)
 {
-    uint8_t val[] = {OTHER_BYTE};
+    uint8_t val[] = { OTHER_BYTE };
 
-    ppp_hdr_set_code((ppp_hdr_t*) val, PPP_CODE);
+    ppp_hdr_set_code((ppp_hdr_t *) val, PPP_CODE);
 
     TEST_ASSERT_EQUAL_INT(PPP_CODE, val[0]);
 }
 
 static void test_ppp_hdr_get_id(void)
 {
-    uint8_t val[] = {PPP_CODE, PPP_ID};
+    uint8_t val[] = { PPP_CODE, PPP_ID };
 
-    TEST_ASSERT_EQUAL_INT(PPP_ID, ppp_hdr_get_id((ppp_hdr_t*) val));
+    TEST_ASSERT_EQUAL_INT(PPP_ID, ppp_hdr_get_id((ppp_hdr_t *) val));
 }
 
 static void test_ppp_hdr_set_id(void)
 {
-    uint8_t val[] = {TEST_UINT8, PPP_ID};
+    uint8_t val[] = { TEST_UINT8, PPP_ID };
 
-    ppp_hdr_set_id((ppp_hdr_t*) val, PPP_ID);
+    ppp_hdr_set_id((ppp_hdr_t *) val, PPP_ID);
 
     TEST_ASSERT_EQUAL_INT(PPP_ID, val[1]);
 }
 
 static void test_ppp_hdr_get_length(void)
 {
-    uint8_t val[] = {PPP_CODE, PPP_ID, PPP_LENGTH >> 8, PPP_LENGTH & 0x00FF};
+    uint8_t val[] = { PPP_CODE, PPP_ID, PPP_LENGTH >> 8, PPP_LENGTH & 0x00FF };
 
-    TEST_ASSERT_EQUAL_INT(PPP_LENGTH, ppp_hdr_get_length((ppp_hdr_t*) val));
+    TEST_ASSERT_EQUAL_INT(PPP_LENGTH, ppp_hdr_get_length((ppp_hdr_t *) val));
 }
 
 static void test_ppp_hdr_set_length(void)
 {
-    uint8_t val[] = {PPP_CODE, PPP_ID, OTHER_U16 >> 8, OTHER_U16  & 0x00FF};
+    uint8_t val[] = { PPP_CODE, PPP_ID, OTHER_U16 >> 8, OTHER_U16  & 0x00FF };
 
-    ppp_hdr_set_length((ppp_hdr_t*) val, PPP_LENGTH);
+    ppp_hdr_set_length((ppp_hdr_t *) val, PPP_LENGTH);
 
-    TEST_ASSERT_EQUAL_INT(PPP_LENGTH>>8, val[2]);
-    TEST_ASSERT_EQUAL_INT(PPP_LENGTH&0x00FF, val[3]);
+    TEST_ASSERT_EQUAL_INT(PPP_LENGTH >> 8, val[2]);
+    TEST_ASSERT_EQUAL_INT(PPP_LENGTH & 0x00FF, val[3]);
 }
 
 
