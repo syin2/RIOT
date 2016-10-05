@@ -394,6 +394,7 @@ void driver_events(pppdev_t *d, uint8_t event)
 {
     sim900_t *dev = (sim900_t *) d;
 
+	event = dev->isr_flag;
     /*Driver event*/
     switch (event) {
         case MSG_AT_FINISHED:
