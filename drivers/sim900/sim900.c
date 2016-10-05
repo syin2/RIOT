@@ -80,8 +80,9 @@ static inline void _isr_at_command(sim900_t *dev, char data)
     /* if the AT command finished, send msg to driver */
     if (!dev->_num_esc) {
         _reset_at_status(dev);
-        msg.type = PPPDEV_MSG_TYPE_EVENT;
-        msg.content.value = MSG_AT_FINISHED;
+        dev->isr_flags = MSG_AT_FINISHED;
+        msg.type = GNRC_NETDEV_MSG_TYPE_EVENT;
+        msg.content.ptr = dev;
         msg_send_int(&msg, dev->mac_pid);
     }
 
@@ -92,8 +93,8 @@ static inline void _rx_ready(sim900_t *dev)
 {
     msg_t msg;
 
-    msg.type = PPPDEV_MSG_TYPE_EVENT;
-    msg.content.value = RX_FINISHED;
+    msg.type = GNRC_NETDEV_MSG_TYPE_EVENT;
+    msg.content.ptr = dev;
 
     dev->ppp_rx_state = PPP_RX_IDLE;
     dev->rx_count = dev->int_count;
@@ -102,6 +103,7 @@ static inline void _rx_ready(sim900_t *dev)
 
     /* if PPP pkt is sane, send to thread */
     if (dev->int_fcs == PPPGOODFCS16 && dev->escape == 0 && dev->rx_count >= 4) {
+		dev->isr_flags = RX_FINISHED;
         msg_send_int(&msg, dev->mac_pid);
     }
 
@@ -164,10 +166,11 @@ static void rx_cb(void *arg, uint8_t data)
     }
 }
 
-void _send_driver_event(msg_t *msg, uint8_t driver_event)
+void _send_driver_event(msg_t *msg, uint8_t driver_event, sim900_t* dev)
 {
-    msg->type = PPPDEV_MSG_TYPE_EVENT;
-    msg->content.value = driver_event;
+    msg->type = GNRC_NETDEV_MSG_TYPE_EVENT;
+    msg->content.ptr = dev;
+    dev->isr_flags = driver_event;
     msg_send(msg, thread_getpid());
 }
 
@@ -256,8 +259,9 @@ int sim900_send(pppdev_t *ppp_dev, const struct iovec *vector, int count)
 
 void at_timeout(sim900_t *dev, uint32_t ms, void (*cb)(sim900_t *dev))
 {
-    dev->msg.type = PPPDEV_MSG_TYPE_EVENT;
-    dev->msg.content.value = MSG_AT_TIMEOUT;
+    dev->msg.type = GNRC_NETDEV_MSG_TYPE_EVENT;
+    dev->isr_flags = MSG_AT_TIMEOUT;
+    dev->msg.content.ptr = dev;
     dev->_timer_cb = cb;
     xtimer_set_msg(&dev->xtimer, ms, &dev->msg, dev->mac_pid);
 }
@@ -273,7 +277,7 @@ void check_data_mode(sim900_t *dev)
         puts("Successfully entered data mode");
         dev->state = AT_STATE_RX;
         dev->ppp_rx_state = PPP_RX_IDLE;
-        _send_driver_event(&dev->msg, PDP_UP);
+        _send_driver_event(&dev->msg, PDP_UP, dev);
     }
     else {
         puts("Failed to enter data mode");
