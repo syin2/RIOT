@@ -68,7 +68,6 @@ extern "C" {
 
 #define GNRC_PPP_MSG_QUEUE_SIZE (20)
 
-#define PPPDEV_MSG_TYPE_EVENT (100)         /**< Messages for PPP device drive */
 #define GNRC_PPPDEV_MSG_TYPE_EVENT (101)    /**< Messages for GNRC PPP layer */
 
 #define DCP_MONITOR_INIT_DELAY (15000000)   /**< Time that the monitor should wait after the LCP initiation before monitoring */
