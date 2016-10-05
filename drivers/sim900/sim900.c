@@ -82,7 +82,7 @@ static inline void _isr_at_command(sim900_t *dev, char data)
         _reset_at_status(dev);
         dev->isr_flags = MSG_AT_FINISHED;
         msg.type = GNRC_NETDEV_MSG_TYPE_EVENT;
-        msg.content.ptr = dev;
+        msg.content.ptr = (void*) dev;
         msg_send_int(&msg, dev->mac_pid);
     }
 
@@ -94,7 +94,7 @@ static inline void _rx_ready(sim900_t *dev)
     msg_t msg;
 
     msg.type = GNRC_NETDEV_MSG_TYPE_EVENT;
-    msg.content.ptr = dev;
+    msg.content.ptr = (void*) dev;
 
     dev->ppp_rx_state = PPP_RX_IDLE;
     dev->rx_count = dev->int_count;
@@ -169,7 +169,7 @@ static void rx_cb(void *arg, uint8_t data)
 void _send_driver_event(msg_t *msg, uint8_t driver_event, sim900_t* dev)
 {
     msg->type = GNRC_NETDEV_MSG_TYPE_EVENT;
-    msg->content.ptr = dev;
+    msg->content.ptr = (void*) dev;
     dev->isr_flags = driver_event;
     msg_send(msg, thread_getpid());
 }
@@ -261,7 +261,7 @@ void at_timeout(sim900_t *dev, uint32_t ms, void (*cb)(sim900_t *dev))
 {
     dev->msg.type = GNRC_NETDEV_MSG_TYPE_EVENT;
     dev->isr_flags = MSG_AT_TIMEOUT;
-    dev->msg.content.ptr = dev;
+    dev->msg.content.ptr = (void*) dev;
     dev->_timer_cb = cb;
     xtimer_set_msg(&dev->xtimer, ms, &dev->msg, dev->mac_pid);
 }
@@ -394,7 +394,7 @@ void driver_events(pppdev_t *d, uint8_t event)
 {
     sim900_t *dev = (sim900_t *) d;
 
-	event = dev->isr_flag;
+	event = dev->isr_flags;
     /*Driver event*/
     switch (event) {
         case MSG_AT_FINISHED:
