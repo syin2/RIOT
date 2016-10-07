@@ -24,15 +24,15 @@
 #define MONITOR_TIMEOUT (5000000) /**< timeout of PPP monitor */
 
 static dcp_t static_dcp;
-extern int gnrc_ppp_driver_link_down(pppdev_t *dev);
-extern int gnrc_ppp_driver_dial_up(pppdev_t *dev);
+extern int gnrc_ppp_driver_link_down(netdev2_t *dev);
+extern int gnrc_ppp_driver_dial_up(netdev2_t *dev);
 int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
     msg_t *msg = &protocol->msg;
     msg_t *timer_msg = &((dcp_t *) protocol)->timer_msg;
     xtimer_t *xtimer = &((dcp_t *) protocol)->xtimer;
     dcp_t *dcp = (dcp_t *) protocol;
-    pppdev_t *pppdev = protocol->pppdev->netdev;
+    netdev2_t *pppdev = protocol->pppdev->netdev;
 
     switch (ppp_event) {
         case PPP_UL_STARTED:
