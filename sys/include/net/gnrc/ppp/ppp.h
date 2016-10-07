@@ -107,7 +107,7 @@ typedef struct pppdev_t pppdev_t;
 typedef struct pppdev_driver_t {
     int (*send)(pppdev_t *dev, const struct iovec *vector, int count);
     int (*recv)(pppdev_t *dev, char *buf, int len, void *info);
-    void (*driver_ev)(pppdev_t *dev, uint8_t event);
+    void (*isr)(pppdev_t *dev);
     int (*init)(pppdev_t *dev);
     int (*set)(pppdev_t *dev, netopt_t opt, void *value, size_t value_len);
     int (*get)(pppdev_t *dev, netopt_t opt, void *value, size_t max_len);
