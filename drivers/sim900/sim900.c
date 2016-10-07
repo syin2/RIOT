@@ -390,12 +390,12 @@ int sim900_init(pppdev_t *d)
     return 0;
 }
 
-void driver_events(pppdev_t *d, uint8_t event)
+void sim900_isr(pppdev_t *d)
 {
     sim900_t *dev = (sim900_t *) d;
 
-	event = dev->isr_flags;
-	printf("Event: %i\n", (int) event);
+	int event = dev->isr_flags;
+	printf("Event: %i\n", event);
     /*Driver event*/
     switch (event) {
         case MSG_AT_FINISHED:
@@ -494,7 +494,7 @@ const static pppdev_driver_t pppdev_driver_sim900 =
 {
     .send = sim900_send,
     .recv = sim900_recv,
-    .driver_ev = driver_events,
+    .isr = sim900_isr,
     .init = sim900_init,
     .set = sim900_set,
     .get = sim900_get,

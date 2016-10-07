@@ -338,7 +338,7 @@ void *_gnrc_ppp_thread(void *args)
                 dispatch_ppp_msg(pppdev, event);
                 break;
             case GNRC_NETDEV_MSG_TYPE_EVENT:
-                d->driver->driver_ev((pppdev_t *) d, event);
+                d->driver->isr((pppdev_t *) d);
                 break;
             case GNRC_NETAPI_MSG_TYPE_SET:
                 opt = (gnrc_netapi_opt_t *) msg.content.ptr;
