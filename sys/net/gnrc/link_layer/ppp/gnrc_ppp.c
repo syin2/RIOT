@@ -92,7 +92,7 @@ ppp_target_t _get_target_from_protocol(uint16_t protocol)
     }
     return PROT_UNDEF;
 }
-gnrc_pktsnip_t *retrieve_pkt(pppdev_t *dev)
+gnrc_pktsnip_t *retrieve_pkt(netdev2_t *dev)
 {
     int nbytes;
 
@@ -102,7 +102,7 @@ gnrc_pktsnip_t *retrieve_pkt(pppdev_t *dev)
     return pkt;
 }
 
-int gnrc_ppp_setup(gnrc_pppdev_t *dev, pppdev_t *netdev)
+int gnrc_ppp_setup(gnrc_pppdev_t *dev, netdev2_t *netdev)
 {
     dev->netdev = netdev;
     dev->state = PPP_LINK_DEAD;
@@ -321,7 +321,7 @@ void *_gnrc_ppp_thread(void *args)
     DEBUG("gnrc_ppp_thread started\n");
     gnrc_pppdev_t *pppdev = (gnrc_pppdev_t *) args;
     gnrc_netif_add(thread_getpid());
-    pppdev_t *d = pppdev->netdev;
+    netdev2_t *d = pppdev->netdev;
     d->driver->init(d);
 
     msg_t msg_queue[GNRC_PPP_MSG_QUEUE];;
@@ -338,7 +338,7 @@ void *_gnrc_ppp_thread(void *args)
                 dispatch_ppp_msg(pppdev, event);
                 break;
             case GNRC_NETDEV_MSG_TYPE_EVENT:
-                d->driver->isr((pppdev_t *) d);
+                d->driver->isr((netdev2_t *) d);
                 break;
             case GNRC_NETAPI_MSG_TYPE_SET:
                 opt = (gnrc_netapi_opt_t *) msg.content.ptr;

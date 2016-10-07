@@ -28,6 +28,7 @@
 #include "net/gnrc/pktbuf.h"
 #include "xtimer.h"
 #include "thread.h"
+#include "net/netdev2.h"
 #include "net/gnrc/ppp/opt.h"
 #include "net/gnrc/ppp/prot.h"
 #include "net/gnrc/ppp/lcp.h"
@@ -99,28 +100,6 @@ typedef enum {
     PPP_TERMINATION
 } ppp_state_t;
 
-typedef struct pppdev_t pppdev_t;
-
-/**
- * @brief data type for handling driver representation of ppp device
- */
-typedef struct pppdev_driver_t {
-    int (*send)(pppdev_t *dev, const struct iovec *vector, int count);
-    int (*recv)(pppdev_t *dev, char *buf, int len, void *info);
-    void (*isr)(pppdev_t *dev);
-    int (*init)(pppdev_t *dev);
-    int (*set)(pppdev_t *dev, netopt_t opt, void *value, size_t value_len);
-    int (*get)(pppdev_t *dev, netopt_t opt, void *value, size_t max_len);
-} pppdev_driver_t;
-
-
-/**
- * @brief base class of a ppp device
- */
-typedef struct pppdev_t {
-    const pppdev_driver_t *driver; /**< pointer to driver representation */
-} pppdev_t;
-
 
 /**
  * @brief class of custom driver control protocol
@@ -141,7 +120,7 @@ typedef struct dcp_t {
  */
 typedef struct gnrc_pppdev_t {
     ppp_protocol_t *protocol[NUM_OF_PROTS]; /**< array of PPP sub protocols */
-    pppdev_t *netdev;                       /**< pointer to ppp device */
+    netdev2_t *netdev;                       /**< pointer to ppp device */
     uint8_t state;                          /**< State of gnrc_ppp. Unused and will be removed */
 } gnrc_pppdev_t;
 
@@ -151,11 +130,11 @@ typedef struct gnrc_pppdev_t {
  * @brief setup function for GNRC PPP
  *
  * @param dev pointer to gnrc ppp interface
- * @param pppdev pointer to pppdev interface
+ * @param pppdev pointer to netdev2 interface
  *
  * @return 0 for the moment
  */
-int gnrc_ppp_setup(gnrc_pppdev_t *dev, pppdev_t *pppdev);
+int gnrc_ppp_setup(gnrc_pppdev_t *dev, netdev2_t *netdev);
 
 gnrc_pktsnip_t *pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnrc_pktsnip_t *payload);
 

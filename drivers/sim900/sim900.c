@@ -205,7 +205,7 @@ void sim900_putchar(uart_t uart, uint8_t c)
     uart_write(uart, p, 1);
 }
 
-int sim900_recv(pppdev_t *ppp_dev, char *buf, int len, void *info)
+int sim900_recv(netdev2_t *ppp_dev, char *buf, int len, void *info)
 {
     sim900_t *dev = (sim900_t *) ppp_dev;
     int payload_length = dev->rx_count - 2;
@@ -217,7 +217,7 @@ int sim900_recv(pppdev_t *ppp_dev, char *buf, int len, void *info)
     return payload_length;
 }
 
-int sim900_send(pppdev_t *ppp_dev, const struct iovec *vector, int count)
+int sim900_send(netdev2_t *ppp_dev, const struct iovec *vector, int count)
 {
     sim900_t *dev = (sim900_t *) ppp_dev;
     uint16_t fcs = PPPINITFCS16;
@@ -337,7 +337,7 @@ void dial_up(sim900_t *dev)
     at_timeout(dev, SIM900_DATAMODE_DELAY, &check_device_status);
 }
 
-int sim900_set(pppdev_t *dev, netopt_t opt, void *value, size_t value_len)
+int sim900_set(netdev2_t *dev, netopt_t opt, void *value, size_t value_len)
 {
     sim900_t *d = (sim900_t *) dev;
     network_uint32_t *nu32;
@@ -363,7 +363,7 @@ int sim900_set(pppdev_t *dev, netopt_t opt, void *value, size_t value_len)
     return 0;
 }
 
-int sim900_init(pppdev_t *d)
+int sim900_init(netdev2_t *d)
 {
     sim900_t *dev = (sim900_t *) d;
 
@@ -390,7 +390,7 @@ int sim900_init(pppdev_t *d)
     return 0;
 }
 
-void sim900_isr(pppdev_t *d)
+void sim900_isr(netdev2_t *d)
 {
     sim900_t *dev = (sim900_t *) d;
 
@@ -413,7 +413,7 @@ void sim900_isr(pppdev_t *d)
     }
 }
 
-static int _get_iid(pppdev_t *pppdev, eui64_t *value, size_t max_len)
+static int _get_iid(netdev2_t *pppdev, eui64_t *value, size_t max_len)
 {
     if (max_len < sizeof(eui64_t)) {
         return -EOVERFLOW;
@@ -461,7 +461,7 @@ static void _set_mac_address(sim900_t *dev)
     dev->mac_addr[0] |= 0x02;
 }
 
-int sim900_get(pppdev_t *dev, netopt_t opt, void *value, size_t max_lem)
+int sim900_get(netdev2_t *dev, netopt_t opt, void *value, size_t max_lem)
 {
     /*Fake values*/
     switch (opt) {
@@ -475,13 +475,13 @@ int sim900_get(pppdev_t *dev, netopt_t opt, void *value, size_t max_lem)
     }
 }
 
-int gnrc_ppp_driver_dial_up(pppdev_t *dev)
+int gnrc_ppp_driver_dial_up(netdev2_t *dev)
 {
     dial_up((sim900_t *) dev);
     return 0;
 }
 
-int gnrc_ppp_driver_link_down(pppdev_t *dev)
+int gnrc_ppp_driver_link_down(netdev2_t *dev)
 {
     sim900_t *d = (sim900_t *) dev;
 
@@ -490,7 +490,7 @@ int gnrc_ppp_driver_link_down(pppdev_t *dev)
     return 0;
 }
 
-const static pppdev_driver_t pppdev_driver_sim900 =
+const  netdev2_driver_t sim900_driver =
 {
     .send = sim900_send,
     .recv = sim900_recv,
@@ -502,7 +502,7 @@ const static pppdev_driver_t pppdev_driver_sim900 =
 
 void sim900_setup(sim900_t *dev, const sim900_params_t *params)
 {
-    dev->netdev.driver = &pppdev_driver_sim900;
+    dev->netdev.driver = &sim900_driver;
     dev->uart = (uart_t) params->uart;
     dev->rx_buf = (uint8_t *) params->buf;
     dev->rx_len = (uint16_t) params->buf_len;
