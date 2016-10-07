@@ -24,6 +24,8 @@
 #define MONITOR_TIMEOUT (5000000) /**< timeout of PPP monitor */
 
 static dcp_t static_dcp;
+extern int gnrc_ppp_driver_link_down(pppdev_t *dev);
+extern int gnrc_ppp_driver_dial_up(pppdev_t *dev);
 int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
     msg_t *msg = &protocol->msg;
@@ -40,7 +42,7 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
             /*Remove timer*/
             xtimer_remove(xtimer);
             dcp->dead_counter = DCP_DEAD_COUNTER;
-            pppdev->driver->link_down(pppdev);
+            gnrc_ppp_driver_link_down(pppdev);
             break;
 
         case PPP_LINKUP:
@@ -77,7 +79,7 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
             break;
 
         case PPP_DIALUP:
-            pppdev->driver->dial_up(pppdev);
+            gnrc_ppp_driver_dial_up(pppdev);
             break;
         default:
             DEBUG("gnrc_ppp: dcp: Receive unknown message\n");
