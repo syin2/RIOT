@@ -111,8 +111,6 @@ typedef struct pppdev_driver_t {
     int (*init)(pppdev_t *dev);
     int (*set)(pppdev_t *dev, netopt_t opt, void *value, size_t value_len);
     int (*get)(pppdev_t *dev, netopt_t opt, void *value, size_t max_len);
-    int (*dial_up)(pppdev_t *dev);
-    int (*link_down)(pppdev_t *dev);
 } pppdev_driver_t;
 
 

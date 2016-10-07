@@ -475,13 +475,13 @@ int sim900_get(pppdev_t *dev, netopt_t opt, void *value, size_t max_lem)
     }
 }
 
-int sim900_dialup(pppdev_t *dev)
+int gnrc_ppp_driver_dial_up(pppdev_t *dev)
 {
     dial_up((sim900_t *) dev);
     return 0;
 }
 
-int link_down(pppdev_t *dev)
+int gnrc_ppp_driver_link_down(pppdev_t *dev)
 {
     sim900_t *d = (sim900_t *) dev;
 
@@ -498,8 +498,6 @@ const static pppdev_driver_t pppdev_driver_sim900 =
     .init = sim900_init,
     .set = sim900_set,
     .get = sim900_get,
-    .dial_up = sim900_dialup,
-    .link_down = link_down
 };
 
 void sim900_setup(sim900_t *dev, const sim900_params_t *params)
