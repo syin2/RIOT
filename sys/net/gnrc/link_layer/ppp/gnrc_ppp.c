@@ -318,7 +318,7 @@ int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
 
 void *_gnrc_ppp_thread(void *args)
 {
-    DEBUG("gnrc_ppp_trhead started\n");
+    DEBUG("gnrc_ppp_thread started\n");
     gnrc_pppdev_t *pppdev = (gnrc_pppdev_t *) args;
     gnrc_netif_add(thread_getpid());
     pppdev_t *d = pppdev->netdev;
