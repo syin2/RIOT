@@ -42,8 +42,7 @@
 
 #define MSG_AT_FINISHED (1)
 #define MSG_AT_TIMEOUT (2)
-#define PDP_UP (3)
-#define RX_FINISHED (4)
+#define RX_FINISHED (3)
 
 #define HDLC_FLAG_CHAR (0x7e)
 #define HDLC_ESCAPE_CHAR (0x7d)
@@ -277,7 +276,8 @@ void check_data_mode(sim900_t *dev)
         puts("Successfully entered data mode");
         dev->state = AT_STATE_RX;
         dev->ppp_rx_state = PPP_RX_IDLE;
-        _send_driver_event(&dev->msg, PDP_UP, dev);
+		gnrc_ppp_link_down(&dev->msg, dev->mac_pid);
+		gnrc_ppp_link_up(&dev->msg, dev->mac_pid);
     }
     else {
         puts("Failed to enter data mode");
@@ -395,6 +395,7 @@ void driver_events(pppdev_t *d, uint8_t event)
     sim900_t *dev = (sim900_t *) d;
 
 	event = dev->isr_flags;
+	printf("Event: %i\n", (int) event);
     /*Driver event*/
     switch (event) {
         case MSG_AT_FINISHED:
@@ -402,10 +403,6 @@ void driver_events(pppdev_t *d, uint8_t event)
             break;
         case MSG_AT_TIMEOUT:
             dev->_timer_cb(dev);
-            break;
-        case PDP_UP:
-            gnrc_ppp_link_down(&dev->msg, dev->mac_pid);
-            gnrc_ppp_link_up(&dev->msg, dev->mac_pid);
             break;
         case RX_FINISHED:
             gnrc_ppp_dispatch_pkt(&dev->msg, dev->mac_pid);
