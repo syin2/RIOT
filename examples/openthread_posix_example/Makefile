@@ -22,6 +22,9 @@ endif
 ifneq (,$(filter iotlab-m3 fox,$(BOARD)))
   DRIVER := at86rf231
 endif
+ifneq (,$(filter pba-d-01-kw2x,$(BOARD)))
+  DRIVER := kw2xrf
+endif
 
 ifneq (,$(filter at86rf2%,$(DRIVER)))
   FEATURES_REQUIRED = periph_spi periph_gpio
