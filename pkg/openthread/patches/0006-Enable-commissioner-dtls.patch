@@ -1,0 +1,29 @@
+From 9a84919ae350c5042245c65c669943b282cf49a6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jos=C3=A9=20Alamos?= <jialamos@uc.cl>
+Date: Thu, 13 Oct 2016 17:04:29 -0300
+Subject: [PATCH] Enabled commissioner and dtls
+
+---
+ include/openthread-config.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/include/openthread-config.h b/include/openthread-config.h
+index 7efe8bc..549b978 100644
+--- a/include/openthread-config.h
++++ b/include/openthread-config.h
+@@ -86,6 +86,12 @@
+ /* Version number of package */
+ #define VERSION "g6d48a7b"
+ 
++/* Enable Commissioner */
++#define OPENTHREAD_ENABLE_COMMISSIONER 1
++
++/* Enable DTLS */
++#define OPENTHREAD_ENABLE_DTLS 1
++
+ /* Define for Solaris 2.5.1 so the uint32_t typedef from <sys/synch.h>,
+    <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
+    #define below would cause a syntax error. */
+-- 
+1.9.1
+
