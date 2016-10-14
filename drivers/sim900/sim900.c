@@ -394,8 +394,7 @@ void sim900_isr(netdev2_t *d)
 {
     sim900_t *dev = (sim900_t *) d;
 
-	int event = dev->isr_flags;
-	printf("Event: %i\n", event);
+    int event = dev->isr_flags;
     /*Driver event*/
     switch (event) {
         case MSG_AT_FINISHED:
