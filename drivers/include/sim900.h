@@ -68,7 +68,8 @@ typedef struct sim900_t {
     uint8_t apn[SIM900_APN_SIZE];               /**< stores APN name */
     uint8_t apn_len;                            /**< stores APN name */
     uint8_t mac_addr[DUMMY_ADDR_LEN];           /**< Dummy MAC holder*/
-	uint8_t isr_flags;
+    uint8_t isr_flags;
+    uint8_t rx_char;
 } sim900_t;
 
 /**
