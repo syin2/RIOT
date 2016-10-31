@@ -11,7 +11,7 @@
  * @ingroup     net
  * @brief       HDLC types
 
- * @note        Last Updated: 2016-02-04
+ * @note        Last Updated: 2016-10-31
  * @{
  *
  * @file
@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-#define HDLCTYPE_PPP       (0xFF)    /**< NCP related packet segment */
+#define HDLCTYPE_PPP       (0xFF)    /**< HDLC packet carries PPP frame */
 
 #ifdef __cplusplus
 }
