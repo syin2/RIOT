@@ -334,9 +334,6 @@ void *_gnrc_ppp_thread(void *args)
         msg_receive(&msg);
         event = msg.content.value;
         switch (msg.type) {
-            case GNRC_PPPDEV_MSG_TYPE_EVENT:
-                dispatch_ppp_msg(pppdev, event);
-                break;
             case GNRC_NETDEV_MSG_TYPE_EVENT:
                 d->driver->isr((netdev2_t *) d);
                 break;
@@ -356,6 +353,9 @@ void *_gnrc_ppp_thread(void *args)
                 break;
             case GNRC_NETAPI_MSG_TYPE_SND:
                 ppp_ipv4_send(pppdev, (gnrc_pktsnip_t *) msg.content.ptr);
+                break;
+            case GNRC_PPPDEV_MSG_TYPE_EVENT:
+                dispatch_ppp_msg(pppdev, event);
                 break;
             default:
                 DEBUG("Received an unknown thread msg: %i\n", msg.type);
