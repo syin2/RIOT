@@ -69,7 +69,7 @@ extern "C" {
 
 #define GNRC_PPP_MSG_QUEUE_SIZE (20)
 
-#define GNRC_PPPDEV_MSG_TYPE_EVENT (101)    /**< Messages for GNRC PPP layer */
+#define GNRC_PPP_MSG_TYPE_EVENT (101)    /**< Messages for GNRC PPP layer */
 
 #define DCP_MONITOR_INIT_DELAY (15000000)   /**< Time that the monitor should wait after the LCP initiation before monitoring */
 #define DCP_MONITOR_TIMEOUT (10000000)      /**< time between LCP Echo request monitoriin */

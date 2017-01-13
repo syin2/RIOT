@@ -354,7 +354,7 @@ void *_gnrc_ppp_thread(void *args)
             case GNRC_NETAPI_MSG_TYPE_SND:
                 ppp_ipv4_send(pppdev, (gnrc_pktsnip_t *) msg.content.ptr);
                 break;
-            case GNRC_PPPDEV_MSG_TYPE_EVENT:
+            case GNRC_PPP_MSG_TYPE_EVENT:
                 dispatch_ppp_msg(pppdev, event);
                 break;
             default:
