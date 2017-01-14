@@ -29,6 +29,7 @@
 #include "xtimer.h"
 #include "thread.h"
 #include "net/netdev2.h"
+#include "net/netdev2/ppp.h"
 #include "net/gnrc/ppp/opt.h"
 #include "net/gnrc/ppp/prot.h"
 #include "net/gnrc/ppp/lcp.h"
@@ -120,7 +121,7 @@ typedef struct dcp_t {
  */
 typedef struct gnrc_pppdev_t {
     ppp_protocol_t *protocol[NUM_OF_PROTS]; /**< array of PPP sub protocols */
-    netdev2_t *netdev;                       /**< pointer to ppp device */
+    netdev2_ppp_t *netdev;                       /**< pointer to ppp device */
     uint8_t state;                          /**< State of gnrc_ppp. Unused and will be removed */
 } gnrc_pppdev_t;
 

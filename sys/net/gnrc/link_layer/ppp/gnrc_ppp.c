@@ -104,7 +104,7 @@ gnrc_pktsnip_t *retrieve_pkt(netdev2_t *dev)
 
 int gnrc_ppp_setup(gnrc_pppdev_t *dev, netdev2_t *netdev)
 {
-    dev->netdev = netdev;
+    dev->netdev = (netdev2_ppp_t*) netdev;
     dev->state = PPP_LINK_DEAD;
 
     dev->protocol[PROT_DCP] = dcp_get_static_pointer();
@@ -128,6 +128,7 @@ int gnrc_ppp_setup(gnrc_pppdev_t *dev, netdev2_t *netdev)
 int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 {
     hdlc_hdr_t hdlc_hdr;
+    netdev2_t *netdev = (netdev2_t*) dev->netdev;
 
     hdlc_hdr_set_address(&hdlc_hdr, PPP_HDLC_ADDRESS);
     hdlc_hdr_set_control(&hdlc_hdr, PPP_HDLC_CONTROL);
@@ -146,7 +147,7 @@ int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
     hdr = gnrc_pktbuf_get_iovec(hdr, &n);
     if (hdr != NULL) {
         struct iovec *vector = (struct iovec *) hdr->data;
-        res = dev->netdev->driver->send(dev->netdev, vector, n);
+        res = netdev->driver->send(netdev, vector, n);
     }
     gnrc_pktbuf_release(hdr);
     return res;
@@ -183,9 +184,10 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
     ppp_target_t target = ppp_msg_get_target(ppp_msg);
     ppp_event_t event = ppp_msg_get_event(ppp_msg);
     gnrc_pktsnip_t *pkt = NULL;
+    netdev2_t *netdev = (netdev2_t*) netdev;
 
     if (event == PPP_RECV) {
-        pkt = retrieve_pkt(dev->netdev);
+        pkt = retrieve_pkt(netdev);
         gnrc_pktsnip_t *result = gnrc_pktbuf_mark(pkt, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
         if (!result) {
             DEBUG("gnrc_ppp: no space left in packet buffer\n");
@@ -256,6 +258,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 
 int gnrc_ppp_get_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value_len)
 {
+    netdev2_t *netdev = (netdev2_t*) dev->netdev;
     int res;
 
     switch (opt) {
@@ -279,7 +282,7 @@ int gnrc_ppp_get_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
             res = 1;
             break;
         default:
-            res = dev->netdev->driver->get(dev->netdev, opt, value, value_len);
+            res = netdev->driver->get(netdev, opt, value, value_len);
             break;
     }
     return res;
@@ -287,6 +290,7 @@ int gnrc_ppp_get_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
 
 int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value_len)
 {
+    netdev2_t *netdev = (netdev2_t*) dev->netdev;
     int res;
 
     switch (opt) {
@@ -309,7 +313,7 @@ int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
             res = 0;
             break;
         default:
-            res = dev->netdev->driver->set(dev->netdev, opt, value, value_len);
+            res = netdev->driver->set(netdev, opt, value, value_len);
             break;
     }
     return res;
@@ -321,7 +325,7 @@ void *_gnrc_ppp_thread(void *args)
     DEBUG("gnrc_ppp_thread started\n");
     gnrc_pppdev_t *pppdev = (gnrc_pppdev_t *) args;
     gnrc_netif_add(thread_getpid());
-    netdev2_t *d = pppdev->netdev;
+    netdev2_t *d = (netdev2_t*) pppdev->netdev;
     d->driver->init(d);
 
     msg_t msg_queue[GNRC_PPP_MSG_QUEUE];;

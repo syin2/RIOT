@@ -19,7 +19,7 @@
 #ifndef NETDEV2_IEEE802154_H_
 #define NETDEV2_IEEE802154_H_
 
-#include "net/gnrc/ppp/ppp.h"
+#include "net/gnrc/ppp/prot.h"
 #include "net/gnrc/nettype.h"
 #include "net/netopt.h"
 #include "net/netdev2.h"

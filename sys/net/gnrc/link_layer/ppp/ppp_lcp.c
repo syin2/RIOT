@@ -110,14 +110,15 @@ uint8_t lcp_accm_build_nak_opts(uint8_t *buf)
 void lcp_accm_set(ppp_fsm_t *lcp, ppp_option_t *opt, uint8_t peer)
 {
     gnrc_pppdev_t *dev = ((ppp_protocol_t *) lcp)->pppdev;
+    netdev2_t *netdev = (netdev2_t*) dev->netdev;
     uint8_t *payload;
 
     ppp_opt_get_payload(opt, (void **) &payload);
     if (peer) {
-        dev->netdev->driver->set(dev->netdev, NETOPT_PPP_ACCM_RX, (void *) payload, sizeof(uint32_t));
+        netdev->driver->set(netdev, NETOPT_PPP_ACCM_RX, (void *) payload, sizeof(uint32_t));
     }
     else {
-        dev->netdev->driver->set(dev->netdev, NETOPT_PPP_ACCM_TX, (void *) payload, sizeof(uint32_t));
+        netdev->driver->set(netdev, NETOPT_PPP_ACCM_TX, (void *) payload, sizeof(uint32_t));
     }
 }
 
