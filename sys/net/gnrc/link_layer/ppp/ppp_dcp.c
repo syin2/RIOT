@@ -32,7 +32,7 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
     msg_t *timer_msg = &((dcp_t *) protocol)->timer_msg;
     xtimer_t *xtimer = &((dcp_t *) protocol)->xtimer;
     dcp_t *dcp = (dcp_t *) protocol;
-    netdev2_t *pppdev = protocol->pppdev->netdev;
+    netdev2_t *pppdev = (netdev2_t*) protocol->pppdev->netdev;
 
     switch (ppp_event) {
         case PPP_UL_STARTED:
