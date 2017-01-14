@@ -46,14 +46,14 @@
 
 void send_ppp_event(msg_t *msg, ppp_msg_t ppp_msg)
 {
-    msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
+    msg->type = GNRC_PPP_MSG_TYPE_EVENT;
     msg->content.value = ppp_msg;
     msg_send(msg, thread_getpid());
 }
 
 void send_ppp_event_xtimer(msg_t *msg, xtimer_t *xtimer, ppp_msg_t ppp_msg, int timeout)
 {
-    msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
+    msg->type = GNRC_PPP_MSG_TYPE_EVENT;
     msg->content.value = ppp_msg;
     xtimer_remove(xtimer);
     xtimer_set_msg(xtimer, timeout, msg, thread_getpid());
@@ -365,7 +365,7 @@ void *_gnrc_ppp_thread(void *args)
 
 void gnrc_ppp_trigger_event(msg_t *msg, kernel_pid_t pid, uint8_t target, uint8_t event)
 {
-    msg->type = GNRC_PPPDEV_MSG_TYPE_EVENT;
+    msg->type = GNRC_PPP_MSG_TYPE_EVENT;
     msg->content.value = (target << 8) | (event & 0xffff);
     msg_send(msg, pid);
 }
