@@ -165,17 +165,17 @@ static int _ppp_pkt_is_valid(gnrc_pktsnip_t *pkt)
     return ppp_hdr_get_length(hdr) < pkt->size;
 }
 
-int _prot_is_allowed(ppp_protocol_t **protocols, uint16_t protocol)
+int _prot_is_allowed(gnrc_pppdev_t *dev, uint16_t protocol)
 {
     switch (protocol) {
         case PPPTYPE_LCP:
-            return protocols[PROT_LCP]->state == PROTOCOL_STARTING || protocols[PROT_LCP]->state == PROTOCOL_UP;
+            return dev->lcp->state == PROTOCOL_STARTING || dev->lcp->state == PROTOCOL_UP;
         case PPPTYPE_NCP_IPV4:
-            return protocols[PROT_IPCP]->state == PROTOCOL_STARTING || protocols[PROT_IPCP]->state == PROTOCOL_UP;
+            return dev->ipcp->state == PROTOCOL_STARTING || dev->ipcp->state == PROTOCOL_UP;
         case PPPTYPE_PAP:
-            return protocols[PROT_AUTH]->state == PROTOCOL_STARTING;
+            return dev->pap->state == PROTOCOL_STARTING;
         case PPPTYPE_IPV4:
-            return protocols[PROT_IPV4]->state == PROTOCOL_UP;
+            return dev->ipv4->state == PROTOCOL_UP;
     }
     return 0;
 }
@@ -213,7 +213,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
             return -EBADMSG;
         }
 
-        if (!_prot_is_allowed(dev->protocol, hdlc_hdr_get_protocol(hdlc_hdr))) {
+        if (!_prot_is_allowed(dev, hdlc_hdr_get_protocol(hdlc_hdr))) {
             DEBUG("gnrc_ppp: Received a ppp packet that's not allowed in current ppp state. Discard packet\n");
             gnrc_pktbuf_release(pkt);
             return -1;
