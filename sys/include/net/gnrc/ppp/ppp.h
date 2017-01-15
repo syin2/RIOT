@@ -120,7 +120,6 @@ typedef struct dcp_t {
  * @brief GNRC PPP main struct
  */
 typedef struct gnrc_pppdev_t {
-    ppp_protocol_t *protocol[NUM_OF_PROTS]; /**< array of PPP sub protocols */
     ppp_protocol_t *dcp;
     ppp_protocol_t *lcp;
     ppp_protocol_t *pap;
