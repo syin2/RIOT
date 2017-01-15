@@ -92,16 +92,6 @@ typedef enum {
     PPP_DIALUP          /**< Event for starting dialup process */
 } ppp_dev_event_t;
 
-/*Deprecated. Not used in gnrc_ppp*/
-typedef enum {
-    PPP_LINK_DEAD,
-    PPP_LINK_ESTABLISHED,
-    PPP_AUTHENTICATION,
-    PPP_NETWORK,
-    PPP_TERMINATION
-} ppp_state_t;
-
-
 /**
  * @brief GNRC PPP main struct
  */
@@ -112,7 +102,6 @@ typedef struct gnrc_pppdev_t {
     ppp_protocol_t *ipcp;
     ppp_protocol_t *ipv4;
     netdev2_ppp_t *netdev;                       /**< pointer to ppp device */
-    uint8_t state;                          /**< State of gnrc_ppp. Unused and will be removed */
 } gnrc_pppdev_t;
 
 
