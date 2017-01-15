@@ -184,7 +184,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
     ppp_target_t target = ppp_msg_get_target(ppp_msg);
     ppp_event_t event = ppp_msg_get_event(ppp_msg);
     gnrc_pktsnip_t *pkt = NULL;
-    netdev2_t *netdev = (netdev2_t*) netdev;
+    netdev2_t *netdev = (netdev2_t*) dev->netdev;
 
     if (event == PPP_RECV) {
         pkt = retrieve_pkt(netdev);
