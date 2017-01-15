@@ -113,11 +113,11 @@ int gnrc_ppp_setup(gnrc_pppdev_t *dev, netdev2_t *netdev)
     dev->pap = pap_get_static_pointer();
     dev->ipv4 = ipv4_get_static_pointer();
 
-    dcp_init(dev, dev->dcp);
-    lcp_init(dev, dev->lcp);
-    ipcp_init(dev, dev->ipcp);
-    ppp_ipv4_init(dev, dev->ipv4, (ipcp_t *) dev->ipcp);
-    pap_init(dev, dev->pap);
+    dcp_init(dev);
+    lcp_init(dev);
+    ipcp_init(dev);
+    ppp_ipv4_init(dev);
+    pap_init(dev);
 
     trigger_fsm_event((ppp_fsm_t *) dev->lcp, E_OPEN, NULL);
     trigger_fsm_event((ppp_fsm_t *) dev->ipcp, E_OPEN, NULL);

@@ -90,13 +90,13 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
     return 0;
 }
 
-int pap_init(struct gnrc_pppdev_t *ppp_dev, ppp_protocol_t *protocol)
+int pap_init(struct gnrc_pppdev_t *ppp_dev)
 {
-    pap_t *pap = (pap_t *) protocol;
+    pap_t *pap = (pap_t *) ppp_dev->pap;
 
     pap->user_size = DEFAULT_APN_USER_SIZE;
     pap->pass_size = DEFAULT_APN_PASS_SIZE;
-    ppp_protocol_init((ppp_protocol_t *) pap, ppp_dev, pap_handler, PROT_AUTH);
+    ppp_protocol_init(ppp_dev->pap, ppp_dev, pap_handler, PROT_AUTH);
     pap->counter = DEFAULT_PAP_COUNTER;
     return 0;
 }
