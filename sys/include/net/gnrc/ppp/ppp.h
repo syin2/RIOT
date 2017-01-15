@@ -207,19 +207,6 @@ void gnrc_ppp_disconnect(msg_t *msg, kernel_pid_t pid);
 
 
 /**
- * @brief set a net option for GNRC PPP or ppp device
- *
- * @param dev pointer to gnrc ppp interface
- * @param opt option to be set
- * @param value value of the option
- * @param value_len size of the option
- *
- * @return positive number with option result
- * @return negative number if there was an error
- */
-int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value_len);
-
-/**
  * @brief init the GNRC PPP thread
  *
  * @param stack stack for GNRC PPP thread
