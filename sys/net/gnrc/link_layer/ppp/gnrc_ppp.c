@@ -257,71 +257,6 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
     return target_prot->handler(target_prot, event, pkt);
 }
 
-
-int gnrc_ppp_get_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value_len)
-{
-    netdev2_t *netdev = (netdev2_t*) dev->netdev;
-    int res;
-
-    switch (opt) {
-        case NETOPT_PPP_LCP_STATE:
-            *((uint8_t *) value) = dev->lcp->state;
-            res = 0;
-            break;
-        case NETOPT_PPP_AUTH_STATE:
-            *((uint8_t *) value) = dev->pap->state;
-            res = 0;
-            break;
-        case NETOPT_PPP_IPCP_STATE:
-            *((uint8_t *) value) = dev->ipcp->state;
-            res = 0;
-            break;
-        case NETOPT_PPP_IS_IPV6_READY:
-            res = dev->ipv4->state == PROTOCOL_UP;
-            *((uint8_t *) value) = res;
-            break;
-        case NETOPT_IS_PPP_IF:
-            res = 1;
-            break;
-        default:
-            res = netdev->driver->get(netdev, opt, value, value_len);
-            break;
-    }
-    return res;
-}
-
-int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value_len)
-{
-    netdev2_t *netdev = (netdev2_t*) dev->netdev;
-    int res;
-
-    switch (opt) {
-        case NETOPT_TUNNEL_IPV4_ADDRESS:
-            ((ppp_ipv4_t *) dev->ipv4)->tunnel_addr = *((ipv4_addr_t *) value);
-            res = 0;
-            break;
-        case NETOPT_TUNNEL_UDP_PORT:
-            ((ppp_ipv4_t *) dev->ipv4)->tunnel_port = *((uint16_t *) value);
-            res = 0;
-            break;
-        case NETOPT_APN_USER:
-            memcpy(((pap_t *) dev->pap)->username, value, value_len);
-            ((pap_t *) dev->pap)->user_size = value_len;
-            res = 0;
-            break;
-        case NETOPT_APN_PASS:
-            memcpy(((pap_t *) dev->pap)->password, value, value_len);
-            ((pap_t *) dev->pap)->pass_size = value_len;
-            res = 0;
-            break;
-        default:
-            res = netdev->driver->set(netdev, opt, value, value_len);
-            break;
-    }
-    return res;
-}
-
-
 void *_gnrc_ppp_thread(void *args)
 {
     DEBUG("gnrc_ppp_thread started\n");
@@ -345,14 +280,14 @@ void *_gnrc_ppp_thread(void *args)
                 break;
             case GNRC_NETAPI_MSG_TYPE_SET:
                 opt = (gnrc_netapi_opt_t *) msg.content.ptr;
-                res = gnrc_ppp_set_opt(pppdev, opt->opt, opt->data, opt->data_len);
+                res = d->driver->set(d, opt->opt, opt->data, opt->data_len);
                 reply.type = GNRC_NETAPI_MSG_TYPE_ACK;
                 reply.content.value = (uint32_t) res;
                 msg_reply(&msg, &reply);
                 break;
             case GNRC_NETAPI_MSG_TYPE_GET:
                 opt = (gnrc_netapi_opt_t *) msg.content.ptr;
-                res = gnrc_ppp_get_opt(pppdev, opt->opt, opt->data, opt->data_len);
+                res = d->driver->get(d, opt->opt, opt->data, opt->data_len);
                 reply.type = GNRC_NETAPI_MSG_TYPE_ACK;
                 reply.content.value = (uint32_t) res;
                 msg_reply(&msg, &reply);
