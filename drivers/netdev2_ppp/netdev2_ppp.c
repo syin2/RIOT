@@ -30,7 +30,6 @@
 int netdev2_ppp_get(netdev2_ppp_t *dev, netopt_t opt, void *value, size_t max_len)
 {
     int res;
-	netdev2_t *netdev = (netdev2_t*) dev;
     switch (opt) {
         case NETOPT_PPP_LCP_STATE:
             *((uint8_t *) value) = ((ppp_protocol_t*) &dev->lcp)->state;
@@ -52,7 +51,7 @@ int netdev2_ppp_get(netdev2_ppp_t *dev, netopt_t opt, void *value, size_t max_le
             res = 1;
             break;
         default:
-            res = netdev->driver->get(netdev, opt, value, max_len);
+            return -ENOTSUP;
             break;
     }
     return res;
@@ -61,7 +60,6 @@ int netdev2_ppp_get(netdev2_ppp_t *dev, netopt_t opt, void *value, size_t max_le
 int netdev2_ppp_set(netdev2_ppp_t *dev, netopt_t opt, void *value, size_t value_len)
 {
     int res;
-	netdev2_t *netdev = (netdev2_t*) dev;
     switch (opt) {
         case NETOPT_TUNNEL_IPV4_ADDRESS:
             dev->ipv4.tunnel_addr = *((ipv4_addr_t *) value);
@@ -82,7 +80,7 @@ int netdev2_ppp_set(netdev2_ppp_t *dev, netopt_t opt, void *value, size_t value_
             res = 0;
             break;
         default:
-            res = netdev->driver->set(netdev, opt, value, value_len);
+            return -ENOTSUP;
             break;
     }
     return res;

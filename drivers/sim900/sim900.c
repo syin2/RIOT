@@ -358,7 +358,7 @@ int sim900_set(netdev2_t *dev, netopt_t opt, void *value, size_t value_len)
             d->apn_len = value_len;
             break;
         default:
-            return -ENOTSUP;
+            return netdev2_ppp_set((netdev2_ppp_t*) dev, opt, value, value_len);
     }
     return 0;
 }
@@ -460,7 +460,7 @@ static void _set_mac_address(sim900_t *dev)
     dev->mac_addr[0] |= 0x02;
 }
 
-int sim900_get(netdev2_t *dev, netopt_t opt, void *value, size_t max_lem)
+int sim900_get(netdev2_t *dev, netopt_t opt, void *value, size_t max_len)
 {
     /*Fake values*/
     switch (opt) {
@@ -470,7 +470,7 @@ int sim900_get(netdev2_t *dev, netopt_t opt, void *value, size_t max_lem)
         case NETOPT_IPV6_IID:
             return _get_iid(dev, value, DUMMY_ADDR_LEN);
         default:
-            return -ENOTSUP;
+            return netdev2_ppp_get((netdev2_ppp_t*) dev, opt, value, max_len);
     }
 }
 
