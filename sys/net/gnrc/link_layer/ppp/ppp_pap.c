@@ -48,7 +48,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
     ppp_hdr_t *hdr = (ppp_hdr_t *) recv_pkt->data;
     xtimer_t *xtimer = &pap->xtimer;
     msg_t *timer_msg = &pap->timer_msg;
-    lcp_t *lcp = (lcp_t *) protocol->pppdev->protocol[PROT_LCP];
+    lcp_t *lcp = (lcp_t *) protocol->pppdev->lcp;
     uint8_t local_auth = lcp->local_auth;
 
     switch (ppp_event) {

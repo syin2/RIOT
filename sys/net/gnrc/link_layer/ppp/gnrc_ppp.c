@@ -107,20 +107,20 @@ int gnrc_ppp_setup(gnrc_pppdev_t *dev, netdev2_t *netdev)
     dev->netdev = (netdev2_ppp_t*) netdev;
     dev->state = PPP_LINK_DEAD;
 
-    dev->protocol[PROT_DCP] = dcp_get_static_pointer();
-    dev->protocol[PROT_LCP] = lcp_get_static_pointer();
-    dev->protocol[PROT_IPCP] = ipcp_get_static_pointer();
-    dev->protocol[PROT_AUTH] = pap_get_static_pointer();
-    dev->protocol[PROT_IPV4] = ipv4_get_static_pointer();
+    dev->dcp = dcp_get_static_pointer();
+    dev->lcp = lcp_get_static_pointer();
+    dev->ipcp = ipcp_get_static_pointer();
+    dev->pap = pap_get_static_pointer();
+    dev->ipv4 = ipv4_get_static_pointer();
 
-    dcp_init(dev, dev->protocol[PROT_DCP]);
-    lcp_init(dev, dev->protocol[PROT_LCP]);
-    ipcp_init(dev, dev->protocol[PROT_IPCP]);
-    ppp_ipv4_init(dev, dev->protocol[PROT_IPV4], (ipcp_t *) dev->protocol[PROT_IPCP]);
-    pap_init(dev, dev->protocol[PROT_AUTH]);
+    dcp_init(dev, dev->dcp);
+    lcp_init(dev, dev->lcp);
+    ipcp_init(dev, dev->ipcp);
+    ppp_ipv4_init(dev, dev->ipv4, (ipcp_t *) dev->ipcp);
+    pap_init(dev, dev->pap);
 
-    trigger_fsm_event((ppp_fsm_t *) dev->protocol[PROT_LCP], E_OPEN, NULL);
-    trigger_fsm_event((ppp_fsm_t *) dev->protocol[PROT_IPCP], E_OPEN, NULL);
+    trigger_fsm_event((ppp_fsm_t *) dev->lcp, E_OPEN, NULL);
+    trigger_fsm_event((ppp_fsm_t *) dev->ipcp, E_OPEN, NULL);
     return 0;
 }
 
@@ -136,7 +136,7 @@ int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 
     gnrc_pktsnip_t *hdr = gnrc_pktbuf_add(pkt, (void *) &hdlc_hdr, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
 
-    if (gnrc_pkt_len(hdr) > ((lcp_t *) dev->protocol[PROT_LCP])->peer_mru) {
+    if (gnrc_pkt_len(hdr) > ((lcp_t *) dev->lcp)->peer_mru) {
         DEBUG("gnrc_ppp: Sending exceeds peer MRU. Dropping packet.\n");
         gnrc_pktbuf_release(hdr);
         return -EBADMSG;
@@ -195,7 +195,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
         }
 
         /*Drop packet if exceeds MRU*/
-        if (gnrc_pkt_len(pkt) > ((lcp_t *) dev->protocol[PROT_LCP])->mru) {
+        if (gnrc_pkt_len(pkt) > ((lcp_t *) dev->lcp)->mru) {
             DEBUG("gnrc_ppp: Exceeded MRU of device. Dropping packet.\n");
             gnrc_pktbuf_release(pkt);
             return -EBADMSG;
@@ -209,7 +209,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
             network_uint16_t protocol = byteorder_htons(hdlc_hdr_get_protocol(pkt->next->data));
             gnrc_pktbuf_remove_snip(pkt, pkt->next);
             gnrc_pktsnip_t *rp = gnrc_pktbuf_add(pkt, &protocol, 2, GNRC_NETTYPE_UNDEF);
-            send_protocol_reject(dev, ((lcp_t *) dev->protocol[PROT_LCP])->pr_id++, rp);
+            send_protocol_reject(dev, ((lcp_t *) dev->lcp)->pr_id++, rp);
             return -EBADMSG;
         }
 
@@ -230,21 +230,21 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
     ppp_protocol_t *target_prot;
     switch (target) {
         case PROT_LCP:
-            target_prot = (ppp_protocol_t *) dev->protocol[PROT_LCP];
+            target_prot = (ppp_protocol_t *) dev->lcp;
             break;
         case PROT_IPCP:
         case BROADCAST_NCP:
-            target_prot = (ppp_protocol_t *) dev->protocol[PROT_IPCP];
+            target_prot = (ppp_protocol_t *) dev->ipcp;
             break;
         case PROT_IPV4:
-            target_prot = (ppp_protocol_t *) dev->protocol[PROT_IPV4];
+            target_prot = (ppp_protocol_t *) dev->ipv4;
             break;
         case PROT_DCP:
         case BROADCAST_LCP:
-            target_prot = (ppp_protocol_t *) dev->protocol[PROT_DCP];
+            target_prot = (ppp_protocol_t *) dev->dcp;
             break;
         case PROT_AUTH:
-            target_prot = (ppp_protocol_t *) dev->protocol[PROT_AUTH];
+            target_prot = (ppp_protocol_t *) dev->pap;
             break;
         default:
             DEBUG("Unrecognized target\n");
@@ -263,19 +263,19 @@ int gnrc_ppp_get_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
 
     switch (opt) {
         case NETOPT_PPP_LCP_STATE:
-            *((uint8_t *) value) = dev->protocol[PROT_LCP]->state;
+            *((uint8_t *) value) = dev->lcp->state;
             res = 0;
             break;
         case NETOPT_PPP_AUTH_STATE:
-            *((uint8_t *) value) = dev->protocol[PROT_AUTH]->state;
+            *((uint8_t *) value) = dev->pap->state;
             res = 0;
             break;
         case NETOPT_PPP_IPCP_STATE:
-            *((uint8_t *) value) = dev->protocol[PROT_IPCP]->state;
+            *((uint8_t *) value) = dev->ipcp->state;
             res = 0;
             break;
         case NETOPT_PPP_IS_IPV6_READY:
-            res = dev->protocol[PROT_IPV4]->state == PROTOCOL_UP;
+            res = dev->ipv4->state == PROTOCOL_UP;
             *((uint8_t *) value) = res;
             break;
         case NETOPT_IS_PPP_IF:
@@ -295,21 +295,21 @@ int gnrc_ppp_set_opt(gnrc_pppdev_t *dev, netopt_t opt, void *value, size_t value
 
     switch (opt) {
         case NETOPT_TUNNEL_IPV4_ADDRESS:
-            ((ppp_ipv4_t *) dev->protocol[PROT_IPV4])->tunnel_addr = *((ipv4_addr_t *) value);
+            ((ppp_ipv4_t *) dev->ipv4)->tunnel_addr = *((ipv4_addr_t *) value);
             res = 0;
             break;
         case NETOPT_TUNNEL_UDP_PORT:
-            ((ppp_ipv4_t *) dev->protocol[PROT_IPV4])->tunnel_port = *((uint16_t *) value);
+            ((ppp_ipv4_t *) dev->ipv4)->tunnel_port = *((uint16_t *) value);
             res = 0;
             break;
         case NETOPT_APN_USER:
-            memcpy(((pap_t *) dev->protocol[PROT_AUTH])->username, value, value_len);
-            ((pap_t *) dev->protocol[PROT_AUTH])->user_size = value_len;
+            memcpy(((pap_t *) dev->pap)->username, value, value_len);
+            ((pap_t *) dev->pap)->user_size = value_len;
             res = 0;
             break;
         case NETOPT_APN_PASS:
-            memcpy(((pap_t *) dev->protocol[PROT_AUTH])->password, value, value_len);
-            ((pap_t *) dev->protocol[PROT_AUTH])->pass_size = value_len;
+            memcpy(((pap_t *) dev->pap)->password, value, value_len);
+            ((pap_t *) dev->pap)->pass_size = value_len;
             res = 0;
             break;
         default:
