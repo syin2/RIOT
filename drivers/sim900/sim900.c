@@ -501,7 +501,7 @@ const  netdev2_driver_t sim900_driver =
 
 void sim900_setup(sim900_t *dev, const sim900_params_t *params)
 {
-    dev->netdev.driver = &sim900_driver;
+    ((netdev2_t*) dev)->driver = &sim900_driver;
     dev->uart = (uart_t) params->uart;
     dev->rx_buf = (uint8_t *) params->buf;
     dev->rx_len = (uint16_t) params->buf_len;
