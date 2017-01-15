@@ -54,9 +54,6 @@ typedef struct __attribute__((packed)){
     network_uint16_t udp_len;
 } udp_phdr_t;
 
-static ipcp_t static_ipcp;
-static ppp_ipv4_t static_ipv4;
-
 static fsm_conf_t *ipcp_get_conf_by_code(ppp_fsm_t *cp, uint8_t code)
 {
     switch (code) {
@@ -314,14 +311,4 @@ int ppp_ipv4_recv(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 safe_out:
     gnrc_pktbuf_release(pkt);
     return 0;
-}
-
-ppp_protocol_t *ipcp_get_static_pointer(void)
-{
-    return (ppp_protocol_t *) &static_ipcp;
-}
-
-ppp_protocol_t *ipv4_get_static_pointer(void)
-{
-    return (ppp_protocol_t *) &static_ipv4;
 }

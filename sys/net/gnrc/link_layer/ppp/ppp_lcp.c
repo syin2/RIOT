@@ -39,7 +39,6 @@
 #define OPT_SIZE_AUTH_PAP (2)   /**< size of PAP option */
 #define OPT_SIZE_ACCM (4)       /**< size of ACCM option */
 
-static lcp_t static_lcp;
 static fsm_conf_t *lcp_get_conf_by_code(ppp_fsm_t *cp, uint8_t code)
 {
     switch (code) {
@@ -237,9 +236,4 @@ int lcp_init(gnrc_pppdev_t *ppp_dev)
     ((lcp_t *) lcp)->local_auth = 0;
     ((lcp_t *) lcp)->monitor_id = 0;
     return 0;
-}
-
-ppp_protocol_t *lcp_get_static_pointer(void)
-{
-    return (ppp_protocol_t *) &static_lcp;
 }

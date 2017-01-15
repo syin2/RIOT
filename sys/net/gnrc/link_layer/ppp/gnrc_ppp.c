@@ -107,11 +107,13 @@ int gnrc_ppp_setup(gnrc_pppdev_t *dev, netdev2_t *netdev)
     dev->netdev = (netdev2_ppp_t*) netdev;
     dev->state = PPP_LINK_DEAD;
 
-    dev->dcp = dcp_get_static_pointer();
-    dev->lcp = lcp_get_static_pointer();
-    dev->ipcp = ipcp_get_static_pointer();
-    dev->pap = pap_get_static_pointer();
-    dev->ipv4 = ipv4_get_static_pointer();
+	netdev2_ppp_t *pppdev = (netdev2_ppp_t*) netdev;
+
+    dev->dcp = (ppp_protocol_t*) &pppdev->dcp;
+    dev->lcp = (ppp_protocol_t*) &pppdev->lcp;
+    dev->ipcp = (ppp_protocol_t*) &pppdev->ipcp;
+    dev->pap = (ppp_protocol_t*) &pppdev->pap;
+    dev->ipv4 = (ppp_protocol_t*) &pppdev->ipv4;
 
     dcp_init(dev);
     lcp_init(dev);

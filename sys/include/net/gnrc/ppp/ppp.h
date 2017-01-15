@@ -103,20 +103,6 @@ typedef enum {
 
 
 /**
- * @brief class of custom driver control protocol
- * @extends ppp_protocol_t
- *
- * @details the DCP is in charge of monitoring the link and exchanging messages with the ppp device
- */
-typedef struct dcp_t {
-    ppp_protocol_t prot;    /**< base ppp_protocol_t object */
-    msg_t timer_msg;        /**< msg struct for handling timeouts messages */
-    xtimer_t xtimer;        /**< xtimer struct for sending timeout messages */
-    uint8_t dead_counter;   /**< when reaches zero, the link is assumed to be dead */
-} dcp_t;
-
-
-/**
  * @brief GNRC PPP main struct
  */
 typedef struct gnrc_pppdev_t {

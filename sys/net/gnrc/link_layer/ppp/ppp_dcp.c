@@ -23,7 +23,6 @@
 
 #define MONITOR_TIMEOUT (5000000) /**< timeout of PPP monitor */
 
-static dcp_t static_dcp;
 extern int gnrc_ppp_driver_link_down(netdev2_t *dev);
 extern int gnrc_ppp_driver_dial_up(netdev2_t *dev);
 int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
@@ -92,9 +91,4 @@ int dcp_init(gnrc_pppdev_t *ppp_dev)
     ppp_protocol_init(ppp_dev->dcp, ppp_dev, dcp_handler, PROT_DCP);
     ((dcp_t *) ppp_dev->dcp)->dead_counter = DCP_DEAD_COUNTER;
     return 0;
-}
-
-ppp_protocol_t *dcp_get_static_pointer(void)
-{
-    return (ppp_protocol_t *) &static_dcp;
 }

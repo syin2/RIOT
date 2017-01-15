@@ -26,7 +26,6 @@
 #define DEFAULT_APN_USER_SIZE (0)   /**< default APN user size (no user) */
 #define DEFAULT_APN_PASS_SIZE (0)   /**< default APN password size (no password) */
 
-static pap_t static_pap;
 gnrc_pktsnip_t *_pap_payload(pap_t *pap)
 {
     gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, 2 + pap->user_size + pap->pass_size, GNRC_NETTYPE_UNDEF);
@@ -99,9 +98,4 @@ int pap_init(struct gnrc_pppdev_t *ppp_dev)
     ppp_protocol_init(ppp_dev->pap, ppp_dev, pap_handler, PROT_AUTH);
     pap->counter = DEFAULT_PAP_COUNTER;
     return 0;
-}
-
-ppp_protocol_t *pap_get_static_pointer(void)
-{
-    return (ppp_protocol_t *) &static_pap;
 }

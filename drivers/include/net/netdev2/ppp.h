@@ -20,6 +20,10 @@
 #define NETDEV2_IEEE802154_H_
 
 #include "net/gnrc/ppp/prot.h"
+#include "net/gnrc/ppp/prot.h"
+#include "net/gnrc/ppp/lcp.h"
+#include "net/gnrc/ppp/pap.h"
+#include "net/gnrc/ppp/ipcp.h"
 #include "net/gnrc/nettype.h"
 #include "net/netopt.h"
 #include "net/netdev2.h"
@@ -27,6 +31,20 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief class of custom driver control protocol
+ * @extends ppp_protocol_t
+ *
+ * @details the DCP is in charge of monitoring the link and exchanging messages with the ppp device
+ */
+typedef struct dcp_t {
+    ppp_protocol_t prot;    /**< base ppp_protocol_t object */
+    msg_t timer_msg;        /**< msg struct for handling timeouts messages */
+    xtimer_t xtimer;        /**< xtimer struct for sending timeout messages */
+    uint8_t dead_counter;   /**< when reaches zero, the link is assumed to be dead */
+} dcp_t;
+
 
 /**
  * @brief Extended structure to hold IEEE 802.15.4 driver state
@@ -46,7 +64,11 @@ typedef struct {
     gnrc_nettype_t proto;                   /**< Protocol for upper layer */
 #endif
     ppp_protocol_t *protocol[NUM_OF_PROTS]; /**< array of PPP sub protocols */
-
+	dcp_t dcp;
+	lcp_t lcp;
+	pap_t pap;
+	ipcp_t ipcp;
+	ppp_ipv4_t ipv4;
 } netdev2_ppp_t;
 
 
