@@ -174,7 +174,8 @@ static void *_gnrc_netdev2_thread(void *args)
                 msg_reply(&msg, &reply);
                 break;
             default:
-                DEBUG("gnrc_netdev2: Unknown command %" PRIu16 "\n", msg.type);
+				if(!gnrc_netdev2->msg_handler || gnrc_netdev2->msg_handler(gnrc_netdev2, &msg, &reply) < 0)
+					DEBUG("gnrc_netdev2: Unknown command %" PRIu16 "\n", msg.type);
                 break;
         }
     }

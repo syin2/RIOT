@@ -77,6 +77,7 @@ typedef struct gnrc_netdev2 {
      * @brief PID of this adapter for netapi messages
      */
     kernel_pid_t pid;
+    int (*msg_handler)(struct gnrc_netdev2 *dev, msg_t *msg, msg_t *reply);
 } gnrc_netdev2_t;
 
 /**
