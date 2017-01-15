@@ -103,21 +103,21 @@ static void ipcp_config_init(ppp_fsm_t *ipcp)
     ipcp->conf[IPCP_IPADDRESS].set = &ipcp_ipaddress_set;
 }
 
-int ipcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *protocol)
+int ipcp_init(gnrc_pppdev_t *ppp_dev)
 {
-    ppp_protocol_init(protocol, ppp_dev, fsm_handle_ppp_msg, PROT_IPCP);
-    fsm_init(ppp_dev, (ppp_fsm_t *) protocol);
-    ipcp_config_init((ppp_fsm_t *) protocol);
+    ppp_protocol_init(ppp_dev->ipcp, ppp_dev, fsm_handle_ppp_msg, PROT_IPCP);
+    fsm_init(ppp_dev, (ppp_fsm_t *) ppp_dev->ipcp);
+    ipcp_config_init((ppp_fsm_t *) ppp_dev->ipcp);
 
-    ipcp_t *ipcp = (ipcp_t *) protocol;
-    ppp_fsm_t *ipcp_fsm = (ppp_fsm_t *) protocol;
+    ipcp_t *ipcp = (ipcp_t *) ppp_dev->ipcp;
+    ppp_fsm_t *ipcp_fsm = (ppp_fsm_t *) ppp_dev->ipcp;
 
     ipcp_fsm->supported_codes = FLAG_CONF_REQ | FLAG_CONF_ACK | FLAG_CONF_NAK | FLAG_CONF_REJ | FLAG_TERM_REQ | FLAG_TERM_ACK | FLAG_CODE_REJ;
     ipcp_fsm->prottype = GNRC_NETTYPE_IPCP;
     ipcp_fsm->restart_timer = IPCP_RESTART_TIMER;
     ipcp_fsm->get_conf_by_code = &ipcp_get_conf_by_code;
-    protocol->lower_layer = PROT_LCP;
-    protocol->upper_layer = PROT_IPV4;
+    ppp_dev->ipcp->lower_layer = PROT_LCP;
+    ppp_dev->ipcp->upper_layer = PROT_IPV4;
     ipcp->ip_id = IPV4_DEFAULT_ID;
     return 0;
 }
@@ -232,11 +232,11 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 }
 
 
-int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *protocol, ipcp_t *ipcp)
+int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev)
 {
-    ppp_ipv4_t *ipv4 = (ppp_ipv4_t *) protocol;
+    ppp_ipv4_t *ipv4 = (ppp_ipv4_t *) ppp_dev->ipv4;
 
-    ppp_protocol_init(protocol, ppp_dev, handle_ipv4, PROT_IPV4);
+    ppp_protocol_init(ppp_dev->ipv4, ppp_dev, handle_ipv4, PROT_IPV4);
     ipv4->tunnel_addr.u32 = byteorder_htonl(DEFAULT_TUNNEL_ADDRESS);
     ipv4->tunnel_port = DEFAULT_TUNNEL_PORT;
     return 0;

@@ -216,11 +216,11 @@ int lcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
     }
 }
 
-int lcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *protocol)
+int lcp_init(gnrc_pppdev_t *ppp_dev)
 {
-    ppp_fsm_t *lcp = (ppp_fsm_t *) protocol;
+    ppp_fsm_t *lcp = (ppp_fsm_t *) ppp_dev->lcp;
 
-    ppp_protocol_init((ppp_protocol_t *) lcp, ppp_dev, lcp_handler, PROT_LCP);
+    ppp_protocol_init(ppp_dev->lcp, ppp_dev, lcp_handler, PROT_LCP);
     fsm_init(ppp_dev, lcp);
     lcp_config_init(lcp);
 

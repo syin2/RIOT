@@ -87,10 +87,10 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
     }
     return 0;
 }
-int dcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *dcp)
+int dcp_init(gnrc_pppdev_t *ppp_dev)
 {
-    ppp_protocol_init(dcp, ppp_dev, dcp_handler, PROT_DCP);
-    ((dcp_t *) dcp)->dead_counter = DCP_DEAD_COUNTER;
+    ppp_protocol_init(ppp_dev->dcp, ppp_dev, dcp_handler, PROT_DCP);
+    ((dcp_t *) ppp_dev->dcp)->dead_counter = DCP_DEAD_COUNTER;
     return 0;
 }
 

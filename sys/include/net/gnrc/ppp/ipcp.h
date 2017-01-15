@@ -73,7 +73,7 @@ struct ppp_fsm_t;
  *
  * @return 0
  */
-int ipcp_init(struct gnrc_pppdev_t *ppp_dev, ppp_protocol_t *ipcp);
+int ipcp_init(struct gnrc_pppdev_t *ppp_dev);
 
 
 /**
@@ -85,7 +85,7 @@ int ipcp_init(struct gnrc_pppdev_t *ppp_dev, ppp_protocol_t *ipcp);
  *
  * @return 0
  */
-int ppp_ipv4_init(struct gnrc_pppdev_t *ppp_dev, ppp_protocol_t *ipv4, ipcp_t *ipcp);
+int ppp_ipv4_init(struct gnrc_pppdev_t *ppp_dev);
 
 /**
  * @brief send an encapsulated pkt

@@ -172,7 +172,7 @@ void *_gnrc_ppp_thread(void *args);
  *
  * @return 0
  */
-int dcp_init(gnrc_pppdev_t *ppp_dev, ppp_protocol_t *dcp);
+int dcp_init(gnrc_pppdev_t *ppp_dev);
 ppp_protocol_t *dcp_get_static_pointer(void);
 
 
