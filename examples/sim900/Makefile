@@ -31,6 +31,7 @@ USEMODULE += gnrc_netdev_default
 USEMODULE += auto_init_gnrc_netif
 USEMODULE += gnrc_ipv6_default
 USEMODULE += gnrc_icmpv6_echo
+USEMODULE += netdev2_ppp
 USEMODULE += gnrc_sixlowpan_border_router_default
 USEMODULE += fib
 
