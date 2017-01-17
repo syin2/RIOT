@@ -268,12 +268,12 @@ void pdp_netattach(sim900_t *dev)
 
 void check_data_mode(sim900_t *dev)
 {
+    netdev2_t* netdev = (netdev2_t*) dev;
     if (dev->at_status & HAS_CONN) {
         puts("Successfully entered data mode");
         dev->state = AT_STATE_RX;
         dev->ppp_rx_state = PPP_RX_IDLE;
-		gnrc_ppp_link_down(&dev->msg, dev->mac_pid);
-		gnrc_ppp_link_up(&dev->msg, dev->mac_pid);
+        netdev->event_callback(netdev, NETDEV2_EVENT_LINK_UP);
     }
     else {
         puts("Failed to enter data mode");

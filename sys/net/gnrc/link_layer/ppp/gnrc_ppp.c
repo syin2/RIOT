@@ -267,6 +267,11 @@ static void _event_cb(netdev2_t *dev, netdev2_event_t event)
             puts("gnrc_netdev2: possibly lost interrupt.");
         }
     }
+    else if (event == NETDEV2_EVENT_LINK_UP)
+    {
+        dispatch_ppp_msg(gnrc_pppdev, (0xFF00) | (PPP_LINKDOWN&0xFF));
+        dispatch_ppp_msg(gnrc_pppdev, (0xFF00) | (PPP_LINKUP&0xFF));
+    }
 }
 
 void *_gnrc_ppp_thread(void *args)
