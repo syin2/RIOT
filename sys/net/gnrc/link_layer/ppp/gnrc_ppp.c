@@ -254,12 +254,18 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
     return target_prot->handler(target_prot, event, pkt);
 }
 
+static void _event_cb(netdev2_t *dev, netdev2_event_t event)
+{
+}
+
 void *_gnrc_ppp_thread(void *args)
 {
     DEBUG("gnrc_ppp_thread started\n");
     gnrc_pppdev_t *pppdev = (gnrc_pppdev_t *) args;
     gnrc_netif_add(thread_getpid());
     netdev2_t *d = (netdev2_t*) pppdev->netdev;
+    d->event_callback = _event_cb;
+    d->context = pppdev;
     d->driver->init(d);
 
     msg_t msg_queue[GNRC_PPP_MSG_QUEUE];;
