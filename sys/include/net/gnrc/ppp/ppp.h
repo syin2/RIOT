@@ -89,7 +89,6 @@ typedef enum {
     PPP_UL_FINISHED,    /**< upper layer of a protocol finished */
     PPP_MONITOR,        /**< Message for the monitor */
     PPP_LINK_ALIVE,     /**< Message from LCP to DCP indicating the link is alive */
-    PPP_DIALUP          /**< Event for starting dialup process */
 } ppp_dev_event_t;
 
 /**

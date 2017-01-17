@@ -77,10 +77,6 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
             dcp->dead_counter = DCP_DEAD_COUNTER;
             break;
 
-        case PPP_DIALUP:
-            en = NETOPT_ENABLE;
-            pppdev->driver->set(pppdev, NETOPT_DIAL_UP, &en, sizeof(netopt_enable_t));
-            break;
         default:
             DEBUG("gnrc_ppp: dcp: Receive unknown message\n");
             break;
