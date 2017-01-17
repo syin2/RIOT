@@ -27,8 +27,6 @@ void _print_usage(char *p_name)
 }
 int ppp_cmd(int argc, char **argv)
 {
-    msg_t msg;
-
     if (argc < 3) {
         _print_usage(argv[0]);
         return 1;
@@ -100,7 +98,8 @@ int ppp_cmd(int argc, char **argv)
         printf("PPP: IPv6 ready:                                %s\n", ipv6_status[ipv6_ready]);
     }
     else if (strcmp(argv[1], "disconnect") == 0) {
-        gnrc_ppp_disconnect(&msg, atoi(argv[2]));
+        en = NETOPT_DISABLE;
+        gnrc_netapi_set(atoi(argv[2]), NETOPT_DIAL_UP, 0, &en, sizeof(netopt_enable_t));
         printf("Hanging up and disconnecting PPP\n");
     }
     else {

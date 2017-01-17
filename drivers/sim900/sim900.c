@@ -360,6 +360,7 @@ int sim900_set(netdev2_t *dev, netopt_t opt, void *value, size_t value_len)
             }
             else
             {
+                dev->event_callback(dev, NETDEV2_EVENT_LINK_DOWN);
                 _reset_at_status(d);
                 at_timeout(d, SIM900_LINKDOWN_DELAY, &dial_up);
             }

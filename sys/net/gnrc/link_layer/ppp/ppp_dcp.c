@@ -54,11 +54,6 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 #endif
             break;
 
-        case PPP_LINKDOWN:
-            protocol->state = PROTOCOL_DOWN;
-            send_ppp_event(msg, ppp_msg_set(PROT_LCP, PPP_LINKDOWN));
-            break;
-
         case PPP_MONITOR:
             if (dcp->dead_counter) {
                 send_ppp_event(msg, ppp_msg_set(PROT_LCP, PPP_MONITOR));

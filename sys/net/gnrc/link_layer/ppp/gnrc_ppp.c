@@ -257,6 +257,9 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 static void _event_cb(netdev2_t *dev, netdev2_event_t event)
 {
     gnrc_pppdev_t *gnrc_pppdev = (gnrc_pppdev_t*) dev->context;
+    netdev2_ppp_t *pppdev = (netdev2_ppp_t*) dev;
+
+    ppp_protocol_t *dcp = (ppp_protocol_t*) &pppdev->dcp;
     if (event == NETDEV2_EVENT_ISR) {
         msg_t msg;
 
@@ -275,6 +278,11 @@ static void _event_cb(netdev2_t *dev, netdev2_event_t event)
     else if (event == NETDEV2_EVENT_RX_COMPLETE)
     {
         dispatch_ppp_msg(gnrc_pppdev, (0xFF00) | (PPP_RECV&0xFF));
+    }
+    else if (event == NETDEV2_EVENT_LINK_DOWN)
+    {
+        dcp->state = PROTOCOL_DOWN;
+        dispatch_ppp_msg(gnrc_pppdev, ((PROT_LCP<<8)&0xFF00) | (PPP_LINKDOWN & 0xFF));
     }
 }
 
@@ -333,11 +341,6 @@ void gnrc_ppp_trigger_event(msg_t *msg, kernel_pid_t pid, uint8_t target, uint8_
     msg->type = GNRC_PPP_MSG_TYPE_EVENT;
     msg->content.value = (target << 8) | (event & 0xffff);
     msg_send(msg, pid);
-}
-
-void gnrc_ppp_disconnect(msg_t *msg, kernel_pid_t pid)
-{
-    gnrc_ppp_trigger_event(msg, pid, PROT_DCP, PPP_LINKDOWN);
 }
 
 kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,
