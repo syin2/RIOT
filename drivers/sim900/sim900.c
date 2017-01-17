@@ -205,9 +205,9 @@ void sim900_putchar(uart_t uart, uint8_t c)
     uart_write(uart, p, 1);
 }
 
-int sim900_recv(netdev2_t *ppp_dev, char *buf, int len, void *info)
+int sim900_recv(netdev2_t *netdev, void *buf, size_t len, void *info)
 {
-    sim900_t *dev = (sim900_t *) ppp_dev;
+    sim900_t *dev = (sim900_t *) netdev;
     int payload_length = dev->rx_count - 2;
 
     /* if buf given, copy rx buf to buf */
@@ -217,9 +217,9 @@ int sim900_recv(netdev2_t *ppp_dev, char *buf, int len, void *info)
     return payload_length;
 }
 
-int sim900_send(netdev2_t *ppp_dev, const struct iovec *vector, int count)
+int sim900_send(netdev2_t *netdev, const struct iovec *vector, unsigned count)
 {
-    sim900_t *dev = (sim900_t *) ppp_dev;
+    sim900_t *dev = (sim900_t *) netdev;
     uint16_t fcs = PPPINITFCS16;
 
     /* Lock thread in order to prevent multiple writes */
