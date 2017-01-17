@@ -7,6 +7,7 @@
 
 #include "msg.h"
 #include "net/ipv4/hdr.h"
+#include "net/netopt.h"
 
 #define ENABLE_SHELL (1)
 #define MAIN_QUEUE_SIZE     (8)
@@ -34,6 +35,7 @@ int ppp_cmd(int argc, char **argv)
     }
 
 
+    netopt_enable_t en;
     uint16_t dev_type;
     gnrc_netapi_get(atoi(argv[2]), NETOPT_DEVICE_TYPE, 0, &dev_type, 2);
     if (dev_type != NETDEV2_TYPE_PPP) {
@@ -46,7 +48,8 @@ int ppp_cmd(int argc, char **argv)
             return 1;
         }
         printf("Dialing up PPP\n");
-        gnrc_ppp_dial_up(&msg, atoi(argv[2]));
+        en = NETOPT_ENABLE;
+        gnrc_netapi_set(atoi(argv[2]), NETOPT_DIAL_UP, 0, &en, sizeof(netopt_enable_t));
     }
     else if (strcmp(argv[1], "apn") == 0) {
         if (argc < 4) {
