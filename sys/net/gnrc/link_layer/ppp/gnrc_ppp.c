@@ -251,13 +251,27 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
             gnrc_pktbuf_release(pkt);
             DEBUG("gnrc_ppp: Invalid ppp packet. Discard.\n");
         }
-        target_prot = _get_prot_by_target(pppdev, target);
-        if(!target_prot)
+
+        switch(target)
         {
-            DEBUG("Unrecognized target\n");
-            return -1;
+            case PROT_LCP:
+                fsm_handle_ppp_msg((ppp_protocol_t*) &pppdev->lcp, PPP_RECV, pkt);
+                break;
+            case PROT_IPCP:
+                fsm_handle_ppp_msg((ppp_protocol_t*) &pppdev->ipcp, PPP_RECV, pkt);
+                break;
+            case PROT_IPV4:
+                ppp_ipv4_recv(dev, pkt);
+                break;
+            case PROT_AUTH:
+                pap_recv((ppp_protocol_t*) &pppdev->pap, pkt);
+                break;
+            default:
+                DEBUG("Unrecognized target\n");
+                return -1;
+
         }
-        return target_prot->handler(target_prot, PPP_RECV, pkt);
+        return 0;
     }
     else
     {

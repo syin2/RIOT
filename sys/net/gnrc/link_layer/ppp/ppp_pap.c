@@ -38,13 +38,27 @@ gnrc_pktsnip_t *_pap_payload(pap_t *pap)
     return pkt;
 }
 
+void pap_recv(struct ppp_protocol_t *protocol, gnrc_pktsnip_t *pkt)
+{
+    msg_t *msg = &protocol->msg;
+    pap_t *pap = (pap_t *) protocol;
+    ppp_hdr_t *hdr = (ppp_hdr_t *) pkt->data;
+    xtimer_t *xtimer = &pap->xtimer;
+    xtimer_remove(xtimer);
+    if (hdr->code != PPP_CONF_ACK) {
+        DEBUG("gnrc_ppp: pap: Wrong APN auth. Closing link.\n");
+        send_ppp_event(msg, ppp_msg_set(PROT_LCP, PPP_LINKDOWN));
+    }
+    else {
+        protocol->state = PROTOCOL_UP;
+        send_ppp_event(msg, ppp_msg_set(BROADCAST_NCP, PPP_LINKUP));
+    }
+}
 int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
     pap_t *pap = (pap_t *) protocol;
     msg_t *msg = &protocol->msg;
     gnrc_pktsnip_t *pkt;
-    gnrc_pktsnip_t *recv_pkt = (gnrc_pktsnip_t *) args;
-    ppp_hdr_t *hdr = (ppp_hdr_t *) recv_pkt->data;
     xtimer_t *xtimer = &pap->xtimer;
     msg_t *timer_msg = &pap->timer_msg;
     lcp_t *lcp = (lcp_t *) &protocol->pppdev->netdev->lcp;
@@ -66,17 +80,6 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
         case PPP_LINKDOWN:
             protocol->state = PROTOCOL_DOWN;
             send_ppp_event(msg, ppp_msg_set(BROADCAST_NCP, PPP_LINKDOWN));
-            break;
-        case PPP_RECV:
-            xtimer_remove(xtimer);
-            if (hdr->code != PPP_CONF_ACK) {
-                DEBUG("gnrc_ppp: pap: Wrong APN auth. Closing link.\n");
-                send_ppp_event(msg, ppp_msg_set(PROT_LCP, PPP_LINKDOWN));
-            }
-            else {
-                protocol->state = PROTOCOL_UP;
-                send_ppp_event(msg, ppp_msg_set(BROADCAST_NCP, PPP_LINKUP));
-            }
             break;
         case PPP_TIMEOUT:
             pkt = _pap_payload(pap);

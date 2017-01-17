@@ -205,7 +205,6 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 
     (void) ipcp;
 
-    gnrc_pppdev_t *pppdev = protocol->pppdev;
     gnrc_pktsnip_t *recv_pkt = (gnrc_pktsnip_t *) args;
     (void) recv_pkt;
 
@@ -218,9 +217,6 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
         case PPP_LINKDOWN:
             DEBUG("gnrc_ppp: IPv4 down\n");
             protocol->state = PROTOCOL_DOWN;
-            break;
-        case PPP_RECV:
-            ppp_ipv4_recv(pppdev, recv_pkt);
             break;
         default:
             break;
