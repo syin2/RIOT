@@ -335,11 +335,6 @@ void gnrc_ppp_trigger_event(msg_t *msg, kernel_pid_t pid, uint8_t target, uint8_
     msg_send(msg, pid);
 }
 
-void gnrc_ppp_dispatch_pkt(msg_t *msg, kernel_pid_t pid)
-{
-    gnrc_ppp_trigger_event(msg, pid, 0xFF, PPP_RECV);
-}
-
 void gnrc_ppp_disconnect(msg_t *msg, kernel_pid_t pid)
 {
     gnrc_ppp_trigger_event(msg, pid, PROT_DCP, PPP_LINKDOWN);
