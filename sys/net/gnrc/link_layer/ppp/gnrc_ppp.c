@@ -34,6 +34,7 @@
 #include "net/ppp/hdr.h"
 #include <errno.h>
 #include <string.h>
+#include "byteorder.h"
 
 #define ENABLE_DEBUG    (0)
 #include "debug.h"
@@ -64,11 +65,11 @@ gnrc_pktsnip_t *pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnr
 {
     ppp_hdr_t ppp_hdr;
 
-    ppp_hdr_set_code(&ppp_hdr, code);
-    ppp_hdr_set_id(&ppp_hdr, id);
+    ppp_hdr.code = code;
+    ppp_hdr.id = id;
 
     int payload_length = payload ? payload->size : 0;
-    ppp_hdr_set_length(&ppp_hdr, payload_length + sizeof(ppp_hdr_t));
+    ppp_hdr.length = byteorder_htons(payload_length + sizeof(ppp_hdr_t));
 
     gnrc_pktsnip_t *ppp_pkt = gnrc_pktbuf_add(payload, (void *) &ppp_hdr, sizeof(ppp_hdr_t), pkt_type);
     return ppp_pkt;
@@ -158,7 +159,7 @@ static int _ppp_pkt_is_valid(gnrc_pktsnip_t *pkt)
 {
     ppp_hdr_t *hdr = pkt->data;
 
-    return ppp_hdr_get_length(hdr) < pkt->size;
+    return byteorder_ntohs(hdr->length) < pkt->size;
 }
 
 int _prot_is_allowed(gnrc_pppdev_t *dev, uint16_t protocol)

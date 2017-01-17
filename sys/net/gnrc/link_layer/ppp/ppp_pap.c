@@ -69,7 +69,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
             break;
         case PPP_RECV:
             xtimer_remove(xtimer);
-            if (ppp_hdr_get_code(hdr) != PPP_CONF_ACK) {
+            if (hdr->code != PPP_CONF_ACK) {
                 DEBUG("gnrc_ppp: pap: Wrong APN auth. Closing link.\n");
                 send_ppp_event(msg, ppp_msg_set(PROT_LCP, PPP_LINKDOWN));
             }

@@ -162,19 +162,19 @@ gnrc_pktsnip_t *gen_ip_pkt(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *payload, uint8_t pr
 
     ipv4_hdr_set_version(hdr);
     ipv4_hdr_set_ihl(hdr, 5);
-    ipv4_hdr_set_ts(hdr, 0);
-    ipv4_hdr_set_tl(hdr, gnrc_pkt_len(pkt));
-    ipv4_hdr_set_id(hdr, ++(ipcp->ip_id));
+    hdr->ts = 0;
+    hdr->tl = byteorder_htons(gnrc_pkt_len(pkt));
+    hdr->id = byteorder_htons(++(ipcp->ip_id));
     ipv4_hdr_set_flags(hdr, 0);
     ipv4_hdr_set_fo(hdr, 0);
-    ipv4_hdr_set_ttl(hdr, 64);
-    ipv4_hdr_set_protocol(hdr, protocol);
-    ipv4_hdr_set_csum(hdr, 0);
-    ipv4_hdr_set_src(hdr, src);
-    ipv4_hdr_set_dst(hdr, dst);
+    hdr->ttl = 64;
+    hdr->protocol = protocol;
+    hdr->csum = byteorder_htons(0);
+    hdr->src = src;
+    hdr->dst = dst;
 
     /*Calculate checkshum*/
-    ipv4_hdr_set_csum(hdr, ~inet_csum_slice(0, pkt->data, pkt->size, 0));
+    hdr->csum = byteorder_htons(~inet_csum_slice(0, pkt->data, pkt->size, 0));
 
     return pkt;
 }
