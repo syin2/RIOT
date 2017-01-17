@@ -292,12 +292,6 @@ typedef enum {
      */
     NETOPT_PPP_IS_IPV6_READY,
     /**
-     * @brief check if an interface type is PPP.
-     *
-     * Returns 1 if the interface type is PPP.
-     */
-    NETOPT_IS_PPP_IF,
-    /**
      * @brief en/disable encryption.
      */
     NETOPT_ENCRYPTION,          /**< en/disable encryption */
