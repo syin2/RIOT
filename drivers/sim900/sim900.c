@@ -353,6 +353,16 @@ int sim900_set(netdev2_t *dev, netopt_t opt, void *value, size_t value_len)
             memcpy(d->apn, value, value_len);
             d->apn_len = value_len;
             break;
+        case NETOPT_DIAL_UP:
+            if(*((netopt_enable_t*) value))
+            {
+                dial_up(d);
+            }
+            else
+            {
+                _reset_at_status(d);
+                at_timeout(d, SIM900_LINKDOWN_DELAY, &dial_up);
+            }
         default:
             return netdev2_ppp_set((netdev2_ppp_t*) dev, opt, value, value_len);
     }
@@ -468,23 +478,6 @@ int sim900_get(netdev2_t *dev, netopt_t opt, void *value, size_t max_len)
         default:
             return netdev2_ppp_get((netdev2_ppp_t*) dev, opt, value, max_len);
     }
-}
-
-//TODO
-int gnrc_ppp_driver_dial_up(netdev2_t *dev)
-{
-    dial_up((sim900_t *) dev);
-    return 0;
-}
-
-//TODO
-int gnrc_ppp_driver_link_down(netdev2_t *dev)
-{
-    sim900_t *d = (sim900_t *) dev;
-
-    _reset_at_status(d);
-    at_timeout(d, SIM900_LINKDOWN_DELAY, &dial_up);
-    return 0;
 }
 
 const  netdev2_driver_t sim900_driver =
