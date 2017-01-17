@@ -105,7 +105,7 @@ gnrc_pktsnip_t *retrieve_pkt(netdev2_t *dev)
 
 int gnrc_ppp_setup(gnrc_pppdev_t *dev, netdev2_t *netdev)
 {
-    dev->dev = (netdev2_ppp_t*) netdev;
+    dev->dev = (netdev2_t*) netdev;
 
 	netdev2_ppp_t *pppdev = (netdev2_ppp_t*) netdev;
 
