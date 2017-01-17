@@ -262,6 +262,7 @@ void *_gnrc_ppp_thread(void *args)
 {
     DEBUG("gnrc_ppp_thread started\n");
     gnrc_pppdev_t *pppdev = (gnrc_pppdev_t *) args;
+    pppdev->pid = thread_getpid();
     gnrc_netif_add(thread_getpid());
     netdev2_t *d = (netdev2_t*) pppdev->netdev;
     d->event_callback = _event_cb;
