@@ -103,7 +103,7 @@ gnrc_pktsnip_t *retrieve_pkt(netdev2_t *dev)
     return pkt;
 }
 
-int gnrc_ppp_setup(gnrc_pppdev_t *dev, netdev2_t *netdev)
+int gnrc_ppp_setup(gnrc_netdev2_t *dev, netdev2_t *netdev)
 {
     dev->dev = (netdev2_t*) netdev;
 
@@ -121,7 +121,7 @@ int gnrc_ppp_setup(gnrc_pppdev_t *dev, netdev2_t *netdev)
 }
 
 
-int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
+int gnrc_ppp_send(gnrc_netdev2_t *dev, gnrc_pktsnip_t *pkt)
 {
     hdlc_hdr_t hdlc_hdr;
     netdev2_t *netdev = (netdev2_t*) dev->dev;
@@ -162,7 +162,7 @@ static int _ppp_pkt_is_valid(gnrc_pktsnip_t *pkt)
     return byteorder_ntohs(hdr->length) < pkt->size;
 }
 
-int _prot_is_allowed(gnrc_pppdev_t *dev, uint16_t protocol)
+int _prot_is_allowed(gnrc_netdev2_t *dev, uint16_t protocol)
 {
 	netdev2_ppp_t *pppdev = (netdev2_ppp_t*) dev->dev;
     switch (protocol) {
@@ -213,7 +213,7 @@ static void _pass_on_packet(gnrc_pktsnip_t *pkt)
         return;
     }
 }
-int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
+int dispatch_ppp_msg(gnrc_netdev2_t *dev, ppp_msg_t ppp_msg)
 {
     ppp_target_t target = ppp_msg_get_target(ppp_msg);
     ppp_event_t event = ppp_msg_get_event(ppp_msg);
@@ -305,7 +305,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 
 static void _event_cb(netdev2_t *dev, netdev2_event_t event)
 {
-    gnrc_pppdev_t *gnrc_pppdev = (gnrc_pppdev_t*) dev->context;
+    gnrc_netdev2_t *gnrc_pppdev = (gnrc_netdev2_t*) dev->context;
     netdev2_ppp_t *pppdev = (netdev2_ppp_t*) dev;
 
     ppp_protocol_t *dcp = (ppp_protocol_t*) &pppdev->dcp;
@@ -338,7 +338,7 @@ static void _event_cb(netdev2_t *dev, netdev2_event_t event)
 void *_gnrc_ppp_thread(void *args)
 {
     DEBUG("gnrc_ppp_thread started\n");
-    gnrc_pppdev_t *pppdev = (gnrc_pppdev_t *) args;
+    gnrc_netdev2_t *pppdev = (gnrc_netdev2_t *) args;
     pppdev->pid = thread_getpid();
     gnrc_netif_add(thread_getpid());
     netdev2_t *d = (netdev2_t*) pppdev->dev;
@@ -393,7 +393,7 @@ void gnrc_ppp_trigger_event(msg_t *msg, kernel_pid_t pid, uint8_t target, uint8_
 }
 
 kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,
-                              const char *name, gnrc_pppdev_t *gnrc_pppdev)
+                              const char *name, gnrc_netdev2_t *gnrc_pppdev)
 {
     kernel_pid_t res;
 
@@ -411,7 +411,7 @@ kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,
 
     return res;
 }
-void ppp_protocol_init(ppp_protocol_t *protocol, struct gnrc_pppdev_t *pppdev, int (*handler)(struct ppp_protocol_t *, uint8_t, void *), uint8_t id)
+void ppp_protocol_init(ppp_protocol_t *protocol, gnrc_netdev2_t *pppdev, int (*handler)(struct ppp_protocol_t *, uint8_t, void *), uint8_t id)
 {
     protocol->handler = handler;
     protocol->id = id;

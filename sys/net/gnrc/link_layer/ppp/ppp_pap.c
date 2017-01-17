@@ -61,7 +61,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
     gnrc_pktsnip_t *pkt;
     xtimer_t *xtimer = &pap->xtimer;
     msg_t *timer_msg = &pap->timer_msg;
-    gnrc_pppdev_t *gnrc_pppdev = protocol->pppdev;
+    gnrc_netdev2_t *gnrc_pppdev = protocol->pppdev;
     netdev2_ppp_t *pppdev = (netdev2_ppp_t*) gnrc_pppdev->dev;
     lcp_t *lcp = (lcp_t *) &pppdev->lcp;
     uint8_t local_auth = lcp->local_auth;
@@ -94,7 +94,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
     return 0;
 }
 
-int pap_init(struct gnrc_pppdev_t *ppp_dev)
+int pap_init(gnrc_netdev2_t *ppp_dev)
 {
     netdev2_ppp_t *pppdev = (netdev2_ppp_t*) ppp_dev->dev;
     pap_t *pap = (pap_t *) &pppdev->pap;

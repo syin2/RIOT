@@ -23,6 +23,7 @@
 #include <inttypes.h>
 
 #include "net/gnrc.h"
+#include "net/gnrc/netdev2.h"
 #include "net/ppp/hdr.h"
 #include "net/gnrc/pkt.h"
 #include "net/gnrc/pktbuf.h"
@@ -91,15 +92,6 @@ typedef enum {
     PPP_LINK_ALIVE,     /**< Message from LCP to DCP indicating the link is alive */
 } ppp_dev_event_t;
 
-/**
- * @brief GNRC PPP main struct
- */
-typedef struct gnrc_pppdev_t {
-    netdev2_t *dev;                       /**< pointer to ppp device */
-    kernel_pid_t pid;
-} gnrc_pppdev_t;
-
-
 
 /**
  * @brief setup function for GNRC PPP
@@ -109,7 +101,7 @@ typedef struct gnrc_pppdev_t {
  *
  * @return 0 for the moment
  */
-int gnrc_ppp_setup(gnrc_pppdev_t *dev, netdev2_t *netdev);
+int gnrc_ppp_setup(gnrc_netdev2_t *dev, netdev2_t *netdev);
 
 gnrc_pktsnip_t *pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnrc_pktsnip_t *payload);
 
@@ -123,7 +115,7 @@ gnrc_pktsnip_t *pkt_build(gnrc_nettype_t pkt_type, uint8_t code, uint8_t id, gnr
  * @return -EBADMSG if the packet is not valid
  * @return 0 otherwise
  */
-int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt);
+int gnrc_ppp_send(gnrc_netdev2_t *dev, gnrc_pktsnip_t *pkt);
 
 
 /**
@@ -142,7 +134,7 @@ void *_gnrc_ppp_thread(void *args);
  *
  * @return 0
  */
-int dcp_init(gnrc_pppdev_t *ppp_dev);
+int dcp_init(gnrc_netdev2_t *ppp_dev);
 ppp_protocol_t *dcp_get_static_pointer(void);
 
 
@@ -202,7 +194,7 @@ void gnrc_ppp_disconnect(msg_t *msg, kernel_pid_t pid);
  * @return pid of GNRC PPP
  */
 kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,
-                              const char *name, gnrc_pppdev_t *gnrc_pppdev);
+                              const char *name, gnrc_netdev2_t *gnrc_pppdev);
 
 
 /**
@@ -213,7 +205,7 @@ kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,
  * @param id id of packet
  * @param payload payload of configure request packet
  */
-void send_configure_request(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *payload);
+void send_configure_request(gnrc_netdev2_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *payload);
 
 /**
  * @brief send a configure ack packet
@@ -223,7 +215,7 @@ void send_configure_request(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t
  * @param id id of packet
  * @param opts ACK'd options
  */
-void send_configure_ack(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *opts);
+void send_configure_ack(gnrc_netdev2_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *opts);
 
 /**
  * @brief send a configure nak packet
@@ -233,7 +225,7 @@ void send_configure_ack(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id,
  * @param id id of packet
  * @param opts NAK'd options
  */
-void send_configure_nak(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *opts);
+void send_configure_nak(gnrc_netdev2_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *opts);
 
 /**
  * @brief send configure reject
@@ -243,7 +235,7 @@ void send_configure_nak(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id,
  * @param id id of packet
  * @param opts rejected options
  */
-void send_configure_rej(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *opts);
+void send_configure_rej(gnrc_netdev2_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *opts);
 
 /**
  * @brief
@@ -252,7 +244,7 @@ void send_configure_rej(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id,
  * @param protocol nettype of packet
  * @param id id of packet
  */
-void send_terminate_req(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id);
+void send_terminate_req(gnrc_netdev2_t *dev, gnrc_nettype_t protocol, uint8_t id);
 
 /**
  * @brief send terminate ack
@@ -262,7 +254,7 @@ void send_terminate_req(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id)
  * @param id id of packet
  * @param response response of terminate request
  */
-void send_terminate_ack(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *response);
+void send_terminate_ack(gnrc_netdev2_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *response);
 
 /**
  * @brief send code reject packet
@@ -272,7 +264,7 @@ void send_terminate_ack(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id,
  * @param id id of packet
  * @param rejected rejected packet including ppp header
  */
-void send_code_rej(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *rejected);
+void send_code_rej(gnrc_netdev2_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *rejected);
 
 /**
  * @brief send echo reply
@@ -282,7 +274,7 @@ void send_code_rej(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc
  * @param id id of packet
  * @param data data of the echo reply
  */
-void send_echo_reply(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *data);
+void send_echo_reply(gnrc_netdev2_t *dev, gnrc_nettype_t protocol, uint8_t id, gnrc_pktsnip_t *data);
 
 /**
  * @brief send protocol reject packet
@@ -292,7 +284,7 @@ void send_echo_reply(gnrc_pppdev_t *dev, gnrc_nettype_t protocol, uint8_t id, gn
  * @param id id of packet
  * @param pkt rejected packet
  */
-void send_protocol_reject(gnrc_pppdev_t *dev, uint8_t id, gnrc_pktsnip_t *pkt);
+void send_protocol_reject(gnrc_netdev2_t *dev, uint8_t id, gnrc_pktsnip_t *pkt);
 
 /**
  * @brief send PAP auth request
@@ -302,7 +294,7 @@ void send_protocol_reject(gnrc_pppdev_t *dev, uint8_t id, gnrc_pktsnip_t *pkt);
  * @param id id of packet
  * @param credentials credentials of the PAP request
  */
-void send_pap_request(gnrc_pppdev_t *dev, uint8_t id, gnrc_pktsnip_t *credentials);
+void send_pap_request(gnrc_netdev2_t *dev, uint8_t id, gnrc_pktsnip_t *credentials);
 #ifdef __cplusplus
 }
 #endif

@@ -533,7 +533,7 @@ int trigger_fsm_event(ppp_fsm_t *cp, int event, gnrc_pktsnip_t *pkt)
     return 0;
 }
 
-int fsm_init(gnrc_pppdev_t *ppp_dev, ppp_fsm_t *cp)
+int fsm_init(gnrc_netdev2_t *ppp_dev, ppp_fsm_t *cp)
 {
     cp->state = S_INITIAL;
     cp->cr_sent_identifier = 0;

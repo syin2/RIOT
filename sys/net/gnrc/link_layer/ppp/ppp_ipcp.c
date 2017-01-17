@@ -100,7 +100,7 @@ static void ipcp_config_init(ppp_fsm_t *ipcp)
     ipcp->conf[IPCP_IPADDRESS].set = &ipcp_ipaddress_set;
 }
 
-int ipcp_init(gnrc_pppdev_t *ppp_dev)
+int ipcp_init(gnrc_netdev2_t *ppp_dev)
 {
     netdev2_ppp_t *pppdev = (netdev2_ppp_t*) ppp_dev->dev;
 	ppp_protocol_t *prot_ipcp = (ppp_protocol_t*) &pppdev->ipcp;
@@ -158,7 +158,7 @@ gnrc_pktsnip_t *gen_ip_pkt(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *payload, uint8_t pr
     ipv4_hdr_t *hdr = pkt->data;
 
     ipv4_addr_t dst = ipv4->tunnel_addr;
-    gnrc_pppdev_t *gnrc_pppdev = ((ppp_protocol_t *) ipv4)->pppdev;
+    gnrc_netdev2_t *gnrc_pppdev = ((ppp_protocol_t *) ipv4)->pppdev;
     netdev2_ppp_t *pppdev = (netdev2_ppp_t*) gnrc_pppdev->dev;
     ipcp_t *ipcp = (ipcp_t *) (&pppdev->ipcp);
     ipv4_addr_t src = ipcp->ip;
@@ -188,7 +188,7 @@ gnrc_pktsnip_t *_build_udp(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *pkt)
     gnrc_pktsnip_t *udp = gnrc_pktbuf_add(pkt, NULL, sizeof(udp_hdr_t), GNRC_NETTYPE_UNDEF);
 
     ipv4_addr_t dst = ipv4->tunnel_addr;
-    gnrc_pppdev_t *gnrc_pppdev = ((ppp_protocol_t *) ipv4)->pppdev;
+    gnrc_netdev2_t *gnrc_pppdev = ((ppp_protocol_t *) ipv4)->pppdev;
     netdev2_ppp_t *pppdev = (netdev2_ppp_t*) gnrc_pppdev->dev;
     ipcp_t *ipcp = (ipcp_t *) (&pppdev->ipcp);
     ipv4_addr_t src = ipcp->ip;
@@ -206,7 +206,7 @@ gnrc_pktsnip_t *_build_udp(ppp_ipv4_t *ipv4, gnrc_pktsnip_t *pkt)
 
 int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 {
-    gnrc_pppdev_t *gnrc_pppdev = protocol->pppdev;
+    gnrc_netdev2_t *gnrc_pppdev = protocol->pppdev;
     netdev2_ppp_t *pppdev = (netdev2_ppp_t*) gnrc_pppdev->dev;
     ipcp_t *ipcp = (ipcp_t *) &pppdev->ipcp;
 
@@ -233,7 +233,7 @@ int handle_ipv4(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 }
 
 
-int ppp_ipv4_init(gnrc_pppdev_t *ppp_dev)
+int ppp_ipv4_init(gnrc_netdev2_t *ppp_dev)
 {
     netdev2_ppp_t *pppdev = (netdev2_ppp_t*) ppp_dev->dev;
     ppp_ipv4_t *ipv4 = (ppp_ipv4_t *) &pppdev->ipv4;
@@ -257,7 +257,7 @@ int _tunnel_is_set(ppp_ipv4_t *ipv4)
 {
     return byteorder_ntohl(ipv4->tunnel_addr.u32) != DEFAULT_TUNNEL_ADDRESS && ipv4->tunnel_port != DEFAULT_TUNNEL_PORT;
 }
-int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
+int ppp_ipv4_send(gnrc_netdev2_t *ppp_dev, gnrc_pktsnip_t *pkt)
 {
     netdev2_ppp_t *pppdev = (netdev2_ppp_t*) ppp_dev->dev;
     int ipv4_ready = ((ppp_protocol_t *) &pppdev->ipv4)->state == PROTOCOL_UP;
@@ -283,7 +283,7 @@ int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
     return 0;
 }
 
-gnrc_pktsnip_t *ppp_ipv4_recv(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
+gnrc_pktsnip_t *ppp_ipv4_recv(gnrc_netdev2_t *ppp_dev, gnrc_pktsnip_t *pkt)
 {
     gnrc_pktsnip_t *ipv4_hdr = gnrc_pktbuf_mark(pkt, sizeof(ipv4_hdr_t), GNRC_NETTYPE_UNDEF);
     gnrc_pktsnip_t *udp_hdr = gnrc_pktbuf_mark(pkt, sizeof(udp_hdr_t), GNRC_NETTYPE_UNDEF);

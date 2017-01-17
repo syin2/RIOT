@@ -21,6 +21,7 @@
 
 #include "sim900.h"
 #include "periph/uart.h"
+#include "net/gnrc/netdev2.h"
 
 #define ENABLE_DEBUG (1)
 #include "debug.h"
@@ -36,7 +37,7 @@
  * @brief   Stacks for the MAC layer threads
  */
 static char _pppdev_stack[SIM900_STACKSIZE];
-static gnrc_pppdev_t _gnrc_sim900;
+static gnrc_netdev2_t _gnrc_sim900;
 
 static uint8_t _inbuf[2048];
 static sim900_t dev;

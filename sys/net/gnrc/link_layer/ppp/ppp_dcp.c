@@ -78,7 +78,7 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
     }
     return 0;
 }
-int dcp_init(gnrc_pppdev_t *ppp_dev)
+int dcp_init(gnrc_netdev2_t *ppp_dev)
 {
     netdev2_ppp_t *pppdev = (netdev2_ppp_t*) ppp_dev->dev;
     ppp_protocol_init((ppp_protocol_t*) &pppdev->dcp, ppp_dev, dcp_handler, PROT_DCP);
