@@ -109,7 +109,7 @@ uint8_t lcp_accm_build_nak_opts(uint8_t *buf)
 void lcp_accm_set(ppp_fsm_t *lcp, ppp_option_t *opt, uint8_t peer)
 {
     gnrc_pppdev_t *dev = ((ppp_protocol_t *) lcp)->pppdev;
-    netdev2_t *netdev = (netdev2_t*) dev->netdev;
+    netdev2_t *netdev = (netdev2_t*) dev->dev;
     uint8_t *payload;
 
     ppp_opt_get_payload(opt, (void **) &payload);
@@ -217,7 +217,7 @@ int lcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 
 int lcp_init(gnrc_pppdev_t *ppp_dev)
 {
-    ppp_fsm_t *lcp = (ppp_fsm_t *) &ppp_dev->netdev->lcp;
+    ppp_fsm_t *lcp = (ppp_fsm_t *) &ppp_dev->dev->lcp;
 
     ppp_protocol_init((ppp_protocol_t*) lcp, ppp_dev, lcp_handler, PROT_LCP);
     fsm_init(ppp_dev, lcp);

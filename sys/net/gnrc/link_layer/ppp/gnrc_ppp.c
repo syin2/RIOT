@@ -105,7 +105,7 @@ gnrc_pktsnip_t *retrieve_pkt(netdev2_t *dev)
 
 int gnrc_ppp_setup(gnrc_pppdev_t *dev, netdev2_t *netdev)
 {
-    dev->netdev = (netdev2_ppp_t*) netdev;
+    dev->dev = (netdev2_ppp_t*) netdev;
 
 	netdev2_ppp_t *pppdev = (netdev2_ppp_t*) netdev;
 
@@ -124,7 +124,7 @@ int gnrc_ppp_setup(gnrc_pppdev_t *dev, netdev2_t *netdev)
 int gnrc_ppp_send(gnrc_pppdev_t *dev, gnrc_pktsnip_t *pkt)
 {
     hdlc_hdr_t hdlc_hdr;
-    netdev2_t *netdev = (netdev2_t*) dev->netdev;
+    netdev2_t *netdev = (netdev2_t*) dev->dev;
 	netdev2_ppp_t *pppdev = (netdev2_ppp_t*) netdev;
 
     hdlc_hdr_set_address(&hdlc_hdr, PPP_HDLC_ADDRESS);
@@ -164,7 +164,7 @@ static int _ppp_pkt_is_valid(gnrc_pktsnip_t *pkt)
 
 int _prot_is_allowed(gnrc_pppdev_t *dev, uint16_t protocol)
 {
-	netdev2_ppp_t *pppdev = (netdev2_ppp_t*) dev->netdev;
+	netdev2_ppp_t *pppdev = (netdev2_ppp_t*) dev->dev;
     switch (protocol) {
         case PPPTYPE_LCP:
             return ((ppp_protocol_t*) &pppdev->lcp)->state == PROTOCOL_STARTING || ((ppp_protocol_t*) &pppdev->lcp)->state == PROTOCOL_UP;
@@ -218,8 +218,8 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
     ppp_target_t target = ppp_msg_get_target(ppp_msg);
     ppp_event_t event = ppp_msg_get_event(ppp_msg);
     gnrc_pktsnip_t *pkt = NULL;
-    netdev2_t *netdev = (netdev2_t*) dev->netdev;
-	netdev2_ppp_t *pppdev = (netdev2_ppp_t*) dev->netdev;
+    netdev2_t *netdev = (netdev2_t*) dev->dev;
+	netdev2_ppp_t *pppdev = (netdev2_ppp_t*) dev->dev;
 
     ppp_protocol_t *target_prot;
 
@@ -341,7 +341,7 @@ void *_gnrc_ppp_thread(void *args)
     gnrc_pppdev_t *pppdev = (gnrc_pppdev_t *) args;
     pppdev->pid = thread_getpid();
     gnrc_netif_add(thread_getpid());
-    netdev2_t *d = (netdev2_t*) pppdev->netdev;
+    netdev2_t *d = (netdev2_t*) pppdev->dev;
     d->event_callback = _event_cb;
     d->context = pppdev;
     d->driver->init(d);
@@ -398,7 +398,7 @@ kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,
     kernel_pid_t res;
 
     /* check if given netdev device is defined and the driver is set */
-    if (gnrc_pppdev == NULL || gnrc_pppdev->netdev == NULL) {
+    if (gnrc_pppdev == NULL || gnrc_pppdev->dev == NULL) {
         return -ENODEV;
     }
 

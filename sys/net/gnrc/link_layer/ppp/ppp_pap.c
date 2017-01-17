@@ -61,7 +61,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
     gnrc_pktsnip_t *pkt;
     xtimer_t *xtimer = &pap->xtimer;
     msg_t *timer_msg = &pap->timer_msg;
-    lcp_t *lcp = (lcp_t *) &protocol->pppdev->netdev->lcp;
+    lcp_t *lcp = (lcp_t *) &protocol->pppdev->dev->lcp;
     uint8_t local_auth = lcp->local_auth;
 
     switch (ppp_event) {
@@ -94,7 +94,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 
 int pap_init(struct gnrc_pppdev_t *ppp_dev)
 {
-    pap_t *pap = (pap_t *) &ppp_dev->netdev->pap;
+    pap_t *pap = (pap_t *) &ppp_dev->dev->pap;
 
     pap->user_size = DEFAULT_APN_USER_SIZE;
     pap->pass_size = DEFAULT_APN_PASS_SIZE;

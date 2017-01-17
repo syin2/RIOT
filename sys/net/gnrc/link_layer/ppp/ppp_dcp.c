@@ -29,7 +29,7 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
     msg_t *timer_msg = &((dcp_t *) protocol)->timer_msg;
     xtimer_t *xtimer = &((dcp_t *) protocol)->xtimer;
     dcp_t *dcp = (dcp_t *) protocol;
-    netdev2_t *pppdev = (netdev2_t*) protocol->pppdev->netdev;
+    netdev2_t *pppdev = (netdev2_t*) protocol->pppdev->dev;
 
     netopt_enable_t en;
     switch (ppp_event) {
@@ -80,7 +80,7 @@ int dcp_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 }
 int dcp_init(gnrc_pppdev_t *ppp_dev)
 {
-    ppp_protocol_init((ppp_protocol_t*) &ppp_dev->netdev->dcp, ppp_dev, dcp_handler, PROT_DCP);
-    ppp_dev->netdev->dcp.dead_counter = DCP_DEAD_COUNTER;
+    ppp_protocol_init((ppp_protocol_t*) &ppp_dev->dev->dcp, ppp_dev, dcp_handler, PROT_DCP);
+    ppp_dev->dev->dcp.dead_counter = DCP_DEAD_COUNTER;
     return 0;
 }
