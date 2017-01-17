@@ -470,12 +470,14 @@ int sim900_get(netdev2_t *dev, netopt_t opt, void *value, size_t max_len)
     }
 }
 
+//TODO
 int gnrc_ppp_driver_dial_up(netdev2_t *dev)
 {
     dial_up((sim900_t *) dev);
     return 0;
 }
 
+//TODO
 int gnrc_ppp_driver_link_down(netdev2_t *dev)
 {
     sim900_t *d = (sim900_t *) dev;
