@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 José Ignacio Alamos
+ * Copyright (C) 2016 José Ignacio Alamos
  *
  * This file is subject to the terms and conditions of the GNU Lesser General
  * Public License v2.1. See the file LICENSE in the top level directory for
@@ -7,7 +7,7 @@
  */
 
 /**
- * @defgroup    net_ppptypes PPP types
+ * @defgroup    net_ppp Point-to-Point Protocol (PPP) Data Link Layer
  * @ingroup     net
  * @brief       PPP types
 
@@ -18,6 +18,9 @@
  * @brief       PPP type definitions
  *
  * @author      José Ignacio Alamos <jialamos@uc.cl>
+ * @see         <a href="http://www.iana.org/assignments/ppp-numbers/ppp-numbers.xhtml#ppp-numbers-2">
+ *                  IANA, PPP NUMBERS
+ *              </a>
  */
 
 

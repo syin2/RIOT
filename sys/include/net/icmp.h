@@ -20,8 +20,8 @@
  *
  * @author  José Ignacio Alamos <jialamos@uc.cl>
  */
-#ifndef ICMPV4_H
-#define ICMPV4_H
+#ifndef ICMP_H_
+#define ICMP_H_
 
 #include "byteorder.h"
 
@@ -33,8 +33,8 @@ extern "C" {
 /**
  * @brief   Echo request and response message format.
  *
- * @see <a href="https://tools.ietf.org/html/rfc792">
- *          RFC 792, page 13
+ * @see <a href="https://tools.ietf.org/html/rfc792#page-14">
+ *          RFC 792, page 14
  *      </a>
  */
 typedef struct __attribute__((packed)){
@@ -50,5 +50,5 @@ typedef struct __attribute__((packed)){
 }
 #endif
 
-#endif /* ICMPV4_H */
+#endif /* ICMP_H_ */
 /** @} */
