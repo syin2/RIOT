@@ -96,11 +96,6 @@ typedef enum {
  * @brief GNRC PPP main struct
  */
 typedef struct gnrc_pppdev_t {
-    ppp_protocol_t *dcp;
-    ppp_protocol_t *lcp;
-    ppp_protocol_t *pap;
-    ppp_protocol_t *ipcp;
-    ppp_protocol_t *ipv4;
     netdev2_ppp_t *netdev;                       /**< pointer to ppp device */
 } gnrc_pppdev_t;
 

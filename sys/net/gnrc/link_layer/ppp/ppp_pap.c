@@ -47,7 +47,7 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
     ppp_hdr_t *hdr = (ppp_hdr_t *) recv_pkt->data;
     xtimer_t *xtimer = &pap->xtimer;
     msg_t *timer_msg = &pap->timer_msg;
-    lcp_t *lcp = (lcp_t *) protocol->pppdev->lcp;
+    lcp_t *lcp = (lcp_t *) &protocol->pppdev->netdev->lcp;
     uint8_t local_auth = lcp->local_auth;
 
     switch (ppp_event) {
@@ -91,11 +91,11 @@ int pap_handler(struct ppp_protocol_t *protocol, uint8_t ppp_event, void *args)
 
 int pap_init(struct gnrc_pppdev_t *ppp_dev)
 {
-    pap_t *pap = (pap_t *) ppp_dev->pap;
+    pap_t *pap = (pap_t *) &ppp_dev->netdev->pap;
 
     pap->user_size = DEFAULT_APN_USER_SIZE;
     pap->pass_size = DEFAULT_APN_PASS_SIZE;
-    ppp_protocol_init(ppp_dev->pap, ppp_dev, pap_handler, PROT_AUTH);
+    ppp_protocol_init((ppp_protocol_t*) pap, ppp_dev, pap_handler, PROT_AUTH);
     pap->counter = DEFAULT_PAP_COUNTER;
     return 0;
 }
