@@ -237,6 +237,7 @@ void auto_init(void)
 #ifdef MODULE_W5100
     extern void auto_init_w5100(void);
     auto_init_w5100();
+#endif
 	
 #ifdef MODULE_SIM900
     extern void auto_init_sim900(void);
