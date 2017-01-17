@@ -22,6 +22,7 @@
 #include "sim900.h"
 #include "periph/uart.h"
 #include "net/gnrc/netdev2.h"
+#include "net/gnrc/netdev2/ppp.h"
 
 #define ENABLE_DEBUG (1)
 #include "debug.h"
@@ -53,6 +54,7 @@ void auto_init_sim900(void)
     sim900_setup(&dev, &params);
 
     gnrc_ppp_setup(&_gnrc_sim900, (netdev2_t *) &dev);
+    gnrc_netdev2_ppp_init(&_gnrc_sim900, (netdev2_ppp_t*) &dev);
     kernel_pid_t pid = gnrc_pppdev_init(_pppdev_stack, sizeof(_pppdev_stack), SIM900_PRIO, "gnrc_sim900", &_gnrc_sim900);
     (void) pid;
 }

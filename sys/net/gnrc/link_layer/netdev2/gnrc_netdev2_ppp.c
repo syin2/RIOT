@@ -1,0 +1,50 @@
+/*
+ * Copyright (C) Fundación Inria Chile 2017
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
+/**
+ * @ingroup     net_gnrc
+ * @{
+ *
+ * @file
+ * @brief       GNRC to netdev adapter for PPP devices
+ *
+ * @author      José Ignacio Alamos <jose.alamos@inria.cl>
+ *
+ * @}
+ */
+
+#include <errno.h>
+#include "assert.h"
+#include "net/gnrc/netdev2.h"
+#include "net/netdev2/ppp.h"
+#include "net/gnrc.h"
+#include "net/hdlc/hdr.h"
+
+#define ENABLE_DEBUG    (0)
+#include "debug.h"
+
+#define BCAST   (GNRC_NETIF_HDR_FLAGS_BROADCAST | GNRC_NETIF_HDR_FLAGS_MULTICAST)
+
+static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
+{
+    return NULL;
+}
+
+static int _send(gnrc_netdev2_t *dev, gnrc_pktsnip_t *pkt)
+{
+    return 0;
+}
+
+void gnrc_netdev2_ppp_init(gnrc_netdev2_t *gnrc_netdev2, netdev2_ppp_t *dev)
+{
+    assert(gnrc_netdev2 && dev);
+
+    gnrc_netdev2->send = _send;
+    gnrc_netdev2->recv = _recv;
+    gnrc_netdev2->dev = (netdev2_t *) dev;
+}
