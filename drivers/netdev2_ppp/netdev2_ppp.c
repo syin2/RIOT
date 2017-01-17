@@ -47,8 +47,9 @@ int netdev2_ppp_get(netdev2_ppp_t *dev, netopt_t opt, void *value, size_t max_le
             res = ((ppp_protocol_t*) &dev->ipv4)->state == PROTOCOL_UP;
             *((uint8_t *) value) = res;
             break;
-        case NETOPT_IS_PPP_IF:
-            res = 1;
+        case NETOPT_DEVICE_TYPE:
+            *((uint16_t*) value) = NETDEV2_TYPE_PPP;
+            res = 2;
             break;
         default:
             return -ENOTSUP;

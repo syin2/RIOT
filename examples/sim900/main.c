@@ -33,7 +33,10 @@ int ppp_cmd(int argc, char **argv)
         return 1;
     }
 
-    if (gnrc_netapi_get(atoi(argv[2]), NETOPT_IS_PPP_IF, 0, NULL, 0) <= 0) {
+
+    uint16_t dev_type;
+    gnrc_netapi_get(atoi(argv[2]), NETOPT_DEVICE_TYPE, 0, &dev_type, 2);
+    if (dev_type != NETDEV2_TYPE_PPP) {
         printf("interface is not a ppp device.\n");
         return 1;
     }
