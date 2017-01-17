@@ -739,7 +739,7 @@ int handle_term_ack(ppp_fsm_t *cp, gnrc_pktsnip_t *pkt)
 static int handle_conf_pkt(ppp_fsm_t *cp, int type, gnrc_pktsnip_t *pkt)
 {
     gnrc_pktsnip_t *ppp_hdr = gnrc_pktbuf_mark(pkt, sizeof(ppp_hdr_t), cp->prottype);
-    gnrc_pktsnip_t *payload = ppp_hdr == pkt ? NULL : pkt;
+    gnrc_pktsnip_t *payload = pkt->size == 0 ? NULL : pkt;
     ppp_hdr_t *hdr = (ppp_hdr_t *) ppp_hdr->data;
 
     int event;
