@@ -400,7 +400,7 @@ void sim900_isr(netdev2_t *d)
             dev->_timer_cb(dev);
             break;
         case RX_FINISHED:
-            gnrc_ppp_dispatch_pkt(&dev->msg, dev->mac_pid);
+            d->event_callback(d, NETDEV2_EVENT_RX_COMPLETE);
             break;
         default:
             DEBUG("Unrecognized driver msg\n");

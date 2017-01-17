@@ -272,6 +272,10 @@ static void _event_cb(netdev2_t *dev, netdev2_event_t event)
         dispatch_ppp_msg(gnrc_pppdev, (0xFF00) | (PPP_LINKDOWN&0xFF));
         dispatch_ppp_msg(gnrc_pppdev, (0xFF00) | (PPP_LINKUP&0xFF));
     }
+    else if (event == NETDEV2_EVENT_RX_COMPLETE)
+    {
+        dispatch_ppp_msg(gnrc_pppdev, (0xFF00) | (PPP_RECV&0xFF));
+    }
 }
 
 void *_gnrc_ppp_thread(void *args)
