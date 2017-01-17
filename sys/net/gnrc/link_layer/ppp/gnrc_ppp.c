@@ -256,6 +256,17 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 
 static void _event_cb(netdev2_t *dev, netdev2_event_t event)
 {
+    gnrc_pppdev_t *gnrc_pppdev = (gnrc_pppdev_t*) dev->context;
+    if (event == NETDEV2_EVENT_ISR) {
+        msg_t msg;
+
+        msg.type = NETDEV2_MSG_TYPE_EVENT;
+        msg.content.ptr = gnrc_pppdev;
+
+        if (msg_send(&msg, gnrc_pppdev->pid) <= 0) {
+            puts("gnrc_netdev2: possibly lost interrupt.");
+        }
+    }
 }
 
 void *_gnrc_ppp_thread(void *args)
@@ -279,7 +290,7 @@ void *_gnrc_ppp_thread(void *args)
         msg_receive(&msg);
         event = msg.content.value;
         switch (msg.type) {
-            case GNRC_NETDEV_MSG_TYPE_EVENT:
+            case NETDEV2_MSG_TYPE_EVENT:
                 d->driver->isr((netdev2_t *) d);
                 break;
             case GNRC_NETAPI_MSG_TYPE_SET:

@@ -24,6 +24,7 @@
 #include "sim900.h"
 #include "net/eui64.h"
 #include "periph/cpuid.h"
+#include "net/gnrc/netdev2.h"
 
 #define PPPINITFCS16    0xffff
 #define PPPGOODFCS16    0xf0b8
@@ -55,6 +56,7 @@
 
 #define DUMMY_ADDR_LEN (6)
 #define DEFAULT_ACCM (0xffffffff)
+
 void pdp_netattach_timeout(sim900_t *dev);
 void pdp_netattach(sim900_t *dev);
 void pdp_check_netattach(sim900_t *dev);
@@ -67,7 +69,7 @@ static inline void _reset_at_status(sim900_t *dev)
 
 static inline void _isr_at_command(sim900_t *dev, char data)
 {
-    msg_t msg;
+    netdev2_t *netdev = (netdev2_t*) dev;
 
     /* Detect stream of characters and add flag to at_status*/
     dev->_stream |= data;
@@ -80,9 +82,7 @@ static inline void _isr_at_command(sim900_t *dev, char data)
     if (!dev->_num_esc) {
         _reset_at_status(dev);
         dev->isr_flags = MSG_AT_FINISHED;
-        msg.type = GNRC_NETDEV_MSG_TYPE_EVENT;
-        msg.content.ptr = (void*) dev;
-        msg_send_int(&msg, dev->mac_pid);
+        netdev->event_callback(netdev, NETDEV2_EVENT_ISR);
     }
 
     dev->_stream = (dev->_stream << 8);
@@ -90,10 +90,7 @@ static inline void _isr_at_command(sim900_t *dev, char data)
 
 static inline void _rx_ready(sim900_t *dev)
 {
-    msg_t msg;
-
-    msg.type = GNRC_NETDEV_MSG_TYPE_EVENT;
-    msg.content.ptr = (void*) dev;
+    netdev2_t *netdev = (netdev2_t*) dev;
 
     dev->ppp_rx_state = PPP_RX_IDLE;
     dev->rx_count = dev->int_count;
@@ -103,7 +100,7 @@ static inline void _rx_ready(sim900_t *dev)
     /* if PPP pkt is sane, send to thread */
     if (dev->int_fcs == PPPGOODFCS16 && dev->escape == 0 && dev->rx_count >= 4) {
 		dev->isr_flags = RX_FINISHED;
-        msg_send_int(&msg, dev->mac_pid);
+        netdev->event_callback(netdev, NETDEV2_EVENT_ISR);
     }
 
     dev->int_fcs = PPPINITFCS16;
@@ -167,10 +164,9 @@ static void rx_cb(void *arg, uint8_t data)
 
 void _send_driver_event(msg_t *msg, uint8_t driver_event, sim900_t* dev)
 {
-    msg->type = GNRC_NETDEV_MSG_TYPE_EVENT;
-    msg->content.ptr = (void*) dev;
+    netdev2_t *netdev = (netdev2_t*) dev;
     dev->isr_flags = driver_event;
-    msg_send(msg, thread_getpid());
+    netdev->event_callback(netdev, NETDEV2_EVENT_ISR);
 }
 
 int send_at_command(sim900_t *dev, char *cmd, size_t size, uint8_t ne, void (*cb)(sim900_t *dev))
@@ -258,7 +254,7 @@ int sim900_send(netdev2_t *netdev, const struct iovec *vector, unsigned count)
 
 void at_timeout(sim900_t *dev, uint32_t ms, void (*cb)(sim900_t *dev))
 {
-    dev->msg.type = GNRC_NETDEV_MSG_TYPE_EVENT;
+    dev->msg.type = NETDEV2_MSG_TYPE_EVENT;
     dev->isr_flags = MSG_AT_TIMEOUT;
     dev->msg.content.ptr = (void*) dev;
     dev->_timer_cb = cb;
