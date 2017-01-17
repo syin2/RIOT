@@ -274,7 +274,7 @@ int ppp_ipv4_send(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
     return 0;
 }
 
-int ppp_ipv4_recv(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
+gnrc_pktsnip_t *ppp_ipv4_recv(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 {
     gnrc_pktsnip_t *ipv4_hdr = gnrc_pktbuf_mark(pkt, sizeof(ipv4_hdr_t), GNRC_NETTYPE_UNDEF);
     gnrc_pktsnip_t *udp_hdr = gnrc_pktbuf_mark(pkt, sizeof(udp_hdr_t), GNRC_NETTYPE_UNDEF);
@@ -297,15 +297,8 @@ int ppp_ipv4_recv(gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt)
 
     LL_APPEND(pkt, netif_hdr);
 
-    /* throw away packet if no one is interested */
-    if (!gnrc_netapi_dispatch_receive(GNRC_NETTYPE_IPV6, GNRC_NETREG_DEMUX_CTX_ALL, pkt)) {
-        DEBUG("gnrc_ppp: unable to forward packet of type %i\n", pkt->type);
-        gnrc_pktbuf_release(pkt);
-        return 0;
-    }
-
-    return 0;
+    return pkt;
 safe_out:
     gnrc_pktbuf_release(pkt);
-    return 0;
+    return NULL;
 }

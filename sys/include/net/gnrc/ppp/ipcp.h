@@ -107,7 +107,7 @@ int ppp_ipv4_send(struct gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt);
  *
  * @return
  */
-int ppp_ipv4_recv(struct gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt);
+gnrc_pktsnip_t *ppp_ipv4_recv(struct gnrc_pppdev_t *ppp_dev, gnrc_pktsnip_t *pkt);
 
 
 /**

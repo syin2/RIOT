@@ -204,6 +204,15 @@ ppp_protocol_t *_get_prot_by_target(netdev2_ppp_t *pppdev, ppp_target_t target)
     }
     return target_prot;
 }
+static void _pass_on_packet(gnrc_pktsnip_t *pkt)
+{
+    /* throw away packet if no one is interested */
+    if (!gnrc_netapi_dispatch_receive(pkt->type, GNRC_NETREG_DEMUX_CTX_ALL, pkt)) {
+        DEBUG("gnrc_netdev2: unable to forward packet of type %i\n", pkt->type);
+        gnrc_pktbuf_release(pkt);
+        return;
+    }
+}
 int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 {
     ppp_target_t target = ppp_msg_get_target(ppp_msg);
@@ -252,6 +261,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
             DEBUG("gnrc_ppp: Invalid ppp packet. Discard.\n");
         }
 
+        gnrc_pktsnip_t *ret_pkt = NULL;
         switch(target)
         {
             case PROT_LCP:
@@ -261,7 +271,7 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
                 fsm_handle_ppp_msg((ppp_protocol_t*) &pppdev->ipcp, PPP_RECV, pkt);
                 break;
             case PROT_IPV4:
-                ppp_ipv4_recv(dev, pkt);
+                ret_pkt = ppp_ipv4_recv(dev, pkt);
                 break;
             case PROT_AUTH:
                 pap_recv((ppp_protocol_t*) &pppdev->pap, pkt);
@@ -270,6 +280,10 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
                 DEBUG("Unrecognized target\n");
                 return -1;
 
+        }
+
+        if (ret_pkt) {
+            _pass_on_packet(ret_pkt);
         }
         return 0;
     }
