@@ -177,6 +177,33 @@ int _prot_is_allowed(gnrc_pppdev_t *dev, uint16_t protocol)
     }
     return 0;
 }
+
+ppp_protocol_t *_get_prot_by_target(netdev2_ppp_t *pppdev, ppp_target_t target)
+{
+    ppp_protocol_t *target_prot;
+    switch (target) {
+        case PROT_LCP:
+            target_prot = (ppp_protocol_t *) &pppdev->lcp;
+            break;
+        case PROT_IPCP:
+        case BROADCAST_NCP:
+            target_prot = (ppp_protocol_t *) &pppdev->ipcp;
+            break;
+        case PROT_IPV4:
+            target_prot = (ppp_protocol_t *) &pppdev->ipv4;
+            break;
+        case PROT_DCP:
+        case BROADCAST_LCP:
+            target_prot = (ppp_protocol_t *) &pppdev->dcp;
+            break;
+        case PROT_AUTH:
+            target_prot = (ppp_protocol_t *) &pppdev->pap;
+            break;
+        default:
+            target_prot = NULL;
+    }
+    return target_prot;
+}
 int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
 {
     ppp_target_t target = ppp_msg_get_target(ppp_msg);
@@ -184,6 +211,8 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
     gnrc_pktsnip_t *pkt = NULL;
     netdev2_t *netdev = (netdev2_t*) dev->netdev;
 	netdev2_ppp_t *pppdev = (netdev2_ppp_t*) dev->netdev;
+
+    ppp_protocol_t *target_prot;
 
     if (event == PPP_RECV) {
         pkt = retrieve_pkt(netdev);
@@ -222,36 +251,28 @@ int dispatch_ppp_msg(gnrc_pppdev_t *dev, ppp_msg_t ppp_msg)
             gnrc_pktbuf_release(pkt);
             DEBUG("gnrc_ppp: Invalid ppp packet. Discard.\n");
         }
-
-    }
-
-
-    ppp_protocol_t *target_prot;
-    switch (target) {
-        case PROT_LCP:
-            target_prot = (ppp_protocol_t *) &pppdev->lcp;
-            break;
-        case PROT_IPCP:
-        case BROADCAST_NCP:
-            target_prot = (ppp_protocol_t *) &pppdev->ipcp;
-            break;
-        case PROT_IPV4:
-            target_prot = (ppp_protocol_t *) &pppdev->ipv4;
-            break;
-        case PROT_DCP:
-        case BROADCAST_LCP:
-            target_prot = (ppp_protocol_t *) &pppdev->dcp;
-            break;
-        case PROT_AUTH:
-            target_prot = (ppp_protocol_t *) &pppdev->pap;
-            break;
-        default:
+        target_prot = _get_prot_by_target(pppdev, target);
+        if(!target_prot)
+        {
             DEBUG("Unrecognized target\n");
             return -1;
-            break;
+        }
+        return target_prot->handler(target_prot, PPP_RECV, pkt);
+    }
+    else
+    {
+        target_prot = _get_prot_by_target(pppdev, target);
+
+        if(!target_prot)
+        {
+            DEBUG("Unrecognized target\n");
+            return -1;
+        }
+
+        return target_prot->handler(target_prot, event, pkt);
     }
 
-    return target_prot->handler(target_prot, event, pkt);
+
 }
 
 static void _event_cb(netdev2_t *dev, netdev2_event_t event)
