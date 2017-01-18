@@ -80,6 +80,7 @@ typedef struct gnrc_netdev2 {
      */
     int (*send)(struct gnrc_netdev2 *dev, gnrc_pktsnip_t *snip);
 
+    int (*msg_handler)(struct gnrc_netdev2 *dev, msg_t *msg);
 #ifdef MODULE_GNRC_PPP
     int (*link_up)(struct gnrc_netdev2 *dev);
     int (*link_down)(struct gnrc_netdev2 *dev);

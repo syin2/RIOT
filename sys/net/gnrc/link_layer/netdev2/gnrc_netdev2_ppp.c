@@ -58,6 +58,17 @@ static int _link_down(gnrc_netdev2_t *dev)
     return 0;
 }
 
+static int msg_handler(gnrc_netdev2_t *dev, msg_t *msg)
+{
+    int event = msg->content.value;
+    switch(msg->type)
+    {
+        case GNRC_PPP_MSG_TYPE_EVENT:
+            dispatch_ppp_msg(dev, event);
+            break;
+    }
+    return 0;
+}
 void gnrc_netdev2_ppp_init(gnrc_netdev2_t *gnrc_netdev2, netdev2_ppp_t *dev)
 {
     assert(gnrc_netdev2 && dev);
@@ -66,5 +77,6 @@ void gnrc_netdev2_ppp_init(gnrc_netdev2_t *gnrc_netdev2, netdev2_ppp_t *dev)
     gnrc_netdev2->recv = _recv;
     gnrc_netdev2->link_up = _link_up;
     gnrc_netdev2->link_down = _link_down;
+    gnrc_netdev2->msg_handler = msg_handler;
     gnrc_netdev2->dev = (netdev2_t *) dev;
 }

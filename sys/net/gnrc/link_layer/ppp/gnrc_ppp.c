@@ -356,12 +356,11 @@ void *_gnrc_ppp_thread(void *args)
     msg_t msg_queue[GNRC_PPP_MSG_QUEUE];;
     msg_init_queue(msg_queue, GNRC_PPP_MSG_QUEUE);
     msg_t msg, reply;
-    int event, res;
+    int res;
     gnrc_netapi_opt_t *opt;
     while (1) {
         DEBUG("gnrc_ppp: waiting for msg\n");
         msg_receive(&msg);
-        event = msg.content.value;
         switch (msg.type) {
             case NETDEV2_MSG_TYPE_EVENT:
                 d->driver->isr((netdev2_t *) d);
@@ -383,11 +382,12 @@ void *_gnrc_ppp_thread(void *args)
             case GNRC_NETAPI_MSG_TYPE_SND:
                 pppdev->send(pppdev, (gnrc_pktsnip_t*) msg.content.ptr);
                 break;
-            case GNRC_PPP_MSG_TYPE_EVENT:
-                dispatch_ppp_msg(pppdev, event);
-                break;
             default:
-                DEBUG("Received an unknown thread msg: %i\n", msg.type);
+                if(pppdev->msg_handler)
+                    pppdev->msg_handler(pppdev, &msg);
+                else
+                    DEBUG("gnrc_netdev2: Unknown command %" PRIu16 "\n", msg.type);
+                break;
         }
     }
 }
