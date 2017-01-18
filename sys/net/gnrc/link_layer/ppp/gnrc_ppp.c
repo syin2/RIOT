@@ -204,15 +204,6 @@ ppp_protocol_t *_get_prot_by_target(netdev2_ppp_t *pppdev, ppp_target_t target)
     }
     return target_prot;
 }
-static void _pass_on_packet(gnrc_pktsnip_t *pkt)
-{
-    /* throw away packet if no one is interested */
-    if (!gnrc_netapi_dispatch_receive(pkt->type, GNRC_NETREG_DEMUX_CTX_ALL, pkt)) {
-        DEBUG("gnrc_netdev2: unable to forward packet of type %i\n", pkt->type);
-        gnrc_pktbuf_release(pkt);
-        return;
-    }
-}
 
 gnrc_pktsnip_t *ppp_recv(gnrc_netdev2_t *gnrc_netdev)
 {
@@ -310,88 +301,6 @@ int dispatch_ppp_msg(gnrc_netdev2_t *dev, ppp_msg_t ppp_msg)
 
 }
 
-static void _event_cb(netdev2_t *dev, netdev2_event_t event)
-{
-    gnrc_netdev2_t *gnrc_pppdev = (gnrc_netdev2_t*) dev->context;
-
-    gnrc_pktsnip_t *pkt = NULL;
-    if (event == NETDEV2_EVENT_ISR) {
-        msg_t msg;
-
-        msg.type = NETDEV2_MSG_TYPE_EVENT;
-        msg.content.ptr = gnrc_pppdev;
-
-        if (msg_send(&msg, gnrc_pppdev->pid) <= 0) {
-            puts("gnrc_netdev2: possibly lost interrupt.");
-        }
-    }
-    else if (event == NETDEV2_EVENT_LINK_UP)
-    {
-        gnrc_pppdev->link_up(gnrc_pppdev);
-    }
-    else if (event == NETDEV2_EVENT_RX_COMPLETE)
-    {
-        pkt = gnrc_pppdev->recv(gnrc_pppdev);
-        if (pkt) {
-            _pass_on_packet(pkt);
-        }
-    }
-    else if (event == NETDEV2_EVENT_LINK_DOWN)
-    {
-        gnrc_pppdev->link_down(gnrc_pppdev);
-    }
-}
-
-void *_gnrc_ppp_thread(void *args)
-{
-    DEBUG("gnrc_ppp_thread started\n");
-    gnrc_netdev2_t *pppdev = (gnrc_netdev2_t *) args;
-    pppdev->pid = thread_getpid();
-    gnrc_netif_add(thread_getpid());
-    netdev2_t *d = (netdev2_t*) pppdev->dev;
-    d->event_callback = _event_cb;
-    d->context = pppdev;
-    d->driver->init(d);
-
-    msg_t msg_queue[GNRC_PPP_MSG_QUEUE];;
-    msg_init_queue(msg_queue, GNRC_PPP_MSG_QUEUE);
-    msg_t msg, reply;
-    int res;
-    gnrc_netapi_opt_t *opt;
-    while (1) {
-        DEBUG("gnrc_ppp: waiting for msg\n");
-        msg_receive(&msg);
-        switch (msg.type) {
-            case NETDEV2_MSG_TYPE_EVENT:
-                d->driver->isr((netdev2_t *) d);
-                break;
-            case GNRC_NETAPI_MSG_TYPE_SET:
-                opt = (gnrc_netapi_opt_t *) msg.content.ptr;
-                res = d->driver->set(d, opt->opt, opt->data, opt->data_len);
-                reply.type = GNRC_NETAPI_MSG_TYPE_ACK;
-                reply.content.value = (uint32_t) res;
-                msg_reply(&msg, &reply);
-                break;
-            case GNRC_NETAPI_MSG_TYPE_GET:
-                opt = (gnrc_netapi_opt_t *) msg.content.ptr;
-                res = d->driver->get(d, opt->opt, opt->data, opt->data_len);
-                reply.type = GNRC_NETAPI_MSG_TYPE_ACK;
-                reply.content.value = (uint32_t) res;
-                msg_reply(&msg, &reply);
-                break;
-            case GNRC_NETAPI_MSG_TYPE_SND:
-                pppdev->send(pppdev, (gnrc_pktsnip_t*) msg.content.ptr);
-                break;
-            default:
-                if(pppdev->msg_handler)
-                    pppdev->msg_handler(pppdev, &msg);
-                else
-                    DEBUG("gnrc_netdev2: Unknown command %" PRIu16 "\n", msg.type);
-                break;
-        }
-    }
-}
-
 void gnrc_ppp_trigger_event(msg_t *msg, kernel_pid_t pid, uint8_t target, uint8_t event)
 {
     msg->type = GNRC_PPP_MSG_TYPE_EVENT;
@@ -399,25 +308,6 @@ void gnrc_ppp_trigger_event(msg_t *msg, kernel_pid_t pid, uint8_t target, uint8_
     msg_send(msg, pid);
 }
 
-kernel_pid_t gnrc_pppdev_init(char *stack, int stacksize, char priority,
-                              const char *name, gnrc_netdev2_t *gnrc_pppdev)
-{
-    kernel_pid_t res;
-
-    /* check if given netdev device is defined and the driver is set */
-    if (gnrc_pppdev == NULL || gnrc_pppdev->dev == NULL) {
-        return -ENODEV;
-    }
-
-    /* create new gnrc_pppdev thread */
-    res = thread_create(stack, stacksize, priority, THREAD_CREATE_STACKTEST,
-                        _gnrc_ppp_thread, (void *)gnrc_pppdev, name);
-    if (res <= 0) {
-        return -EINVAL;
-    }
-
-    return res;
-}
 void ppp_protocol_init(ppp_protocol_t *protocol, gnrc_netdev2_t *pppdev, int (*handler)(struct ppp_protocol_t *, uint8_t, void *), uint8_t id)
 {
     protocol->handler = handler;
