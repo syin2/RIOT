@@ -80,9 +80,26 @@ typedef struct gnrc_netdev2 {
      */
     int (*send)(struct gnrc_netdev2 *dev, gnrc_pktsnip_t *snip);
 
+
+    /**
+     * @brief Handle custom messages
+     *
+     * This function handles messages that are not present in gnrc_netdev2 loop.
+     */
     int (*msg_handler)(struct gnrc_netdev2 *dev, msg_t *msg);
-#ifdef MODULE_GNRC_PPP
+#if defined(MODULE_GNRC_PPP) || doxygen
+    /**
+     * @brief Handle link up event from this device
+     *
+     * This function handles link up events from device. 
+     */
     int (*link_up)(struct gnrc_netdev2 *dev);
+
+    /**
+     * @brief Handle link down event from this device
+     *
+     * This function handles link down events from device. 
+     */
     int (*link_down)(struct gnrc_netdev2 *dev);
 #endif
     /**
