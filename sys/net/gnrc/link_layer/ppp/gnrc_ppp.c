@@ -127,9 +127,9 @@ int gnrc_ppp_send(gnrc_netdev2_t *dev, gnrc_pktsnip_t *pkt)
     netdev2_t *netdev = (netdev2_t*) dev->dev;
 	netdev2_ppp_t *pppdev = (netdev2_ppp_t*) netdev;
 
-    hdlc_hdr_set_address(&hdlc_hdr, PPP_HDLC_ADDRESS);
-    hdlc_hdr_set_control(&hdlc_hdr, PPP_HDLC_CONTROL);
-    hdlc_hdr_set_protocol(&hdlc_hdr, gnrc_nettype_to_ppp_protnum(pkt->type));
+    hdlc_hdr.address = PPP_HDLC_ADDRESS;
+    hdlc_hdr.control =PPP_HDLC_CONTROL;
+    hdlc_hdr.protocol = byteorder_htons(gnrc_nettype_to_ppp_protnum(pkt->type));
 
     gnrc_pktsnip_t *hdr = gnrc_pktbuf_add(pkt, (void *) &hdlc_hdr, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
 
@@ -227,18 +227,18 @@ gnrc_pktsnip_t *ppp_recv(gnrc_netdev2_t *gnrc_netdev)
     }
 
     hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t *) result->data;
-    target = _get_target_from_protocol(hdlc_hdr_get_protocol(hdlc_hdr));
+    target = _get_target_from_protocol(byteorder_ntohs(hdlc_hdr->protocol));
 
     if (!target) {
         /* Remove hdlc header */
-        network_uint16_t protocol = byteorder_htons(hdlc_hdr_get_protocol(pkt->next->data));
+        network_uint16_t protocol = ((hdlc_hdr_t*) pkt->next->data)->protocol;
         gnrc_pktbuf_remove_snip(pkt, pkt->next);
         gnrc_pktsnip_t *rp = gnrc_pktbuf_add(pkt, &protocol, 2, GNRC_NETTYPE_UNDEF);
         send_protocol_reject(gnrc_netdev, pppdev->lcp.pr_id++, rp);
         return NULL;
     }
 
-    if (!_prot_is_allowed(gnrc_netdev, hdlc_hdr_get_protocol(hdlc_hdr))) {
+    if (!_prot_is_allowed(gnrc_netdev, byteorder_ntohs(hdlc_hdr->protocol))) {
         DEBUG("gnrc_ppp: Received a ppp packet that's not allowed in current ppp state. Discard packet\n");
         goto safe_out;
     }
