@@ -296,7 +296,19 @@ void send_protocol_reject(gnrc_netdev2_t *dev, uint8_t id, gnrc_pktsnip_t *pkt);
  */
 void send_pap_request(gnrc_netdev2_t *dev, uint8_t id, gnrc_pktsnip_t *credentials);
 
+/**
+ * @brief Handle reception of PPP packet
+ *
+ * @param gnrc_netdev pointer to gnrc ppp interface
+ */
 gnrc_pktsnip_t *ppp_recv(gnrc_netdev2_t *gnrc_netdev);
+
+/**
+ * @brief Dispatch ppp message (target and event)
+ *
+ * @param gnrc_netdev pointer to gnrc ppp interface
+ * @param ppp_msg PPP message being sent (encodes target and event)
+ */
 int dispatch_ppp_msg(gnrc_netdev2_t *dev, ppp_msg_t ppp_msg);
 
 #ifdef __cplusplus
