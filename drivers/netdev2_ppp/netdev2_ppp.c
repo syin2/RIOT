@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaspar Schleiser <kaspar@schleiser.de>
+ * Copyright (C) Fundación Inria Chile 2017
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -7,13 +7,13 @@
  */
 
 /**
- * @ingroup     driver_netdev2_eth
+ * @ingroup     driver_netdev2_ppp
  * @{
  *
  * @file
- * @brief       Common code for netdev2 ethernet drivers
+ * @brief       Common code for netdev2 ppp drivers
  *
- * @author      Kaspar Schleiser <kaspar@schleiser.de>
+ * @author      José Ignacio Alamos <jose.alamos@inria.cl>
  *
  * @}
  */
