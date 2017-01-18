@@ -16,8 +16,8 @@
  *
  * @author  José Ignacio Alamos
  */
-#ifndef NETDEV2_IEEE802154_H_
-#define NETDEV2_IEEE802154_H_
+#ifndef NETDEV2_PPP_H_
+#define NETDEV2_PPP_H_
 
 #include "net/gnrc/ppp/prot.h"
 #include "net/gnrc/ppp/prot.h"
@@ -47,7 +47,7 @@ typedef struct dcp_t {
 
 
 /**
- * @brief Extended structure to hold IEEE 802.15.4 driver state
+ * @brief Extended structure to hold PPP driver state
  *
  * @extends netdev2_t
  *
@@ -57,19 +57,19 @@ typedef struct dcp_t {
 typedef struct {
     netdev2_t netdev;                       /**< @ref netdev2_t base class */
     /**
-     * @brief IEEE 802.15.4 specific fields
+     * @brief PPP specific fields
      * @{
      */
-	dcp_t dcp;
-	lcp_t lcp;
-	pap_t pap;
-	ipcp_t ipcp;
-	ppp_ipv4_t ipv4;
+	dcp_t dcp;                             /**< Control protocol for driver */
+	lcp_t lcp;                             /**< Link Control Protocol */
+	pap_t pap;                             /**< Password Authentication Protocol */
+	ipcp_t ipcp;                           /**< IPv4 Network Control Protocol */
+	ppp_ipv4_t ipv4;                       /**< Handler for IPv4 packets */
 } netdev2_ppp_t;
 
 
 /**
- * @brief   Fallback function for netdev2 IEEE 802.15.4 devices' _get function
+ * @brief   Fallback function for netdev2 PPP devices' _get function
  *
  * Supposed to be used by netdev2 drivers as default case.
  *
@@ -85,22 +85,8 @@ int netdev2_ppp_get(netdev2_ppp_t *dev, netopt_t opt, void *value,
                            size_t max_len);
 
 /**
- * @brief   Fallback function for netdev2 IEEE 802.15.4 devices' _set function
+ * @brief   Fallback function for netdev2 PPP devices' _set function
  *
- * Sets netdev2_ppp_t::pan, netdev2_ppp_t::short_addr, and
- * netdev2_ppp_t::long_addr in device struct.
- * Additionally @ref NETDEV2_IEEE802154_SRC_MODE_LONG,
- * @ref NETDEV2_IEEE802154_RAW and, @ref NETDEV2_IEEE802154_ACK_REQ in
- * netdev2_ppp_t::flags can be set or unset.
- *
- * The setting of netdev2_ppp_t::chan is omitted since the legality of
- * its value can be very device specific and can't be checked in this function.
- * Please set it in the netdev2_driver_t::set function of your driver.
- *
- * Be aware that this only manipulates the netdev2_ppp_t struct.
- * Configuration to the device needs to be done in the netdev2_driver_t::set
- * function of the device driver (which should call this function as a fallback
- * afterwards).
  *
  * @param[in] dev       network device descriptor
  * @param[in] opt       option type
@@ -117,5 +103,5 @@ int netdev2_ppp_set(netdev2_ppp_t *dev, netopt_t opt, void *value,
 }
 #endif
 
-#endif /* NETDEV2_IEEE802154_H_ */
+#endif /* NETDEV2_PPP_H_ */
 /** @} */
