@@ -289,13 +289,9 @@ int dispatch_ppp_msg(gnrc_netdev2_t *dev, ppp_msg_t ppp_msg)
 	netdev2_ppp_t *pppdev = (netdev2_ppp_t*) netdev;
 
     ppp_protocol_t *target_prot;
-    gnrc_pktsnip_t *pkt = NULL;
 
     if (event == PPP_RECV) {
-        pkt = ppp_recv(dev);
-        if (pkt) {
-            _pass_on_packet(pkt);
-        }
+        assert(false);
         return 0;
     }
     else
@@ -320,6 +316,7 @@ static void _event_cb(netdev2_t *dev, netdev2_event_t event)
     netdev2_ppp_t *pppdev = (netdev2_ppp_t*) dev;
 
     ppp_protocol_t *dcp = (ppp_protocol_t*) &pppdev->dcp;
+    gnrc_pktsnip_t *pkt = NULL;
     if (event == NETDEV2_EVENT_ISR) {
         msg_t msg;
 
@@ -337,7 +334,10 @@ static void _event_cb(netdev2_t *dev, netdev2_event_t event)
     }
     else if (event == NETDEV2_EVENT_RX_COMPLETE)
     {
-        dispatch_ppp_msg(gnrc_pppdev, (0xFF00) | (PPP_RECV&0xFF));
+        pkt = ppp_recv(gnrc_pppdev);
+        if (pkt) {
+            _pass_on_packet(pkt);
+        }
     }
     else if (event == NETDEV2_EVENT_LINK_DOWN)
     {
