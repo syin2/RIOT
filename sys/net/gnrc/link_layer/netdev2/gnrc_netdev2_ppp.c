@@ -42,11 +42,29 @@ static int _send(gnrc_netdev2_t *dev, gnrc_pktsnip_t *pkt)
     return 0;
 }
 
+static int _link_up(gnrc_netdev2_t *dev)
+{
+    dispatch_ppp_msg(dev, (0xFF00) | (PPP_LINKDOWN&0xFF));
+    dispatch_ppp_msg(dev, (0xFF00) | (PPP_LINKUP&0xFF));
+    return 0;
+}
+
+static int _link_down(gnrc_netdev2_t *dev)
+{
+    netdev2_ppp_t *pppdev = (netdev2_ppp_t*) dev->dev;
+    ppp_protocol_t *dcp = (ppp_protocol_t*) &pppdev->dcp;
+    dcp->state = PROTOCOL_DOWN;
+    dispatch_ppp_msg(dev, ((PROT_LCP<<8)&0xFF00) | (PPP_LINKDOWN & 0xFF));
+    return 0;
+}
+
 void gnrc_netdev2_ppp_init(gnrc_netdev2_t *gnrc_netdev2, netdev2_ppp_t *dev)
 {
     assert(gnrc_netdev2 && dev);
 
     gnrc_netdev2->send = _send;
     gnrc_netdev2->recv = _recv;
+    gnrc_netdev2->link_up = _link_up;
+    gnrc_netdev2->link_down = _link_down;
     gnrc_netdev2->dev = (netdev2_t *) dev;
 }

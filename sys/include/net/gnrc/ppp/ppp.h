@@ -297,6 +297,7 @@ void send_protocol_reject(gnrc_netdev2_t *dev, uint8_t id, gnrc_pktsnip_t *pkt);
 void send_pap_request(gnrc_netdev2_t *dev, uint8_t id, gnrc_pktsnip_t *credentials);
 
 gnrc_pktsnip_t *ppp_recv(gnrc_netdev2_t *gnrc_netdev);
+int dispatch_ppp_msg(gnrc_netdev2_t *dev, ppp_msg_t ppp_msg);
 
 #ifdef __cplusplus
 }
