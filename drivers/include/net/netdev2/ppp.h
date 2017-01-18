@@ -60,10 +60,6 @@ typedef struct {
      * @brief IEEE 802.15.4 specific fields
      * @{
      */
-#ifdef MODULE_GNRC
-    gnrc_nettype_t proto;                   /**< Protocol for upper layer */
-#endif
-    ppp_protocol_t *protocol[NUM_OF_PROTS]; /**< array of PPP sub protocols */
 	dcp_t dcp;
 	lcp_t lcp;
 	pap_t pap;
