@@ -214,7 +214,7 @@ static void _pass_on_packet(gnrc_pktsnip_t *pkt)
     }
 }
 
-int ppp_recv(gnrc_netdev2_t *gnrc_netdev)
+gnrc_pktsnip_t *ppp_recv(gnrc_netdev2_t *gnrc_netdev)
 {
     gnrc_pktsnip_t *pkt = NULL;
     netdev2_t *netdev = (netdev2_t*) gnrc_netdev->dev;
@@ -226,14 +226,13 @@ int ppp_recv(gnrc_netdev2_t *gnrc_netdev)
     gnrc_pktsnip_t *result = gnrc_pktbuf_mark(pkt, sizeof(hdlc_hdr_t), GNRC_NETTYPE_HDLC);
     if (!result) {
         DEBUG("gnrc_ppp: no space left in packet buffer\n");
-        return -ENOBUFS;
+        return NULL;
     }
 
     /*Drop packet if exceeds MRU*/
     if (gnrc_pkt_len(pkt) > pppdev->lcp.mru) {
         DEBUG("gnrc_ppp: Exceeded MRU of device. Dropping packet.\n");
-        gnrc_pktbuf_release(pkt);
-        return -EBADMSG;
+        goto safe_out;
     }
 
     hdlc_hdr_t *hdlc_hdr = (hdlc_hdr_t *) result->data;
@@ -245,18 +244,17 @@ int ppp_recv(gnrc_netdev2_t *gnrc_netdev)
         gnrc_pktbuf_remove_snip(pkt, pkt->next);
         gnrc_pktsnip_t *rp = gnrc_pktbuf_add(pkt, &protocol, 2, GNRC_NETTYPE_UNDEF);
         send_protocol_reject(gnrc_netdev, pppdev->lcp.pr_id++, rp);
-        return -EBADMSG;
+        return NULL;
     }
 
     if (!_prot_is_allowed(gnrc_netdev, hdlc_hdr_get_protocol(hdlc_hdr))) {
         DEBUG("gnrc_ppp: Received a ppp packet that's not allowed in current ppp state. Discard packet\n");
-        gnrc_pktbuf_release(pkt);
-        return -1;
+        goto safe_out;
     }
 
     if (_pkt_is_ppp(pkt) && !_ppp_pkt_is_valid(pkt)) {
-        gnrc_pktbuf_release(pkt);
         DEBUG("gnrc_ppp: Invalid ppp packet. Discard.\n");
+        goto safe_out;
     }
 
     gnrc_pktsnip_t *ret_pkt = NULL;
@@ -276,14 +274,12 @@ int ppp_recv(gnrc_netdev2_t *gnrc_netdev)
             break;
         default:
             DEBUG("Unrecognized target\n");
-            return -1;
-
         }
 
-        if (ret_pkt) {
-            _pass_on_packet(ret_pkt);
-        }
-        return 0;
+    return ret_pkt;
+safe_out:
+    gnrc_pktbuf_release(pkt);
+    return NULL;
 }
 int dispatch_ppp_msg(gnrc_netdev2_t *dev, ppp_msg_t ppp_msg)
 {
@@ -293,9 +289,13 @@ int dispatch_ppp_msg(gnrc_netdev2_t *dev, ppp_msg_t ppp_msg)
 	netdev2_ppp_t *pppdev = (netdev2_ppp_t*) netdev;
 
     ppp_protocol_t *target_prot;
+    gnrc_pktsnip_t *pkt = NULL;
 
     if (event == PPP_RECV) {
-        ppp_recv(dev);
+        pkt = ppp_recv(dev);
+        if (pkt) {
+            _pass_on_packet(pkt);
+        }
         return 0;
     }
     else
