@@ -28,10 +28,10 @@ extern "C" {
 #endif
 
 /**
- * @brief   Initialize GNRC handler for netdev2 XBee devices
+ * @brief   Initialize GNRC handler for netdev2 PPP devices
  *
  * @param[out] gnrc_netdev2     gnrc_netdev2 struct to initialize
- * @param[in]  dev              XBee device to handle
+ * @param[in]  dev              PPP device to handle
  */
 void gnrc_netdev2_ppp_init(gnrc_netdev2_t *gnrc_netdev2, netdev2_ppp_t *dev);
 
