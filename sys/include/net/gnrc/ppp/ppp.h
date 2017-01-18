@@ -295,6 +295,9 @@ void send_protocol_reject(gnrc_netdev2_t *dev, uint8_t id, gnrc_pktsnip_t *pkt);
  * @param credentials credentials of the PAP request
  */
 void send_pap_request(gnrc_netdev2_t *dev, uint8_t id, gnrc_pktsnip_t *credentials);
+
+gnrc_pktsnip_t *ppp_recv(gnrc_netdev2_t *gnrc_netdev);
+
 #ifdef __cplusplus
 }
 #endif

@@ -334,7 +334,7 @@ static void _event_cb(netdev2_t *dev, netdev2_event_t event)
     }
     else if (event == NETDEV2_EVENT_RX_COMPLETE)
     {
-        pkt = ppp_recv(gnrc_pppdev);
+        pkt = gnrc_pppdev->recv(gnrc_pppdev);
         if (pkt) {
             _pass_on_packet(pkt);
         }

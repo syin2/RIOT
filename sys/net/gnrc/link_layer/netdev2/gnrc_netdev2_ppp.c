@@ -21,6 +21,7 @@
 #include <errno.h>
 #include "assert.h"
 #include "net/gnrc/netdev2.h"
+#include "net/gnrc/ppp/ppp.h"
 #include "net/netdev2/ppp.h"
 #include "net/gnrc.h"
 #include "net/hdlc/hdr.h"
@@ -32,7 +33,7 @@
 
 static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
 {
-    return NULL;
+    return ppp_recv(gnrc_netdev2);
 }
 
 static int _send(gnrc_netdev2_t *dev, gnrc_pktsnip_t *pkt)
