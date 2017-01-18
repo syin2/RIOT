@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Freie Universität Berlin
+ * Copyright (C) Fundación Inria Chile 2017
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -13,7 +13,7 @@
  * @file
  * @brief       Implementation of SIM900 driver
  *
- * @author      José Ignacio Alamos <jialamos@uc.cl>
+ * @author      José Ignacio Alamos <jose.alamos@inria.cl>
  *
  * @}
  */
