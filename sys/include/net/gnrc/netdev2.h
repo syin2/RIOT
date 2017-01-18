@@ -80,6 +80,10 @@ typedef struct gnrc_netdev2 {
      */
     int (*send)(struct gnrc_netdev2 *dev, gnrc_pktsnip_t *snip);
 
+#ifdef MODULE_GNRC_PPP
+    int (*link_up)(struct gnrc_netdev2 *dev);
+    int (*link_down)(struct gnrc_netdev2 *dev);
+#endif
     /**
      * @brief Receive a pktsnip from this device
      *
@@ -98,7 +102,6 @@ typedef struct gnrc_netdev2 {
      * @brief PID of this adapter for netapi messages
      */
     kernel_pid_t pid;
-    int (*msg_handler)(struct gnrc_netdev2 *dev, msg_t *msg, msg_t *reply);
 
 #ifdef MODULE_GNRC_MAC
     /**
