@@ -385,7 +385,7 @@ void *_gnrc_ppp_thread(void *args)
                 msg_reply(&msg, &reply);
                 break;
             case GNRC_NETAPI_MSG_TYPE_SND:
-                ppp_ipv4_send(pppdev, (gnrc_pktsnip_t *) msg.content.ptr);
+                pppdev->send(pppdev, (gnrc_pktsnip_t*) msg.content.ptr);
                 break;
             case GNRC_PPP_MSG_TYPE_EVENT:
                 dispatch_ppp_msg(pppdev, event);

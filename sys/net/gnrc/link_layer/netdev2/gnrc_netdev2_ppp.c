@@ -38,6 +38,7 @@ static gnrc_pktsnip_t *_recv(gnrc_netdev2_t *gnrc_netdev2)
 
 static int _send(gnrc_netdev2_t *dev, gnrc_pktsnip_t *pkt)
 {
+    ppp_ipv4_send(dev, (gnrc_pktsnip_t *) pkt);
     return 0;
 }
 
