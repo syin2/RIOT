@@ -30,6 +30,10 @@
 #include "at86rf2xx_params.h"
 #endif
 
+#ifdef MODULE_CC2538_RF
+#include "cc2538_rf.h"
+#endif
+
 #define ENABLE_DEBUG (0)
 #include "debug.h"
 
@@ -39,6 +43,10 @@
 
 #ifdef MODULE_AT86RF2XX
 static at86rf2xx_t at86rf2xx_dev;
+#endif
+
+#ifdef MODULE_CC2538_RF
+static cc2538_rf_t cc2538_rf_dev;
 #endif
 
 #define OPENTHREAD_NETDEV_BUFLEN (ETHERNET_MAX_LEN)
@@ -73,6 +81,12 @@ void openthread_bootstrap(void)
 #ifdef MODULE_AT86RF2XX
     at86rf2xx_setup(&at86rf2xx_dev, &at86rf2xx_params[0]);
     netdev_t *netdev = (netdev_t *) &at86rf2xx_dev;
+#endif
+
+
+#ifdef MODULE_CC2538_RF
+    cc2538_setup(&cc2538_rf_dev);
+    netdev_t *netdev = (netdev_t *) &cc2538_rf_dev;
 #endif
 
     openthread_radio_init(netdev, tx_buf, rx_buf);
