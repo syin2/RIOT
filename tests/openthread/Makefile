@@ -29,8 +29,8 @@ endif
 ifneq (,$(filter iotlab-m3 fox iotlab-a8-m3,$(BOARD)))
   DRIVER := at86rf231
 endif
-ifneq (,$(filter cc2538-rf,$(BOARD)))
-  DRIVER := cc2538-rf
+ifneq (,$(filter remote-revb,$(BOARD)))
+  DRIVER := cc2538_rf
 endif
 
 ifneq (,$(filter at86rf2%,$(DRIVER)))
