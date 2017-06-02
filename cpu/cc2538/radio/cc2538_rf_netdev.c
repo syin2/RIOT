@@ -23,6 +23,7 @@
 
 #include "net/gnrc.h"
 #include "net/netdev.h"
+#include "net/netdev/ieee802154.h"
 
 #include "cc2538_rf.h"
 #include "cc2538_rf_netdev.h"

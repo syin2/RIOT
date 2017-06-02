@@ -39,7 +39,7 @@ ifneq (,$(filter at86rf2%,$(DRIVER)))
 endif
 
 USEMODULE += $(DRIVER)
-
+USEMODULE += netdev_ieee802154
 USEMODULE += random
 USEMODULE += shell
 USEMODULE += shell_commands
