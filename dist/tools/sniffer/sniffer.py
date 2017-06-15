@@ -39,6 +39,8 @@ import socket
 from time import sleep, time
 from struct import pack
 from serial import Serial
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 # PCAP setup
 MAGIC = 0xa1b2c3d4

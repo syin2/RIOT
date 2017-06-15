@@ -34,7 +34,7 @@
 #include "cc2538_rf.h"
 #endif
 
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG (1)
 #include "debug.h"
 
 #ifdef MODULE_AT86RF2XX     /* is mutual exclusive with above ifdef */
@@ -86,9 +86,11 @@ void openthread_bootstrap(void)
 
 #ifdef MODULE_CC2538_RF
     cc2538_setup(&cc2538_rf_dev);
+    DEBUG("cc2538_setup()...\n");
     netdev_t *netdev = (netdev_t *) &cc2538_rf_dev;
 #endif
 
     openthread_radio_init(netdev, tx_buf, rx_buf);
     openthread_netdev_init(ot_thread_stack, sizeof(ot_thread_stack), THREAD_PRIORITY_MAIN - 5, "openthread", netdev);
+
 }

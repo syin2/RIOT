@@ -29,7 +29,7 @@
 #include "cc2538_rf_netdev.h"
 #include "cc2538_rf_internal.h"
 
-#define ENABLE_DEBUG        (0)
+#define ENABLE_DEBUG        (1)
 #include "debug.h"
 
 #define _MAX_MHR_OVERHEAD   (25)
@@ -291,6 +291,7 @@ static int _send(netdev_t *netdev, const struct iovec *vector, unsigned count)
     /* Wait for transmission to complete */
     RFCORE_WAIT_UNTIL(RFCORE->XREG_FSMSTAT1bits.TX_ACTIVE == 0);
 
+    DEBUG("cc2538_rf: transmitted %u packets\n", pkt_len);
     return pkt_len;
 }
 
@@ -367,6 +368,15 @@ static int _recv(netdev_t *netdev, void *buf, size_t len, void *info)
 
 static void _isr(netdev_t *netdev)
 {
+//    uint8_t tranc_status;
+//    switch ( tranc_status ){
+//
+//    }
+//    if (!RFCORE-> XREG_RSSISTATbits.RSSI_VALID) {
+//        netdev->event_callback(netdev, NETDEV_EVENT_TX_MEDIUM_BUSY);
+//        DEBUG("THE CHANNEL IS TOO BUSY...");
+//    }
+
     netdev->event_callback(netdev, NETDEV_EVENT_RX_COMPLETE);
 }
 
@@ -401,6 +411,8 @@ static int _init(netdev_t *netdev)
 #ifdef MODULE_NETSTATS_L2
     memset(&netdev->stats, 0, sizeof(netstats_t));
 #endif
+
+    DEBUG("cc2538_rf has been initialized...\n");
 
     return 0;
 }

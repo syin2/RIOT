@@ -4,7 +4,7 @@ PKG_VERSION=fbfd76a990b81f007957e1bd774e51bce742e53e
 PKG_BUILDDIR ?= $(BINDIRBASE)/pkg/$(BOARD)/$(PKG_NAME)
 
 $(info Compile OpenThread for FTD device)
-OPENTHREAD_ARGS+= --enable-cli-app=ftd --enable-application-coap
+OPENTHREAD_ARGS+= --enable-cli-app=ftd --enable-application-coap --enable-default-logging
 
 $(info $$OPENTHREAD_ARGS is [${OPENTHREAD_ARGS}])
 

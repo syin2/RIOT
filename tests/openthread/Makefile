@@ -54,3 +54,4 @@ USEMODULE += cpp11-compat
 #CFLAGS += -DOPENTHREAD_PANID=0xbeef -DOPENTHREAD_CHANNEL=11
 
 include $(RIOTBASE)/Makefile.include
+
