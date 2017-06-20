@@ -164,7 +164,20 @@ void recv_pkt(otInstance *aInstance, netdev_t *dev)
     DEBUG("\n");
 
     /* Tell OpenThread that receive has finished */
-    otPlatRadioReceiveDone(aInstance, res > 0 ? &sReceiveFrame : NULL, res > 0 ? kThreadError_None : kThreadError_Abort);
+    //otPlatRadioReceiveDone(aInstance, res > 0 ? &sReceiveFrame : NULL, res > 0 ? kThreadError_None : kThreadError_Abort);
+
+#ifdef MODULE_CC2538_RF
+#define RFCORE_XREG_FRMFILT0_FRAME_FILTER_EN    0x00000001  // Enables frame filtering
+#define IEEE802154_ACK_LENGTH  5
+#endif
+
+    if ((RFCORE_XREG_FRMFILT1 & RFCORE_XREG_FRMFILT0_FRAME_FILTER_EN) == 0 ||
+            (sReceiveFrame.mLength > IEEE802154_ACK_LENGTH))
+    {
+        DEBUG("notified MAC about the received frame...\n");
+        otPlatRadioReceiveDone(aInstance, res > 0 ? &sReceiveFrame : NULL, res > 0 ? kThreadError_None : kThreadError_Abort);
+    }
+
 }
 
 /* Called upon TX event */

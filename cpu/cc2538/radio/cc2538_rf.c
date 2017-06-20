@@ -30,12 +30,12 @@
 
 #define CC2538_ACCEPT_FT_2_ACK     (1 << 5)
 
-#define SYS_CTRL_RCGCRFC_RFC0                   0x00000001
-#define SYS_CTRL_SCGCRFC_RFC0                   0x00000001
-#define SYS_CTRL_DCGCRFC_RFC0                   0x00000001
-
-#define RFCORE_XREG_FRMCTRL0_AUTOACK            0x00000020
-#define RFCORE_XREG_FRMCTRL0_AUTOCRC            0x00000040
+//#define SYS_CTRL_RCGCRFC_RFC0                   0x00000001
+//#define SYS_CTRL_SCGCRFC_RFC0                   0x00000001
+//#define SYS_CTRL_DCGCRFC_RFC0                   0x00000001
+//
+//#define RFCORE_XREG_FRMCTRL0_AUTOACK            0x00000020
+//#define RFCORE_XREG_FRMCTRL0_AUTOCRC            0x00000040
 
 
 typedef struct {
@@ -86,90 +86,90 @@ bool cc2538_channel_clear(void)
     }
 }
 
-//void cc2538_init(void)
-//{
-//    const init_pair_t *pair;
-//
-//    for (pair = init_table; pair->reg_addr != NULL; pair++) {
-//        *pair->reg_addr = pair->value;
-//    }
-//
-//    cc2538_set_tx_power(CC2538_RF_POWER_DEFAULT);
-//    cc2538_set_chan(CC2538_RF_CHANNEL_DEFAULT);
-//    cc2538_set_pan(CC2538_RF_PANID_DEFAULT);
-//    cc2538_set_addr_long(cc2538_get_eui64_primary());
-//
-//    /* Select the observable signals (maximum of three) */
-//    RFCORE_XREG_RFC_OBS_CTRL0 = tx_active;
-//    RFCORE_XREG_RFC_OBS_CTRL1 = rx_active;
-//    RFCORE_XREG_RFC_OBS_CTRL2 = ffctrl_fifo;
-//
-//    /* Select output pins for the three observable signals */
-//#ifdef BOARD_OPENMOTE_CC2538
-//    CCTEST_OBSSEL0 = 0;                        /* PC0 = USB_SEL        */
-//    CCTEST_OBSSEL1 = 0;                        /* PC1 = N/C            */
-//    CCTEST_OBSSEL2 = 0;                        /* PC2 = N/C            */
-//    CCTEST_OBSSEL3 = 0;                        /* PC3 = USER_BUTTON    */
-//    CCTEST_OBSSEL4 = OBSSEL_EN | rfc_obs_sig0; /* PC4 = RED_LED        */
-//    CCTEST_OBSSEL5 = 0;                        /* PC5 = ORANGE_LED     */
-//    CCTEST_OBSSEL6 = OBSSEL_EN | rfc_obs_sig1; /* PC6 = YELLOW_LED     */
-//    CCTEST_OBSSEL7 = OBSSEL_EN | rfc_obs_sig2; /* PC7 = GREEN_LED      */
-//#else
-//    /* Assume BOARD_CC2538DK (or similar). */
-//    CCTEST_OBSSEL0 = OBSSEL_EN | rfc_obs_sig0; /* PC0 = LED_1 (red)    */
-//    CCTEST_OBSSEL1 = OBSSEL_EN | rfc_obs_sig1; /* PC1 = LED_2 (yellow) */
-//    CCTEST_OBSSEL2 = OBSSEL_EN | rfc_obs_sig2; /* PC2 = LED_3 (green)  */
-//    CCTEST_OBSSEL3 = 0;                        /* PC3 = LED_4 (red)    */
-//    CCTEST_OBSSEL4 = 0;                        /* PC4 = BTN_L          */
-//    CCTEST_OBSSEL5 = 0;                        /* PC5 = BTN_R          */
-//    CCTEST_OBSSEL6 = 0;                        /* PC6 = BTN_UP         */
-//    CCTEST_OBSSEL7 = 0;                        /* PC7 = BTN_DN         */
-//#endif /* BOARD_OPENMOTE_CC2538 */
-//
-//    if (SYS_CTRL->I_MAP) {
-//        NVIC_SetPriority(RF_RXTX_ALT_IRQn, RADIO_IRQ_PRIO);
-//        NVIC_EnableIRQ(RF_RXTX_ALT_IRQn);
-//
-//        NVIC_SetPriority(RF_ERR_ALT_IRQn, RADIO_IRQ_PRIO);
-//        NVIC_EnableIRQ(RF_ERR_ALT_IRQn);
-//    }
-//    else {
-//        NVIC_SetPriority(RF_RXTX_IRQn, RADIO_IRQ_PRIO);
-//        NVIC_EnableIRQ(RF_RXTX_IRQn);
-//
-//        NVIC_SetPriority(RF_ERR_IRQn, RADIO_IRQ_PRIO);
-//        NVIC_EnableIRQ(RF_ERR_IRQn);
-//    }
-//
-//    /* Flush the receive and transmit FIFOs */
-//    RFCORE_SFR_RFST = ISFLUSHTX;
-//    RFCORE_SFR_RFST = ISFLUSHRX;
-//    /* Disable/filter l2 Acks */
-//    RFCORE_XREG_FRMFILT1 &= ~CC2538_ACCEPT_FT_2_ACK;
-//    cc2538_on();
-//}
-
 void cc2538_init(void)
 {
-    // enable clock
-    SYS_CTRL_RCGCRFC = SYS_CTRL_RCGCRFC_RFC0;
-    SYS_CTRL_SCGCRFC = SYS_CTRL_SCGCRFC_RFC0;
-    SYS_CTRL_DCGCRFC = SYS_CTRL_DCGCRFC_RFC0;
+    const init_pair_t *pair;
 
-    // table 23-7
-    RFCORE_XREG_AGCCTRL1 = 0x15;
-    RFCORE_XREG_TXFILTCFG = 0x09;
-    ANA_REGS_IVCTRL = 0x0b;
+    for (pair = init_table; pair->reg_addr != NULL; pair++) {
+        *pair->reg_addr = pair->value;
+    }
 
-    RFCORE_XREG_CCACTRL0 = 0xf8;
-    RFCORE_XREG_FIFOPCTRL = 127;
-
-    RFCORE_XREG_FRMCTRL0 = RFCORE_XREG_FRMCTRL0_AUTOCRC| RFCORE_XREG_FRMCTRL0_AUTOACK;
     cc2538_set_tx_power(CC2538_RF_POWER_DEFAULT);
-    cc2538_on();
-    DEBUG("cc2538 has been set up...\n");
+    cc2538_set_chan(CC2538_RF_CHANNEL_DEFAULT);
+    cc2538_set_pan(CC2538_RF_PANID_DEFAULT);
+    cc2538_set_addr_long(cc2538_get_eui64_primary());
 
+    /* Select the observable signals (maximum of three) */
+    RFCORE_XREG_RFC_OBS_CTRL0 = tx_active;
+    RFCORE_XREG_RFC_OBS_CTRL1 = rx_active;
+    RFCORE_XREG_RFC_OBS_CTRL2 = ffctrl_fifo;
+
+    /* Select output pins for the three observable signals */
+#ifdef BOARD_OPENMOTE_CC2538
+    CCTEST_OBSSEL0 = 0;                        /* PC0 = USB_SEL        */
+    CCTEST_OBSSEL1 = 0;                        /* PC1 = N/C            */
+    CCTEST_OBSSEL2 = 0;                        /* PC2 = N/C            */
+    CCTEST_OBSSEL3 = 0;                        /* PC3 = USER_BUTTON    */
+    CCTEST_OBSSEL4 = OBSSEL_EN | rfc_obs_sig0; /* PC4 = RED_LED        */
+    CCTEST_OBSSEL5 = 0;                        /* PC5 = ORANGE_LED     */
+    CCTEST_OBSSEL6 = OBSSEL_EN | rfc_obs_sig1; /* PC6 = YELLOW_LED     */
+    CCTEST_OBSSEL7 = OBSSEL_EN | rfc_obs_sig2; /* PC7 = GREEN_LED      */
+#else
+    /* Assume BOARD_CC2538DK (or similar). */
+    CCTEST_OBSSEL0 = OBSSEL_EN | rfc_obs_sig0; /* PC0 = LED_1 (red)    */
+    CCTEST_OBSSEL1 = OBSSEL_EN | rfc_obs_sig1; /* PC1 = LED_2 (yellow) */
+    CCTEST_OBSSEL2 = OBSSEL_EN | rfc_obs_sig2; /* PC2 = LED_3 (green)  */
+    CCTEST_OBSSEL3 = 0;                        /* PC3 = LED_4 (red)    */
+    CCTEST_OBSSEL4 = 0;                        /* PC4 = BTN_L          */
+    CCTEST_OBSSEL5 = 0;                        /* PC5 = BTN_R          */
+    CCTEST_OBSSEL6 = 0;                        /* PC6 = BTN_UP         */
+    CCTEST_OBSSEL7 = 0;                        /* PC7 = BTN_DN         */
+#endif /* BOARD_OPENMOTE_CC2538 */
+
+    if (SYS_CTRL->I_MAP) {
+        NVIC_SetPriority(RF_RXTX_ALT_IRQn, RADIO_IRQ_PRIO);
+        NVIC_EnableIRQ(RF_RXTX_ALT_IRQn);
+
+        NVIC_SetPriority(RF_ERR_ALT_IRQn, RADIO_IRQ_PRIO);
+        NVIC_EnableIRQ(RF_ERR_ALT_IRQn);
+    }
+    else {
+        NVIC_SetPriority(RF_RXTX_IRQn, RADIO_IRQ_PRIO);
+        NVIC_EnableIRQ(RF_RXTX_IRQn);
+
+        NVIC_SetPriority(RF_ERR_IRQn, RADIO_IRQ_PRIO);
+        NVIC_EnableIRQ(RF_ERR_IRQn);
+    }
+
+    /* Flush the receive and transmit FIFOs */
+    RFCORE_SFR_RFST = ISFLUSHTX;
+    RFCORE_SFR_RFST = ISFLUSHRX;
+    /* Disable/filter l2 Acks */
+    RFCORE_XREG_FRMFILT1 &= ~CC2538_ACCEPT_FT_2_ACK;
+    cc2538_on();
 }
+
+//void cc2538_init(void)
+//{
+//    // enable clock
+//    SYS_CTRL_RCGCRFC = SYS_CTRL_RCGCRFC_RFC0;
+//    SYS_CTRL_SCGCRFC = SYS_CTRL_SCGCRFC_RFC0;
+//    SYS_CTRL_DCGCRFC = SYS_CTRL_DCGCRFC_RFC0;
+//
+//    // table 23-7
+//    RFCORE_XREG_AGCCTRL1 = 0x15;
+//    RFCORE_XREG_TXFILTCFG = 0x09;
+//    ANA_REGS_IVCTRL = 0x0b;
+//
+//    RFCORE_XREG_CCACTRL0 = 0xf8;
+//    RFCORE_XREG_FIFOPCTRL = 127;
+//
+//    RFCORE_XREG_FRMCTRL0 = RFCORE_XREG_FRMCTRL0_AUTOCRC| RFCORE_XREG_FRMCTRL0_AUTOACK;
+//    cc2538_set_tx_power(CC2538_RF_POWER_DEFAULT);
+//    cc2538_on();
+//    DEBUG("cc2538 has been set up...\n");
+//
+//}
 
 
 bool cc2538_is_on(void)
