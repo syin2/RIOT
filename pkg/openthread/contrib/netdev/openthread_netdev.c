@@ -67,7 +67,8 @@ uint8_t ot_call_command(char* command, void *arg, void* answer) {
 
 /* OpenThread will call this when switching state from empty tasklet to non-empty tasklet. */
 void otTaskletsSignalPending(otInstance *aInstance) {
-    otTaskletsProcess(aInstance);
+//    otTaskletsProcess(aInstance);
+    (void) aInstance;
 }
 
 static void *_openthread_event_loop(void *arg) {
@@ -101,28 +102,39 @@ static void *_openthread_event_loop(void *arg) {
 
     uint8_t *buf;
     ot_job_t *job;
+//    serial_msg_t * serialBuffer;
     while (1) {
-        msg_receive(&msg);
-        switch (msg.type) {
-            case OPENTHREAD_XTIMER_MSG_TYPE_EVENT:
-                /* Tell OpenThread a time event was received */
-                otPlatAlarmFired(sInstance);
-                break;
-            case OPENTHREAD_NETDEV_MSG_TYPE_EVENT:
-                /* Received an event from driver */
-                dev = msg.content.ptr;
-                dev->driver->isr(dev);
-                break;
-            case OPENTHREAD_SERIAL_MSG_TYPE_EVENT:
-                /* Tell OpenThread about the reception of a CLI command */
-                buf = msg.content.ptr;
-                otPlatUartReceived(buf, strlen((char *) buf));
-                break;
-            case OPENTHREAD_JOB_MSG_TYPE_EVENT:
-                job = msg.content.ptr;
-                reply.content.value = ot_exec_command(sInstance, job->command, job->arg, job->answer);
-                msg_reply(&msg, &reply);
-                break;
+        otTaskletsProcess(sInstance);
+        if(otTaskletsArePending(sInstance) == false) {
+            msg_receive(&msg);
+            switch (msg.type) {
+                case OPENTHREAD_XTIMER_MSG_TYPE_EVENT:
+                    /* Tell OpenThread a time event was received */
+                    otPlatAlarmFired(sInstance);
+                    break;
+                case OPENTHREAD_NETDEV_MSG_TYPE_EVENT:
+                    /* Received an event from driver */
+                    dev = msg.content.ptr;
+                    dev->driver->isr(dev);
+                    break;
+                case OPENTHREAD_SERIAL_MSG_TYPE_EVENT:
+                    /* Tell OpenThread about the reception of a CLI command */
+                    buf = msg.content.ptr;
+                   // DEBUG("This is UART event...%d\n", strlen((char *)buf));
+                    otPlatUartReceived(buf, strlen((char *) buf));
+
+//                    serialBuffer = (serial_msg_t *)msg.content.ptr;
+//                    DEBUG("This is a UART event...%d\n", serialBuffer->length);
+//                    otPlatUartReceived((uint8_t*) serialBuffer->buf, serialBuffer->length);
+//                    serialBuffer->serialBufferStatus =  OPENTHREAD_SERIAL_BUFFER_STATUS_FREE;
+                    break;
+                case OPENTHREAD_JOB_MSG_TYPE_EVENT:
+                    job = msg.content.ptr;
+                    reply.content.value = ot_exec_command(sInstance, job->command, job->arg, job->answer);
+                    DEBUG("This is JOB_MSG_TYPE_EVENT.\n");
+                    msg_reply(&msg, &reply);
+                    break;
+            }
         }
     }
 

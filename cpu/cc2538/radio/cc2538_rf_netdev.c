@@ -385,20 +385,20 @@ static int _init(netdev_t *netdev)
     cc2538_rf_t *dev = (cc2538_rf_t *) netdev;
     _dev = netdev;
 
-    uint16_t pan = cc2538_get_pan();
-    uint16_t chan = cc2538_get_chan();
-    uint16_t addr_short = cc2538_get_addr_short();
-    uint64_t addr_long = cc2538_get_addr_long();
-
-    /* Initialise netdev_ieee802154_t struct */
-    netdev_ieee802154_set((netdev_ieee802154_t *)netdev, NETOPT_NID, &pan,
-                          sizeof(pan));
-    netdev_ieee802154_set((netdev_ieee802154_t *)netdev, NETOPT_CHANNEL, &chan,
-                          sizeof(chan));
-    netdev_ieee802154_set((netdev_ieee802154_t *)netdev, NETOPT_ADDRESS,
-                          &addr_short, sizeof(addr_short));
-    netdev_ieee802154_set((netdev_ieee802154_t *)netdev, NETOPT_ADDRESS_LONG,
-                          &addr_long, sizeof(addr_long));
+//    uint16_t pan = cc2538_get_pan();
+//    uint16_t chan = cc2538_get_chan();
+//    uint16_t addr_short = cc2538_get_addr_short();
+//    uint64_t addr_long = cc2538_get_addr_long();
+//
+//    /* Initialise netdev_ieee802154_t struct */
+//    netdev_ieee802154_set((netdev_ieee802154_t *)netdev, NETOPT_NID, &pan,
+//                          sizeof(pan));
+//    netdev_ieee802154_set((netdev_ieee802154_t *)netdev, NETOPT_CHANNEL, &chan,
+//                          sizeof(chan));
+//    netdev_ieee802154_set((netdev_ieee802154_t *)netdev, NETOPT_ADDRESS,
+//                          &addr_short, sizeof(addr_short));
+//    netdev_ieee802154_set((netdev_ieee802154_t *)netdev, NETOPT_ADDRESS_LONG,
+//                          &addr_long, sizeof(addr_long));
 
     cc2538_set_state(dev, NETOPT_STATE_IDLE);
 

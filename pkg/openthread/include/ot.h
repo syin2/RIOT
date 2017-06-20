@@ -17,7 +17,7 @@
  *
  * @file
  *
- * @author  José Ignacio Alamos <jialamos@uc.cl>
+ * @author  Josï¿½ Ignacio Alamos <jialamos@uc.cl>
  */
 
 #ifndef OT_H
@@ -40,12 +40,26 @@ extern "C" {
 #define OPENTHREAD_MSG_TYPE_RECV         (0x2238)        /**< event for frame reception */
 #define OPENTHREAD_JOB_MSG_TYPE_EVENT    (0x2240)        /**< event indicating an OT_JOB message */
 
+#define OPENTHREAD_SIZEOF_LENGTH_AND_FREEBUFF       4
+#define OPENTHREAD_SERIAL_BUFFER_SIZE               OPENTHREAD_SIZEOF_LENGTH_AND_FREEBUFF + 1
+#define OPENTHREAD_SERIAL_BUFFER_PAYLOAD_SIZE       OPENTHREAD_SERIAL_BUFFER_SIZE - OPENTHREAD_SIZEOF_LENGTH_AND_FREEBUFF
+
+/**< error when no more buffer available*/
+#define OPENTHREAD_ERROR_NO_EMPTY_SERIAL_BUFFER              -1
+/**< serial buffer ready to use*/
+#define OPENTHREAD_SERIAL_BUFFER_STATUS_FREE                 (0x0001)
+/**< serial buffer ready for processsing*/
+#define OPENTHREAD_SERIAL_BUFFER_STATUS_READY_TO_PROCESS     (0x0002)
+/**< serial buffer payload full*/
+#define OPENTHREAD_SERIAL_BUFFER_STATUS_FULL                 (0x0004)
+
 /**
  * @brief   Struct containing a serial message
  */
-typedef struct {
-    void *buf;  /**< buffer containing the message */
-    size_t len; /**< length of the message */
+typedef struct{
+    uint16_t length;                            /**< length of the message*/
+    uint16_t serialBufferStatus;                /**< status of the buffer*/
+    uint16_t buf[OPENTHREAD_SERIAL_BUFFER_PAYLOAD_SIZE]; /**< buffer containing the message */
 } serial_msg_t;
 
 /**
