@@ -49,7 +49,8 @@ static at86rf2xx_t at86rf2xx_dev;
 static cc2538_rf_t cc2538_rf_dev;
 #endif
 
-#define OPENTHREAD_NETDEV_BUFLEN (ETHERNET_MAX_LEN)
+//#define OPENTHREAD_NETDEV_BUFLEN (ETHERNET_MAX_LEN)
+#define OPENTHREAD_NETDEV_BUFLEN   127
 
 static uint8_t rx_buf[OPENTHREAD_NETDEV_BUFLEN];
 static uint8_t tx_buf[OPENTHREAD_NETDEV_BUFLEN];
