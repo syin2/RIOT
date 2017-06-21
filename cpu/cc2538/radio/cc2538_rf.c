@@ -44,13 +44,18 @@ typedef struct {
 } init_pair_t;
 
 static const init_pair_t init_table[] = {
+        //enable clock
     {&SYS_CTRL_RCGCRFC,      0x01                     },
     {&SYS_CTRL_SCGCRFC,      0x01                     },
     {&SYS_CTRL_DCGCRFC,      0x01                     },
+
     {&RFCORE_XREG_CCACTRL0,  0xf8                     },
+        //table 23-7
     {&RFCORE_XREG_TXFILTCFG, 0x09                     },
     {&RFCORE_XREG_AGCCTRL1,  0x15                     },
     {&ANA_REGS_IVCTRL,       0x0b                     },
+
+    //need to figure out what the following register means?
     {&RFCORE_XREG_MDMTEST1,  0x08                     },
     {&RFCORE_XREG_FSCAL1,    0x01                     },
     {&RFCORE_XREG_RXCTRL,    0x3f                     },
