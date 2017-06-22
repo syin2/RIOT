@@ -804,6 +804,7 @@ typedef volatile uint32_t cc2538_reg_t; /**< Least-significant 32 bits of the IE
 #define CCTEST_OBSSEL7              ( *(cc2538_reg_t*)0x44010030 ) /**< CCTEST Select output signal on observation output 7 */
 #define CCTEST_TR0                  ( *(cc2538_reg_t*)0x44010034 ) /**< CCTEST Test register 0 */
 #define CCTEST_USBCTRL              ( *(cc2538_reg_t*)0x44010050 ) /**< CCTEST USB PHY stand-by control */
+
 /** @} */
 
 #define XOSC32M_FREQ                32000000 /**< 32 MHz external oscillator/clock frequency */

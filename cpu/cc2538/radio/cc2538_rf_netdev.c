@@ -20,6 +20,7 @@
  */
 
 #include <errno.h>
+#include <cc2538_rf.h>
 
 #include "net/gnrc.h"
 #include "net/netdev.h"
@@ -40,6 +41,7 @@ static int  _send(netdev_t *netdev, const struct iovec *vector, unsigned count);
 static int  _recv(netdev_t *netdev, void *buf, size_t len, void *info);
 static void _isr(netdev_t *netdev);
 static int  _init(netdev_t *dev);
+
 
 const netdev_driver_t cc2538_rf_driver = {
     .get  = _get,
@@ -254,49 +256,59 @@ static int _set(netdev_t *netdev, netopt_t opt, void *value, size_t value_len)
     return res;
 }
 
-static int _send(netdev_t *netdev, const struct iovec *vector, unsigned count)
-{
-    int pkt_len = 0;
+static int _send(netdev_t *netdev, const struct iovec *vector, unsigned count) {
+    cc2538_rf_t *dev = (cc2538_rf_t *) netdev;
 
-    /* Flush TX FIFO once no transmission in progress */
-    RFCORE_WAIT_UNTIL(RFCORE->XREG_FSMSTAT1bits.TX_ACTIVE == 0);
-    RFCORE_SFR_RFST = ISFLUSHTX;
+    if (dev->state == NETOPT_STATE_RX) {
+        dev->state = NETOPT_STATE_TX;
 
-    /* The first byte of the TX FIFO must be the packet length,
-       but we don't know what it is yet. Write a null byte to the
-       start of the FIFO, so we can come back and update it later */
-    rfcore_write_byte(0);
+        int pkt_len = 0;
 
-    for (unsigned i = 0; i < count; i++) {
-        pkt_len += vector[i].iov_len;
+        /* Flush TX FIFO once no transmission in progress */
+        RFCORE_WAIT_UNTIL(RFCORE->XREG_FSMSTAT1bits.TX_ACTIVE == 0);
+        RFCORE_SFR_RFST = ISFLUSHTX;
 
-        if (pkt_len > CC2538_RF_MAX_DATA_LEN) {
-            DEBUG("cc2538_rf: packet too large (%u > %u)\n",
-                  pkt_len, CC2538_RF_MAX_DATA_LEN);
-            return -EOVERFLOW;
+        /* The first byte of the TX FIFO must be the packet length,
+           but we don't know what it is yet. Write a null byte to the
+           start of the FIFO, so we can come back and update it later */
+        rfcore_write_byte(0);
+
+        for (unsigned i = 0; i < count; i++) {
+            pkt_len += vector[i].iov_len;
+
+            if (pkt_len > CC2538_RF_MAX_DATA_LEN) {
+                DEBUG("cc2538_rf: packet too large (%u > %u)\n",
+                      pkt_len, CC2538_RF_MAX_DATA_LEN);
+                return -EOVERFLOW;
+            }
+
+            rfcore_write_fifo(vector[i].iov_base, vector[i].iov_len);
         }
 
-        rfcore_write_fifo(vector[i].iov_base, vector[i].iov_len);
-    }
-
 #ifdef MODULE_NETSTATS_L2
-    netdev->stats.tx_bytes += pkt_len;
+        netdev->stats.tx_bytes += pkt_len;
 #endif
 
-    /* Set first byte of TX FIFO to the packet length */
-    rfcore_poke_tx_fifo(0, pkt_len + CC2538_AUTOCRC_LEN);
+        /* Set first byte of TX FIFO to the packet length */
+        rfcore_poke_tx_fifo(0, pkt_len + CC2538_AUTOCRC_LEN);
 
-    RFCORE_SFR_RFST = ISTXON;
+        RFCORE_SFR_RFST = ISTXON;
 
-    /* Wait for transmission to complete */
-    RFCORE_WAIT_UNTIL(RFCORE->XREG_FSMSTAT1bits.TX_ACTIVE == 0);
+        /* Wait for transmission to complete */
+        RFCORE_WAIT_UNTIL(RFCORE->XREG_FSMSTAT1bits.TX_ACTIVE == 0);
 
-    DEBUG("cc2538_rf: transmitted %u packets\n", pkt_len);
-    return pkt_len;
+        DEBUG("cc2538_rf: transmitted %u packets\n", pkt_len);
+        return pkt_len;
+
+    }
+
+    return 0;
 }
 
 static int _recv(netdev_t *netdev, void *buf, size_t len, void *info)
 {
+    cc2538_rf_t * dev =( cc2538_rf_t *) netdev;
+    dev->state = NETOPT_STATE_RX;
     size_t pkt_len;
 
     if (buf == NULL) {
@@ -376,8 +388,18 @@ static void _isr(netdev_t *netdev)
 //        netdev->event_callback(netdev, NETDEV_EVENT_TX_MEDIUM_BUSY);
 //        DEBUG("THE CHANNEL IS TOO BUSY...");
 //    }
+    cc2538_rf_t * dev = (cc2538_rf_t *) netdev;
+    if(dev->state == NETOPT_STATE_TX) {
+        DEBUG("radio status is transmitting\n");
+    }
+    if(dev->state == NETOPT_STATE_RX){
+        DEBUG("cc2538 is receiving...\n");
+    }
 
-    netdev->event_callback(netdev, NETDEV_EVENT_RX_COMPLETE);
+//
+//    }
+    //netdev->event_callback(netdev, NETDEV_EVENT_TX_MEDIUM_BUSY);//
+    // netdev->event_callback(netdev, NETDEV_EVENT_RX_COMPLETE);
 }
 
 static int _init(netdev_t *netdev)

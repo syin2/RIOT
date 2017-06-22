@@ -29,6 +29,10 @@
 #include "openthread/platform/radio.h"
 #include "ot.h"
 
+//#ifdef MODULE_CC2538_RF
+#include "cc2538_rf.h"
+//#endif
+
 #define ENABLE_DEBUG (1)
 #include "debug.h"
 
@@ -135,6 +139,8 @@ void openthread_radio_init(netdev_t *dev, uint8_t *tb, uint8_t *rb)
 /* Called upon NETDEV_EVENT_RX_COMPLETE event */
 void recv_pkt(otInstance *aInstance, netdev_t *dev)
 {
+    //cc2538_rf_t * dev_rf= (cc2538_rf_t *) dev;
+
     DEBUG("Openthread: Received pkt\n");
     netdev_ieee802154_rx_info_t rx_info;
     /* Read frame length from driver */

@@ -9,6 +9,7 @@ include_directories(sys/include)
 include_directories(drivers/include)
 include_directories(core/include)
 include_directories(cpu/cc2538/include)
+include_directories(drivers/at86rf2xx/include)
 
 
 set(SOURCE_FILES
