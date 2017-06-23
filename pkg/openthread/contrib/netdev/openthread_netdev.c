@@ -30,7 +30,7 @@
 #include "random.h"
 #include "ot.h"
 
-#define ENABLE_DEBUG (1)
+#define ENABLE_DEBUG (0)
 #include "debug.h"
 
 #define OPENTHREAD_QUEUE_LEN      (8)
@@ -115,6 +115,7 @@ static void *_openthread_event_loop(void *arg) {
                 case OPENTHREAD_NETDEV_MSG_TYPE_EVENT:
                     /* Received an event from driver */
                     dev = msg.content.ptr;
+                    //DEBUG("It is netdev_msg_type_event...\n");
                     dev->driver->isr(dev);
                     break;
                 case OPENTHREAD_SERIAL_MSG_TYPE_EVENT:

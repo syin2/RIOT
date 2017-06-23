@@ -30,7 +30,7 @@
 #include "cc2538_rf_netdev.h"
 #include "cc2538_rf_internal.h"
 
-#define ENABLE_DEBUG        (1)
+#define ENABLE_DEBUG        (0)
 #include "debug.h"
 
 #define _MAX_MHR_OVERHEAD   (25)
@@ -259,7 +259,7 @@ static int _set(netdev_t *netdev, netopt_t opt, void *value, size_t value_len)
 static int _send(netdev_t *netdev, const struct iovec *vector, unsigned count) {
     cc2538_rf_t *dev = (cc2538_rf_t *) netdev;
 
-    if (dev->state == NETOPT_STATE_RX) {
+    if (dev->state == NETOPT_STATE_RX || dev->state == NETOPT_STATE_IDLE) {
         dev->state = NETOPT_STATE_TX;
 
         int pkt_len = 0;
@@ -388,13 +388,15 @@ static void _isr(netdev_t *netdev)
 //        netdev->event_callback(netdev, NETDEV_EVENT_TX_MEDIUM_BUSY);
 //        DEBUG("THE CHANNEL IS TOO BUSY...");
 //    }
-    cc2538_rf_t * dev = (cc2538_rf_t *) netdev;
-    if(dev->state == NETOPT_STATE_TX) {
-        DEBUG("radio status is transmitting\n");
-    }
-    if(dev->state == NETOPT_STATE_RX){
-        DEBUG("cc2538 is receiving...\n");
-    }
+//    cc2538_rf_t * dev = (cc2538_rf_t *) netdev;
+//    if(dev->state == NETOPT_STATE_TX) {
+//        DEBUG("radio status is transmitting\n");
+//        netdev->event_callback(netdev,NETDEV_EVENT_TX_MEDIUM_BUSY);
+//    }
+//    if(dev->state == NETOPT_STATE_RX){
+//        DEBUG("cc2538 is receiving...\n");
+        netdev->event_callback(netdev, NETDEV_EVENT_RX_COMPLETE);
+//    }
 
 //
 //    }

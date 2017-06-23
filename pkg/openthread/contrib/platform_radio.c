@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <cc2538_rf.h>
 
 #include "byteorder.h"
 #include "errno.h"
@@ -31,9 +32,10 @@
 
 //#ifdef MODULE_CC2538_RF
 #include "cc2538_rf.h"
+#include "cc2538.h"
 //#endif
 
-#define ENABLE_DEBUG (1)
+#define ENABLE_DEBUG (0)
 #include "debug.h"
 
 #define RADIO_IEEE802154_FCS_LEN    (2U)
@@ -52,14 +54,14 @@ static int _set_channel(uint16_t channel)
     return _dev->driver->set(_dev, NETOPT_CHANNEL, &channel, sizeof(uint16_t));
 }
 
-/*get transmission power from driver */
-static int16_t _get_power(void)
-{
-    int16_t power;
-
-    _dev->driver->get(_dev, NETOPT_TX_POWER, &power, sizeof(int16_t));
-    return power;
-}
+//*get transmission power from driver */
+//static int16_t _get_power(void)
+//{
+//    int16_t power;
+//
+//    _dev->driver->get(_dev, NETOPT_TX_POWER, &power, sizeof(int16_t));
+//    return power;
+//}
 
 /* set transmission power */
 static int _set_power(int16_t power)
@@ -136,55 +138,129 @@ void openthread_radio_init(netdev_t *dev, uint8_t *tb, uint8_t *rb)
     _dev = dev;
 }
 
-/* Called upon NETDEV_EVENT_RX_COMPLETE event */
 void recv_pkt(otInstance *aInstance, netdev_t *dev)
 {
-    //cc2538_rf_t * dev_rf= (cc2538_rf_t *) dev;
+    cc2538_rf_t * dev_rf= (cc2538_rf_t *) dev;
+    if(dev_rf -> state == NETOPT_STATE_TX)
+    {
+        if( (sTransmitFrame.mPsdu[0] & 32) == 0 )
+        {
+            dev_rf -> state = NETOPT_STATE_RX;
+            otPlatRadioTransmitDone(aInstance, &sTransmitFrame, false, kThreadError_None);
+        }
+        else if(sReceiveFrame.mLength == 5 &&
+                (sReceiveFrame.mPsdu[0] & 0x7) ==0x2 &&
+                 sReceiveFrame.mPsdu[2] == sTransmitFrame.mPsdu[2])
+        {
+            dev_rf -> state = NETOPT_STATE_RX;
+            otPlatRadioTransmitDone(aInstance, &sTransmitFrame, (sReceiveFrame.mPsdu[0] & 16) != 0,
+                                    kThreadError_None);
+        }
+
+    }
+
+    uint8_t  len;
+    uint8_t  crcCorr;
 
     DEBUG("Openthread: Received pkt\n");
-    netdev_ieee802154_rx_info_t rx_info;
-    /* Read frame length from driver */
-    int len = dev->driver->recv(dev, NULL, 0, &rx_info);
-    Rssi = rx_info.rssi;
+    dev_rf->state = NETOPT_STATE_RX;
+    len = RFCORE_SFR_RFDATA;
 
-    /* very unlikely */
     if ((len > (unsigned) UINT16_MAX)) {
         DEBUG("Len too high: %d\n", len);
         otPlatRadioReceiveDone(aInstance, NULL, kThreadError_Abort);
         return;
     }
 
-    /* Fill OpenThread receive frame */
-    /* Openthread needs a packet length with FCS included,
-     * OpenThread do not use the data so we don't need to calculate FCS */
-    sReceiveFrame.mLength = len + RADIO_IEEE802154_FCS_LEN;
-    sReceiveFrame.mPower = _get_power();
+    //read psdu
+    for(int i=0; i< len -2; i++)
+    {
+        sReceiveFrame.mPsdu[i] = RFCORE_SFR_RFDATA;
+    }
 
-    /* Read received frame */
-    int res = dev->driver->recv(dev, (char *) sReceiveFrame.mPsdu, len, NULL);
+    sReceiveFrame.mPower = (int8_t) RFCORE_SFR_RFDATA - 73; //#define cc2538_rssi_offset 73;
+    crcCorr = RFCORE_SFR_RFDATA;
 
-   DEBUG("Received message: len %d\n", (int) sReceiveFrame.mLength);
-    for (int i = 0; i < sReceiveFrame.mLength; ++i) {
-        DEBUG("%x ", sReceiveFrame.mPsdu[i]);
+    DEBUG("Received message: len %d\n", (int) sReceiveFrame.mLength);
+    for (int j= 0; j < sReceiveFrame.mLength; ++j) {
+        DEBUG("%x ", sReceiveFrame.mPsdu[j]);
     }
     DEBUG("\n");
 
-    /* Tell OpenThread that receive has finished */
-    //otPlatRadioReceiveDone(aInstance, res > 0 ? &sReceiveFrame : NULL, res > 0 ? kThreadError_None : kThreadError_Abort);
-
-#ifdef MODULE_CC2538_RF
-#define RFCORE_XREG_FRMFILT0_FRAME_FILTER_EN    0x00000001  // Enables frame filtering
-#define IEEE802154_ACK_LENGTH  5
-#endif
-
-    if ((RFCORE_XREG_FRMFILT1 & RFCORE_XREG_FRMFILT0_FRAME_FILTER_EN) == 0 ||
-            (sReceiveFrame.mLength > IEEE802154_ACK_LENGTH))
+    if(crcCorr & 0x80)
     {
-        DEBUG("notified MAC about the received frame...\n");
-        otPlatRadioReceiveDone(aInstance, res > 0 ? &sReceiveFrame : NULL, res > 0 ? kThreadError_None : kThreadError_Abort);
+        sReceiveFrame.mLength = len;
+        sReceiveFrame.mLqi = crcCorr & 0x7f; //#define cc2528_lqi_bit_mask;
+    }
+    else
+    {
+        RFCORE_SFR_RFST = ISFLUSHRX;
+        RFCORE_SFR_RFST = ISFLUSHRX;
     }
 
+    if( (RFCORE_XREG_FSMSTAT1 & 0x00000040)!=0  && (RFCORE_XREG_FSMSTAT1 & 0x00000080) == 0 )
+    {
+        RFCORE_SFR_RFST = ISFLUSHRX;
+        RFCORE_SFR_RFST = ISFLUSHRX;
+    }
+
+    otPlatRadioReceiveDone(aInstance, &sReceiveFrame, kThreadError_None );
+
+
 }
+
+/* Called upon NETDEV_EVENT_RX_COMPLETE event */
+//void recv_pkt(otInstance *aInstance, netdev_t *dev)
+//{
+//    //cc2538_rf_t * dev_rf= (cc2538_rf_t *) dev;
+//
+//    DEBUG("Openthread: Received pkt\n");
+//    netdev_ieee802154_rx_info_t rx_info;
+//    /* Read frame length from driver */
+//    int len = dev->driver->recv(dev, NULL, 0, &rx_info);
+//    Rssi = rx_info.rssi;
+//
+//    /* very unlikely */
+//    if ((len > (unsigned) UINT16_MAX)) {
+//        DEBUG("Len too high: %d\n", len);
+//        otPlatRadioReceiveDone(aInstance, NULL, kThreadError_Abort);
+//        return;
+//    }
+//
+//    /* Fill OpenThread receive frame */
+//    /* Openthread needs a packet length with FCS included,
+//     * OpenThread do not use the data so we don't need to calculate FCS */
+//    sReceiveFrame.mLength = len + RADIO_IEEE802154_FCS_LEN;
+//
+//    //    sReceiveFrame.mPower = _get_power();
+//    sReceiveFrame.mPower = (int8_t) RFCORE_SFR_RFDATA - 73; //#define CC2538_RSSI_LENGTH 73
+//
+//
+//    /* Read received frame */
+//    int res = dev->driver->recv(dev, (char *) sReceiveFrame.mPsdu, len, NULL);
+//
+//   DEBUG("Received message: len %d\n", (int) sReceiveFrame.mLength);
+//    for (int i = 0; i < sReceiveFrame.mLength; ++i) {
+//        DEBUG("%x ", sReceiveFrame.mPsdu[i]);
+//    }
+//    DEBUG("\n");
+//
+//    /* Tell OpenThread that receive has finished */
+//    //otPlatRadioReceiveDone(aInstance, res > 0 ? &sReceiveFrame : NULL, res > 0 ? kThreadError_None : kThreadError_Abort);
+//
+//#ifdef MODULE_CC2538_RF
+//#define RFCORE_XREG_FRMFILT0_FRAME_FILTER_EN    0x00000001  // Enables frame filtering
+//#define IEEE802154_ACK_LENGTH  5
+//#endif
+//
+//    if ((RFCORE_XREG_FRMFILT1 & RFCORE_XREG_FRMFILT0_FRAME_FILTER_EN) == 0 ||
+//            (sReceiveFrame.mLength > IEEE802154_ACK_LENGTH))
+//    {
+//        DEBUG("notified MAC about the received frame...\n");
+//        otPlatRadioReceiveDone(aInstance, res > 0 ? &sReceiveFrame : NULL, res > 0 ? kThreadError_None : kThreadError_Abort);
+//    }
+//
+//}
 
 /* Called upon TX event */
 void send_pkt(otInstance *aInstance, netdev_t *dev, netdev_event_t event)
